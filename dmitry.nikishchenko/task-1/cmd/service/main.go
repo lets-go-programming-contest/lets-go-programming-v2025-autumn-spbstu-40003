@@ -6,21 +6,26 @@ func main() {
 	var num1, num2, res int
 	var operator rune
 
-	_, error_num1 := fmt.Scanf("%d\n", &num1)
+	_, err := fmt.Scanln(&num1)
 
-	if error_num1 != nil {
+	if err != nil {
 		fmt.Println("Invalid first operand")
 		return
 	}
 
-	_, error_num2 := fmt.Scanf("%d\n", &num2)
+	_, err = fmt.Scanln(&num2)
 
-	if error_num2 != nil {
+	if err != nil {
 		fmt.Println("Invalid second operand")
 		return
 	}
 
-	fmt.Scanf("%c\n", &operator)
+	_, err = fmt.Scanf("%c", &operator)
+
+	if err != nil {
+		fmt.Println("Invalid operation")
+		return
+	}
 
 	switch operator {
 	case '+':
@@ -36,9 +41,9 @@ func main() {
 			fmt.Println("Division by zero")
 			return
 		}
-	default:
-		fmt.Println("Invalid operation")
-		return
+		// default:
+		// 	fmt.Println("Invalid operation")
+		// 	return
 	}
 
 	fmt.Println(res)
