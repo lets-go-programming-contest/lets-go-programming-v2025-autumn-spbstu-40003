@@ -31,7 +31,10 @@ func main() {
 	}
 
 	var opn string
-	fmt.Scanln(&opn)
+	_, err := fmt.Scanln(&opn)
+	if err != nil {
+		return
+	}
 
 	var result int
 	switch opn {
