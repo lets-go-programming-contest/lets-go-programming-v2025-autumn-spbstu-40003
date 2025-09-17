@@ -7,8 +7,10 @@ import (
 
 func inputOperand(opd *int, opdNumber string) bool {
 	var input string
-	var err error
-	fmt.Scanln(&input)
+	_, err := fmt.Scanln(&input)
+	if err != nil {
+		return false
+	}
 	*opd, err = strconv.Atoi(input)
 	if err != nil {
 		fmt.Printf("Invalid %s operand\n", opdNumber)
