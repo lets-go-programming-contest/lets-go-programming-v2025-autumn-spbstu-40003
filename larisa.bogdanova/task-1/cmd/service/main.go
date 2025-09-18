@@ -44,5 +44,4 @@ func main() {
 	default:
 		fmt.Println("Invalid operation")
 	}
-
 }
