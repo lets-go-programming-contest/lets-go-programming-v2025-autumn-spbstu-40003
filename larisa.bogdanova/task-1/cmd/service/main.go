@@ -4,23 +4,27 @@ import "fmt"
 
 func main() {
 	var num1, num2 int
-	var oper string
+	var oper rune
 
-	_, err1 := fmt.Scan(&num1)
+	_, err1 := fmt.Scanln(&num1)
 	if err1 != nil {
 		fmt.Println("Invalid first operand")
 		return
 	}
 
-	_, err2 := fmt.Scan(&num2)
+	_, err2 := fmt.Scanln(&num2)
 	if err2 != nil {
 		fmt.Println("Invalid second operand")
 		return
 	}
 
-	fmt.Scan(&oper)
+	_, err3 := fmt.Scanf("%c", &oper)
+	if err3 != nil {
+		fmt.Println("Invalid operation")
+		return
+	}
 
-	switch oper[0] {
+	switch oper {
 	case '+':
 		fmt.Println(num1 + num2)
 		return
