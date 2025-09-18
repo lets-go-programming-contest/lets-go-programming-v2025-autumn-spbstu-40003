@@ -9,10 +9,10 @@ import (
 )
 
 var (
-	errDivByZero        = errors.New("division by zero")
-	errBadOp            = errors.New("invalid operation")
-	errBadFirstOperand  = errors.New("invalid first operand")
-	errBadSecondOperand = errors.New("invalid second operand")
+	errDivByZero        = errors.New("Division by zero")
+	errBadOp            = errors.New("Invalid operation")
+	errBadFirstOperand  = errors.New("Invalid first operand")
+	errBadSecondOperand = errors.New("Invalid second operand")
 )
 
 func calculate(a, b int, op string) (int, error) {
