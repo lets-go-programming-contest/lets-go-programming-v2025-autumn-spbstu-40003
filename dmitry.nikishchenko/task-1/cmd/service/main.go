@@ -41,9 +41,9 @@ func main() {
 			fmt.Println("Division by zero")
 			return
 		}
-		// default:
-		// 	fmt.Println("Invalid operation")
-		// 	return
+	default:
+		fmt.Println("Invalid operation")
+		return
 	}
 
 	fmt.Println(res)
