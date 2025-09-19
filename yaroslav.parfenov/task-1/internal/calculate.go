@@ -26,5 +26,4 @@ func Calculate() {
 			fmt.Println(float64(firOperand / secOperand))
 		}
 	}
-
 }
