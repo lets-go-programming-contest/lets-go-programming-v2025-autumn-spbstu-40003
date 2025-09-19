@@ -24,6 +24,8 @@ func Calculate() {
 			fmt.Println(float64(firOperand * secOperand))
 		case '/':
 			fmt.Println(float64(firOperand / secOperand))
+		default:
+			fmt.Println("Invalid operation")
 		}
 	}
 }
