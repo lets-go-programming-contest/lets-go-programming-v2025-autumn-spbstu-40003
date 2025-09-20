@@ -22,13 +22,13 @@ func inputOperand(opd *int, opdNumber string) error {
 func main() {
 	var opd1, opd2 int
 
-	err := inputOperand(&opd1, "first");
+	err := inputOperand(&opd1, "first")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	err = inputOperand(&opd2, "second");
+	err = inputOperand(&opd2, "second")
 	if err != nil {
 		fmt.Println(err)
 		return
