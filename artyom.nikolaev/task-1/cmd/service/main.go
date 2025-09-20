@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	
-	"github.com/ArtttNik/task-1/internal"
+
+	"github.com/artyom.nikolaev/task-1/internal"
 )
 
 func main() {
