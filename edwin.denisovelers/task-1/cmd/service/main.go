@@ -44,8 +44,10 @@ func readValue[T int | string](r io.Reader, val *T, errorToShow error) error {
 func main() {
 	in := bufio.NewReader(os.Stdin)
 
-	var a, b int
-	var op string
+	var (
+		a, b int
+		op   string
+	)
 
 	if err := readValue(in, &a, errBadFirstOperand); err != nil {
 		fmt.Println(err)
