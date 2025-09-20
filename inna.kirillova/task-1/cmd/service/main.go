@@ -7,21 +7,22 @@ func main() {
 	var operation string
 
 	_, errorOfInvalidFirstOperand := fmt.Scanln(&a)
-    if errorOfInvalidFirstOperand != nil {
-        fmt.Println("Invalid first operand")
-        return}
+	if errorOfInvalidFirstOperand != nil {
+		fmt.Println("Invalid first operand")
+		return
+	}
 
 	_, errorOfInvalidSecondOperand := fmt.Scanln(&b)
-    if errorOfInvalidSecondOperand != nil {
-        fmt.Println("Invalid second operand")
-        return
-    }
+	if errorOfInvalidSecondOperand != nil {
+		fmt.Println("Invalid second operand")
+		return
+	}
 
 	_, errorOfInvalidOperation := fmt.Scanln(&operation)
-    if errorOfInvalidOperation != nil {
-        fmt.Println("Invalid operation")
-        return
-    }
+	if errorOfInvalidOperation != nil {
+		fmt.Println("Invalid operation")
+		return
+	}
 
 	switch operation {
 	case "+":
