@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"lab_1/internal"
+	"github.com/ArtttNik/task-1/internal"
 )
 
 func main() {
