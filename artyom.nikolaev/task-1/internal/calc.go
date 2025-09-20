@@ -16,37 +16,34 @@ var (
 func Calculate() (float64, error) {
 	var inputA, inputB, inputOp string
 
-	_, errA := fmt.Scanln(&inputA)
-	if errA != nil {
+	if _, err := fmt.Scanln(&inputA); err != nil {
 		return 0, ErrInvalidFirstOperand
 	}
-	_, errB := fmt.Scanln(&inputB)
-	if errB != nil {
+	a, err := strconv.Atoi(inputA)
+	if err != nil {
+		return 0, ErrInvalidFirstOperand
+	}
+
+	if _, err := fmt.Scanln(&inputB); err != nil {
 		return 0, ErrInvalidSecondOperand
 	}
-	_, errOp := fmt.Scanln(&inputOp)
-	if errOp != nil || len(inputOp) != 1 {
+	b, err := strconv.Atoi(inputB)
+	if err != nil {
+		return 0, ErrInvalidSecondOperand
+	}
+
+	if _, err := fmt.Scanln(&inputOp); err != nil {
 		return 0, ErrInvalidOperation
 	}
 
-	a, err1 := strconv.Atoi(inputA)
-	if err1 != nil {
-		return 0, ErrInvalidFirstOperand
-	}
-	b, err2 := strconv.Atoi(inputB)
-	if err2 != nil {
-		return 0, ErrInvalidSecondOperand
-	}
-
-	operator := inputOp[0]
-	switch operator {
-	case '+':
+	switch inputOp {
+	case "+":
 		return float64(a + b), nil
-	case '-':
+	case "-":
 		return float64(a - b), nil
-	case '*':
+	case "*":
 		return float64(a * b), nil
-	case '/':
+	case "/":
 		if b == 0 {
 			return 0, ErrDivisionByZero
 		}
