@@ -5,34 +5,39 @@ import (
 	"strconv"
 )
 
-func inputOperand(opd *int, opdNumber string) bool {
+func inputOperand(opd *int, opdNumber string) error {
 	var input string
 	_, err := fmt.Scanln(&input)
 	if err != nil {
-		return false
+		return fmt.Errorf("Invalid %s operand", opdNumber)
 	}
+
 	*opd, err = strconv.Atoi(input)
 	if err != nil {
-		fmt.Printf("Invalid %s operand\n", opdNumber)
-		return false
+		return fmt.Errorf("Invalid %s operand", opdNumber)
 	}
-	return true
+	return nil
 }
 
 func main() {
 	var opd1, opd2 int
-	flag := inputOperand(&opd1, "first")
-	if !flag {
+
+	err := inputOperand(&opd1, "first");
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
-	flag = inputOperand(&opd2, "second")
-	if !flag {
+
+	err = inputOperand(&opd2, "second");
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
 	var opn string
-	_, err := fmt.Scanln(&opn)
+	_, err = fmt.Scanln(&opn)
 	if err != nil {
+		fmt.Println("Invalid operation")
 		return
 	}
 
@@ -49,7 +54,7 @@ func main() {
 			fmt.Println("Division by zero")
 			return
 		}
-		result = int(opd1 / opd2)
+		result = opd1 / opd2
 	default:
 		fmt.Println("Invalid operation")
 		return
