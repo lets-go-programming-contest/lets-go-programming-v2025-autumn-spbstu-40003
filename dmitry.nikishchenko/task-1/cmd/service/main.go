@@ -3,8 +3,10 @@ package main
 import "fmt"
 
 func main() {
-	var num1, num2, res int
-	var operator rune
+	var (
+		num1, num2, res int
+		operator        rune
+	)
 
 	_, err := fmt.Scanln(&num1)
 
