@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-var errInvNumEmployees = errors.New("Invalid number of collegues")
+var errInvNumEmployees = errors.New("invalid number of employees")
 
 func ProcessDepartments(numDepartments *int) error {
 	var numEmployees int
@@ -15,6 +15,7 @@ func ProcessDepartments(numDepartments *int) error {
 		if err != nil {
 			return errInvNumEmployees
 		}
+
 		err = ProcessEmployees(&numEmployees)
 		if err != nil {
 			return err

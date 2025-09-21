@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	errInvTemperature = errors.New("Invalid temperature")
-	errInvSign        = errors.New("Invalid sign")
+	errInvTemperature = errors.New("invalid temperature")
+	errInvSign        = errors.New("invalid sign")
 )
 
 func ProcessEmployees(numEmployees *int) error {
