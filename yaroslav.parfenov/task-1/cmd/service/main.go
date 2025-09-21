@@ -1,7 +1,9 @@
 package main
 
-import "FirstProject/internal"
+import (
+	"github.com/gituser549/task-1/internal/calc"
+)
 
 func main() {
-	internal.Calculate()
+	calc.Calculate()
 }
