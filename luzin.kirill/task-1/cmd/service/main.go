@@ -14,25 +14,25 @@ func main() {
 		result    float64
 	)
 
-	fmt.Scan(&input)
+	_, errScan := fmt.Scan(&input)
 	a, err := strconv.Atoi(input)
 
-	if err != nil {
+	if err != nil || errScan != nil {
 		fmt.Println("Invalid first operand")
 		os.Exit(0)
 	}
 
-	fmt.Scan(&input)
+	_, errScan = fmt.Scan(&input)
 	b, err = strconv.Atoi(input)
 
-	if err != nil {
+	if err != nil || errScan != nil {
 		fmt.Println("Invalid second operand")
 		os.Exit(0)
 	}
 
-	_, err = fmt.Scan(&operation)
+	_, errScan = fmt.Scan(&operation)
 
-	if err != nil {
+	if errScan != nil {
 		fmt.Println("Invalid operation ")
 		os.Exit(0)
 	}
