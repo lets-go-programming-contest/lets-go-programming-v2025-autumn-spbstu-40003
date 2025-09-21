@@ -8,16 +8,16 @@ import (
 	"strconv"
 )
 
+var (
+	invTemperature = errors.New("Invalid temperature")
+	invSign        = errors.New("Invalid sign")
+)
+
 func ProcessEmployees(numEmployees *int) error {
 
 	const (
 		minTemperature = 15
 		maxTemperature = 30
-	)
-
-	var (
-		invTemperature = errors.New("Invalid temperature")
-		invSign        = errors.New("Invalid sign")
 	)
 
 	var (

@@ -5,12 +5,11 @@ import (
 	"fmt"
 )
 
+var invNumCollegues = errors.New("Invalid number of collegues")
+
 func ProcessDepartments(numDepartments *int) error {
 
-	var (
-		invNumCollegues = errors.New("Invalid number of collegues")
-		numCollegues    int
-	)
+	var numCollegues int
 
 	for *numDepartments > 0 {
 		_, err := fmt.Scanln(&numCollegues)
