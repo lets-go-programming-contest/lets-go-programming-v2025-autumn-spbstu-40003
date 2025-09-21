@@ -8,7 +8,11 @@ import (
 func main() {
 	var tmpString, operator string
 
-	fmt.Scanln(&tmpString)
+	_, err := fmt.Scanln(&tmpString)
+	if err != nil {
+		fmt.Println("Invalid first operand")
+		return
+	}
 	firstValue, err := strconv.Atoi(tmpString)
 
 	if err != nil {
@@ -16,7 +20,11 @@ func main() {
 		return
 	}
 
-	fmt.Scanln(&tmpString)
+	_, err = fmt.Scanln(&tmpString)
+	if err != nil {
+		fmt.Println("Invalid first operand")
+		return
+	}
 	secondValue, err := strconv.Atoi(tmpString)
 
 	if err != nil {
@@ -24,7 +32,11 @@ func main() {
 		return
 	}
 
-	fmt.Scanln(&operator)
+	_, err = fmt.Scanln(&operator)
+	if err != nil {
+		fmt.Println("Invalid first operand")
+		return
+	}
 
 	switch operator {
 	case "+":
