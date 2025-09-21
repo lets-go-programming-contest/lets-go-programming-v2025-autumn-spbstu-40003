@@ -1,39 +1,44 @@
 package main
 
-import (
-	"fmt"
-	"strconv"
-)
+import "fmt"
 
 func main() {
-	var in, op string
+	var (
+		op   string
+		a, b int
+	)
 
-	fmt.Scan(&in)
-	a, err := strconv.Atoi(in)
+	_, err := fmt.Scan(&a)
 	if err != nil {
 		fmt.Println("Invalid first operand")
+		return
 	}
-	fmt.Scan(&in)
-	b, err := strconv.Atoi(in)
+	_, err = fmt.Scan(&b)
 	if err != nil {
 		fmt.Println("Invalid second operand")
+		return
 	}
-	fmt.Scan(&op)
+	_, err = fmt.Scan(&op)
+	if err != nil {
+		fmt.Println("Operation input error")
+		return
+	}
 
-	switch {
-	case op == "+":
+	switch op {
+	case "+":
 		fmt.Println(a + b)
-	case op == "-":
+	case "-":
 		fmt.Println(a - b)
-	case op == "*":
+	case "*":
 		fmt.Println(a * b)
-	case op == "/":
+	case "/":
 		if b == 0 {
 			fmt.Println("Division by zero")
-		} else {
-			fmt.Println(a / b)
+			return
 		}
+		fmt.Println(a / b)
 	default:
 		fmt.Println("Invalid operation")
+		return
 	}
 }
