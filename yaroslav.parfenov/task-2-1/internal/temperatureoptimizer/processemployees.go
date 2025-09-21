@@ -9,12 +9,11 @@ import (
 )
 
 var (
-	invTemperature = errors.New("Invalid temperature")
-	invSign        = errors.New("Invalid sign")
+	errInvTemperature = errors.New("Invalid temperature")
+	errInvSign        = errors.New("Invalid sign")
 )
 
 func ProcessEmployees(numEmployees *int) error {
-
 	const (
 		minTemperature = 15
 		maxTemperature = 30
@@ -45,11 +44,11 @@ func ProcessEmployees(numEmployees *int) error {
 				leftBorder = curBorder
 			}
 		default:
-			return invSign
+			return errInvSign
 		}
 
 		if err != nil || curBorder < minTemperature || curBorder > maxTemperature {
-			return invTemperature
+			return errInvTemperature
 		}
 
 		if leftBorder <= rightBorder {
