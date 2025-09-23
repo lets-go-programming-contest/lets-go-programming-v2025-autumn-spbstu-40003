@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	errInvRecord 	  = errors.New("invalid record format")
+	errInvRecord      = errors.New("invalid record format")
 	errInvTemperature = errors.New("invalid temperature")
 	errInvSign        = errors.New("invalid sign")
 )
@@ -18,7 +18,7 @@ func ProcessEmployees(numEmployees *int) error {
 	)
 
 	var (
-		sign 		string
+		sign        string
 		curBorder   int
 		leftBorder  = minTemperature
 		rightBorder = maxTemperature
@@ -43,7 +43,7 @@ func ProcessEmployees(numEmployees *int) error {
 			return errInvSign
 		}
 
-		if err != nil || curBorder < minTemperature || curBorder > maxTemperature {
+		if curBorder < minTemperature || curBorder > maxTemperature {
 			return errInvTemperature
 		}
 
