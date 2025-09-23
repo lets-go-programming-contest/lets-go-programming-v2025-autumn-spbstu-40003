@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	errInvRecord = errors.New("invalid record format")
+	errInvRecord 	  = errors.New("invalid record format")
 	errInvTemperature = errors.New("invalid temperature")
 	errInvSign        = errors.New("invalid sign")
 )
