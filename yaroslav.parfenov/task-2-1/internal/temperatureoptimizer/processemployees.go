@@ -1,14 +1,12 @@
 package temperatureoptimizer
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
-	"strconv"
 )
 
 var (
+	errInvRecord = errors.New("invalid record format")
 	errInvTemperature = errors.New("invalid temperature")
 	errInvSign        = errors.New("invalid sign")
 )
@@ -20,26 +18,24 @@ func ProcessEmployees(numEmployees *int) error {
 	)
 
 	var (
+		sign 		string
 		curBorder   int
-		err         error
 		leftBorder  = minTemperature
 		rightBorder = maxTemperature
 	)
 
 	for *numEmployees > 0 {
-		scanner := bufio.NewScanner(os.Stdin)
-		scanner.Scan()
-
-		sign := scanner.Text()[0:2]
+		_, err := fmt.Scanln(&sign, &curBorder)
+		if err != nil {
+			return errInvRecord
+		}
 
 		switch sign {
 		case "<=":
-			curBorder, err = strconv.Atoi(scanner.Text()[3:])
 			if curBorder <= rightBorder {
 				rightBorder = curBorder
 			}
 		case ">=":
-			curBorder, err = strconv.Atoi(scanner.Text()[3:])
 			if curBorder >= leftBorder {
 				leftBorder = curBorder
 			}
