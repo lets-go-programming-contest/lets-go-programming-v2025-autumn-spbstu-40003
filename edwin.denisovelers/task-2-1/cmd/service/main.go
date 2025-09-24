@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -12,12 +11,19 @@ import (
 
 var (
 	errParse              = errors.New("parse error")
-	errImpossibleSolution = errors.New("impossible constraint")
+	errImpossibleSolution = errors.New("impossible solution")
+)
+
+type ConstraintType int
+
+const (
+	GreaterEqual ConstraintType = iota
+	LessEqual
 )
 
 type PreferredTemperature struct {
-	value     int
-	isGreater bool
+	value int
+	kind  ConstraintType
 }
 
 func parsePreferredTemperature(s string) (PreferredTemperature, error) {
@@ -27,12 +33,12 @@ func parsePreferredTemperature(s string) (PreferredTemperature, error) {
 	}
 
 	op, numStr := parts[0], parts[1]
-	var isGreater bool
+	var constraint ConstraintType
 	switch op {
 	case ">=":
-		isGreater = true
+		constraint = GreaterEqual
 	case "<=":
-		isGreater = false
+		constraint = LessEqual
 	default:
 		return PreferredTemperature{}, errParse
 	}
@@ -42,18 +48,18 @@ func parsePreferredTemperature(s string) (PreferredTemperature, error) {
 		return PreferredTemperature{}, err
 	}
 
-	return PreferredTemperature{value: value, isGreater: isGreater}, nil
+	return PreferredTemperature{value: value, kind: constraint}, nil
 }
 
-func readLine(r io.Reader) (string, error) {
-	line, err := bufio.NewReader(r).ReadString('\n')
+func readLine(r *bufio.Reader) (string, error) {
+	line, err := r.ReadString('\n')
 	if err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(line), nil
 }
 
-func readInt(r io.Reader) (int, error) {
+func readInt(r *bufio.Reader) (int, error) {
 	var v int
 	_, err := fmt.Fscanln(r, &v)
 	if err != nil {
@@ -63,7 +69,7 @@ func readInt(r io.Reader) (int, error) {
 }
 
 func applyPreference(minT, maxT int, pref PreferredTemperature) (int, int, error) {
-	if pref.isGreater {
+	if pref.kind == GreaterEqual {
 		if pref.value > maxT {
 			return 0, 0, errImpossibleSolution
 		}
@@ -82,7 +88,7 @@ func applyPreference(minT, maxT int, pref PreferredTemperature) (int, int, error
 	return minT, maxT, nil
 }
 
-func processDepartment(r io.Reader, lowerBound, upperBound int) error {
+func processDepartment(r *bufio.Reader, lowerBound, upperBound int) error {
 	employeeCount, err := readInt(r)
 	minT, maxT := lowerBound, upperBound
 	if err != nil {
@@ -102,8 +108,11 @@ func processDepartment(r io.Reader, lowerBound, upperBound int) error {
 
 		minT, maxT, err = applyPreference(minT, maxT, pref)
 		if err != nil {
-			fmt.Println(-1)
-			return nil
+			if errors.Is(err, errImpossibleSolution) {
+				fmt.Println(-1)
+				return nil
+			}
+			return err
 		}
 
 		fmt.Println(minT)
@@ -111,7 +120,7 @@ func processDepartment(r io.Reader, lowerBound, upperBound int) error {
 	return nil
 }
 
-func processDepartments(r io.Reader, lowerBound int, upperBound int) error {
+func solve(r *bufio.Reader, lowerBound int, upperBound int) error {
 	departmentCount, err := readInt(r)
 	if err != nil {
 		return err
@@ -127,7 +136,7 @@ func processDepartments(r io.Reader, lowerBound int, upperBound int) error {
 
 func main() {
 	in := bufio.NewReader(os.Stdin)
-	if err := processDepartments(in, 15, 30); err != nil {
+	if err := solve(in, 15, 30); err != nil {
 		fmt.Println(err)
 	}
 }
