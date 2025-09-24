@@ -13,11 +13,11 @@ var (
 	errImpossibleSolution = errors.New("impossible solution")
 )
 
-type ConstraintType int
+type constraintType int
 
 const (
-	GreaterEqual ConstraintType = iota
-	LessEqual
+	greaterEqual constraintType = iota
+	lessEqual
 )
 
 const (
@@ -26,36 +26,36 @@ const (
 	expectedParts     = 2
 )
 
-type PreferredTemperature struct {
+type preferredTemperature struct {
 	value int
-	kind  ConstraintType
+	kind  constraintType
 }
 
-func parsePreferredTemperature(s string) (PreferredTemperature, error) {
+func parsePreferredTemperature(s string) (preferredTemperature, error) {
 	parts := strings.Fields(s)
 	if len(parts) != expectedParts {
-		return PreferredTemperature{}, errParse
+		return preferredTemperature{}, errParse
 	}
 
 	op, numStr := parts[0], parts[1]
 
-	var constraint ConstraintType
+	var constraint constraintType
 
 	switch op {
 	case ">=":
-		constraint = GreaterEqual
+		constraint = greaterEqual
 	case "<=":
-		constraint = LessEqual
+		constraint = lessEqual
 	default:
-		return PreferredTemperature{}, errParse
+		return preferredTemperature{}, errParse
 	}
 
 	value, err := strconv.Atoi(numStr)
 	if err != nil {
-		return PreferredTemperature{}, fmt.Errorf("invalid number %q: %w", numStr, err)
+		return preferredTemperature{}, fmt.Errorf("invalid number %q: %w", numStr, err)
 	}
 
-	return PreferredTemperature{value: value, kind: constraint}, nil
+	return preferredTemperature{value: value, kind: constraint}, nil
 }
 
 func readLine(reader *bufio.Reader) (string, error) {
@@ -78,8 +78,8 @@ func readInt(reader *bufio.Reader) (int, error) {
 	return value, nil
 }
 
-func applyPreference(minT, maxT int, pref PreferredTemperature) (int, int, error) {
-	if pref.kind == GreaterEqual {
+func applyPreference(minT, maxT int, pref preferredTemperature) (int, int, error) {
+	if pref.kind == greaterEqual {
 		if pref.value > maxT {
 			return 0, 0, errImpossibleSolution
 		}
