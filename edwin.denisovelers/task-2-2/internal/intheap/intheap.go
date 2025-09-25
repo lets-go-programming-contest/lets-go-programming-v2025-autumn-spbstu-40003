@@ -5,15 +5,19 @@ type IntHeap []int
 func (heap *IntHeap) Len() int {
 	return len(*heap)
 }
+
 func (heap *IntHeap) Less(first, second int) bool {
 	return (*heap)[first] < (*heap)[second]
 }
+
 func (heap *IntHeap) Swap(first, second int) {
 	(*heap)[first], (*heap)[second] = (*heap)[second], (*heap)[first]
 }
 
 func (heap *IntHeap) Push(object interface{}) {
-	*heap = append(*heap, object.(int))
+	if val, ok := object.(int); ok {
+		*heap = append(*heap, val)
+	}
 }
 
 func (heap *IntHeap) Pop() interface{} {

@@ -17,28 +17,29 @@ func main() {
 	}
 
 	arr := make([]int, size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		_, err := fmt.Fscan(os.Stdin, &arr[i])
 		if err != nil {
 			return
 		}
 	}
 
-	var k int
+	var kValue int
 
-	_, err = fmt.Fscan(os.Stdin, &k)
+	_, err = fmt.Fscan(os.Stdin, &kValue)
 	if err != nil {
 		return
 	}
 
-	h := &intheap.IntHeap{}
+	minHeap := &intheap.IntHeap{}
 
 	for _, v := range arr {
-		heap.Push(h, v)
-		if h.Len() > k {
-			heap.Pop(h)
+		heap.Push(minHeap, v)
+
+		if minHeap.Len() > kValue {
+			heap.Pop(minHeap)
 		}
 	}
 
-	fmt.Println((*h)[0])
+	fmt.Println((*minHeap)[0])
 }
