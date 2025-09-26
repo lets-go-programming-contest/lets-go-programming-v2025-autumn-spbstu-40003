@@ -24,7 +24,7 @@ func ProcessEmployees(numEmployees *int) error {
 		rightBorder = maxTemperature
 	)
 
-	for *numEmployees > 0 {
+	for range *numEmployees {
 		_, err := fmt.Scanln(&sign, &curBorder)
 		if err != nil {
 			return errInvRecord
@@ -52,8 +52,6 @@ func ProcessEmployees(numEmployees *int) error {
 		} else {
 			fmt.Println(-1)
 		}
-
-		(*numEmployees)--
 	}
 
 	return nil
