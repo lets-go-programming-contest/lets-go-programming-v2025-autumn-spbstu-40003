@@ -6,13 +6,19 @@ import (
 	ih "github.com/gituser549/task-2-2/internal/intheap"
 )
 
-func ProcessDishes(dishStorage *ih.IntHeap, ordPerfectDish int) (int, error) {
+func ProcessDishes(dishStorage *ih.IntHeap, ordPerfectDish int) int {
+	var ansNumDish int
 
-	var curNumDish int
-	for ordPerfectDish > 0 {
-		curNumDish = heap.Pop(dishStorage).(int)
+	for ordPerfectDish > 1 {
+		heap.Pop(dishStorage)
 		ordPerfectDish--
 	}
 
-	return curNumDish, nil
+	ansNumDish, ok := heap.Pop(dishStorage).(int)
+
+	if !ok {
+		return -1
+	}
+
+	return ansNumDish
 }

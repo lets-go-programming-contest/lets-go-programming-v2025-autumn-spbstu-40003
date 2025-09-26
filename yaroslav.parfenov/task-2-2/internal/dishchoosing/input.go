@@ -18,7 +18,6 @@ func GetInput(dishStorage *ih.IntHeap) (int, error) {
 	var numDishes int
 
 	_, err := fmt.Scanln(&numDishes)
-
 	if err != nil {
 		return 0, errInvNumDishes
 	}
