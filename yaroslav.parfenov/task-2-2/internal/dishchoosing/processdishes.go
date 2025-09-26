@@ -9,9 +9,8 @@ import (
 func ProcessDishes(dishStorage *ih.IntHeap, ordPerfectDish int) int {
 	var ansNumDish int
 
-	for ordPerfectDish > 1 {
+	for range ordPerfectDish - 1 {
 		heap.Pop(dishStorage)
-		ordPerfectDish--
 	}
 
 	ansNumDish, ok := heap.Pop(dishStorage).(int)

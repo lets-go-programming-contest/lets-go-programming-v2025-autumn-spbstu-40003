@@ -22,7 +22,7 @@ func GetInput(dishStorage *ih.IntHeap) (int, error) {
 		return 0, errInvNumDishes
 	}
 
-	for numDishes > 0 {
+	for range numDishes {
 		var curDish int
 
 		_, err = fmt.Scan(&curDish)
@@ -31,8 +31,6 @@ func GetInput(dishStorage *ih.IntHeap) (int, error) {
 		}
 
 		heap.Push(dishStorage, curDish)
-
-		numDishes--
 	}
 
 	var ordPerfectDish int
