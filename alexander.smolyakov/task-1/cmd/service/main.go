@@ -40,16 +40,19 @@ func main() {
 	firstOperand, err := readNumber()
 	if err != nil {
 		fmt.Println("Invalid first operand")
+		return
 	}
 
 	secondOperand, err = readNumber()
 	if err != nil {
 		fmt.Println("Invalid second operand")
+		return
 	}
 
 	_, err = fmt.Scan(&operator)
 	if err != nil {
 		fmt.Println("Error reading operator")
+		return
 	}
 
 	result, err = processNumbers(firstOperand, secondOperand, operator)
