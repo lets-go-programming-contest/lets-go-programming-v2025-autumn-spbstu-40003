@@ -23,7 +23,7 @@ func processNumbers(firstOperand, secondOperand int, operator string) (float64, 
 		if secondOperand == 0 {
 			return 0, errors.New("Division by zero")
 		}
-		return float64(firstOperand / secondOperand), nil
+		return float64(firstOperand) / float64(secondOperand), nil
 	default:
 		return 0, errors.New("Invalid operation")
 	}
