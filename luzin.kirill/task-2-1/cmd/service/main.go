@@ -17,7 +17,6 @@ func main() {
 	var cDepartament, cEmployee = 0, 0
 
 	_, err := fmt.Scan(&cDepartament)
-
 	if err != nil {
 		println(errDepartament.Error())
 		os.Exit(0)
@@ -30,7 +29,6 @@ func main() {
 
 	for range cDepartament {
 		_, err = fmt.Scan(&cEmployee)
-
 		if err != nil {
 			println(errEmployee.Error())
 			os.Exit(0)
