@@ -45,21 +45,21 @@ func OptimizeTemperature(cEmployee int) error {
 	return nil
 }
 
-func chooseLogic(min int, max int, str string, temp int) (int, int, error) {
+func chooseLogic(lowerT int, upperT int, str string, temp int) (int, int, error) {
 	switch str {
 	case ">=":
-		if temp <= max {
-			if min < temp {
-				min = temp
+		if temp <= upperT {
+			if lowerT < temp {
+				lowerT = temp
 			}
 		} else {
 			return -1, -1, nil
 		}
 
 	case "<=":
-		if temp >= min {
-			if max > temp {
-				max = temp
+		if temp >= lowerT {
+			if upperT > temp {
+				upperT = temp
 			}
 		} else {
 			return -1, -1, nil
@@ -69,5 +69,5 @@ func chooseLogic(min int, max int, str string, temp int) (int, int, error) {
 		return -1, -1, errLogicInput
 	}
 
-	return min, max, nil
+	return lowerT, upperT, nil
 }
