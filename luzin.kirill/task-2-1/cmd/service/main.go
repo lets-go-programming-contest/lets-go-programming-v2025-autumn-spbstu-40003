@@ -14,7 +14,7 @@ var (
 )
 
 func main() {
-	var cDepartament, cEmployee int = 0, 0
+	var cDepartament, cEmployee = 0, 0
 
 	_, err := fmt.Scan(&cDepartament)
 
@@ -28,7 +28,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	for i := 0; i < cDepartament; i++ {
+	for range cDepartament {
 		_, err = fmt.Scan(&cEmployee)
 
 		if err != nil {

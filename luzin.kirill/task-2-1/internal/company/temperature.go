@@ -5,62 +5,55 @@ import (
 	"fmt"
 )
 
-var errWrongInput = errors.New("wrong input for >= and <=")
+var (
+	errLogicInput       = errors.New("wrong input for >= and <=")
+	errTemperatureInput = errors.New("wrong input for temperature")
+)
 
 func OptimizeTemperature(cEmployee int) error {
 	var (
-		minT, maxT, tempT, optimalT int    = 15, 30, 0, 0
-		input                       string = ""
+		minT, maxT, tempT, optimalT = 15, 30, 0, 0
+		input                       = ""
 	)
 
-	for i := 0; i < cEmployee; i++ {
+	for range cEmployee {
 		_, err := fmt.Scan(&input)
 
 		if err != nil {
-			return err
+			return errLogicInput
 		}
 
 		_, err = fmt.Scan(&tempT)
 
 		if err != nil {
-			return err
+			return errTemperatureInput
 		}
 
 		switch input {
 		case ">=":
-			if optimalT != -1 {
-				if tempT <= maxT {
-
-					if minT < tempT {
-						minT = tempT
-					} else {
-						tempT = minT
-					}
-					optimalT = tempT
-
-				} else {
-					optimalT = -1
+			if tempT <= maxT && optimalT != -1 {
+				if minT < tempT {
+					minT = tempT
 				}
+			} else {
+				optimalT = -1
 			}
 
 		case "<=":
-			if optimalT != -1 {
-				if tempT >= minT {
-
-					if maxT > tempT {
-						maxT = tempT
-					} else {
-						tempT = maxT
-					}
-					optimalT = tempT
-
-				} else {
-					optimalT = -1
+			if tempT >= minT && optimalT != -1 {
+				if maxT > tempT {
+					maxT = tempT
 				}
+			} else {
+				optimalT = -1
 			}
 
 		default:
-			return errWrongInput
+			return errLogicInput
+		}
+
+		if optimalT != -1 {
+			optimalT = minT
 		}
 
 		fmt.Println(optimalT)
