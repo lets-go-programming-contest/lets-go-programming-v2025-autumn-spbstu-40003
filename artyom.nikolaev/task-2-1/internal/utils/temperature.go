@@ -1,4 +1,4 @@
-package internal
+package utils
 
 import (
 	"errors"
@@ -9,7 +9,6 @@ var (
 	ErrInvalidAmount      = errors.New("amount must be greater than zero and lower than 1000")
 	ErrInvalidOperation   = errors.New("invalid operation")
 	ErrInvalidTemperature = errors.New("invalid temperature")
-	ErrScan               = errors.New("scan error")
 )
 
 const (
@@ -19,7 +18,7 @@ const (
 
 func processEmployee(op string, temp int, currentMin, currentMax *int) error {
 	if temp < MinTemp || temp > MaxTemp {
-		return ErrInvalidTemperature
+		return fmt.Errorf("error of the range of temperature: %w", ErrInvalidTemperature)
 	}
 
 	switch op {
@@ -32,7 +31,7 @@ func processEmployee(op string, temp int, currentMin, currentMax *int) error {
 			*currentMax = temp
 		}
 	default:
-		return ErrInvalidOperation
+		return fmt.Errorf("error while trying to read input temperature: %w", ErrInvalidOperation)
 	}
 
 	return nil
@@ -40,7 +39,7 @@ func processEmployee(op string, temp int, currentMin, currentMax *int) error {
 
 func processDepartment(employeeCount int) error {
 	if employeeCount <= 0 || employeeCount > 1000 {
-		return ErrInvalidAmount
+		return fmt.Errorf("error of the range of employee: %w", ErrInvalidAmount)
 	}
 
 	currentMin := MinTemp
@@ -54,12 +53,12 @@ func processDepartment(employeeCount int) error {
 
 		_, err := fmt.Scan(&operation, &temp)
 		if err != nil {
-			return ErrScan
+			return fmt.Errorf("error while trying to read input temperature for employee %w", err)
 		}
 
 		err = processEmployee(operation, temp, &currentMin, &currentMax)
 		if err != nil {
-			return err
+			return fmt.Errorf("error processing employee %w", err)
 		}
 
 		if currentMin <= currentMax {
@@ -77,11 +76,11 @@ func Temp() error {
 
 	_, err := fmt.Scanln(&departmentCount)
 	if err != nil {
-		return ErrScan
+		return fmt.Errorf("error while trying to read department count: %w", err)
 	}
 
 	if departmentCount <= 0 || departmentCount > 1000 {
-		return ErrInvalidAmount
+		return fmt.Errorf("invalid department count %w", ErrInvalidAmount)
 	}
 
 	for range departmentCount {
@@ -89,12 +88,12 @@ func Temp() error {
 
 		_, err := fmt.Scanln(&employeeCount)
 		if err != nil {
-			return ErrScan
+			return fmt.Errorf("error while trying to read employee count for department %w", err)
 		}
 
 		err = processDepartment(employeeCount)
 		if err != nil {
-			return err
+			return fmt.Errorf("error processing department %w", err)
 		}
 	}
 
