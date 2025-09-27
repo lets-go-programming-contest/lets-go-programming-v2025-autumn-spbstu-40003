@@ -29,7 +29,6 @@ func processNumbers(firstOperand, secondOperand int, operator string) (float64, 
 	}
 }
 
-
 func main() {
 	var (
 		firstOperand, secondOperand int
