@@ -8,31 +8,42 @@ import (
 
 func main() {
 	var (
-		input     string
-		a, b      int
-		operation string
-		result    float64
+		input, operation string
+		a, b             int
+		result           float64
 	)
 
-	_, errScan := fmt.Scan(&input)
-	a, err := strconv.Atoi(input)
+	_, err := fmt.Scan(&input)
 
-	if err != nil || errScan != nil {
+	if err != nil {
 		fmt.Println("Invalid first operand")
 		os.Exit(0)
 	}
 
-	_, errScan = fmt.Scan(&input)
-	b, err = strconv.Atoi(input)
+	a, err = strconv.Atoi(input)
 
-	if err != nil || errScan != nil {
+	if err != nil {
+		fmt.Println("Invalid first operand")
+		os.Exit(0)
+	}
+
+	_, err = fmt.Scan(&input)
+
+	if err != nil {
 		fmt.Println("Invalid second operand")
 		os.Exit(0)
 	}
 
-	_, errScan = fmt.Scan(&operation)
+	b, err = strconv.Atoi(input)
 
-	if errScan != nil {
+	if err != nil {
+		fmt.Println("Invalid second operand")
+		os.Exit(0)
+	}
+
+	_, err = fmt.Scan(&operation)
+
+	if err != nil {
 		fmt.Println("Invalid operation ")
 		os.Exit(0)
 	}
