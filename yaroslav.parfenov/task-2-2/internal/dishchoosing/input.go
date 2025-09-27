@@ -2,16 +2,15 @@ package dishchoosing
 
 import (
 	"container/heap"
-	"errors"
 	"fmt"
 
 	ih "github.com/gituser549/task-2-2/internal/intheap"
 )
 
-var (
-	errInvNumDishes      = errors.New("inv num dishes")
-	errInvSomeDish       = errors.New("inv some dish")
-	errInvOrdPerfectDish = errors.New("inv ord-perfect dish")
+const (
+	errInvNumDishes      = "inv num dishes: %w"
+	errInvSomeDish       = "inv some dish: %w"
+	errInvOrdPerfectDish = "inv ord-perfect dish: %w"
 )
 
 func GetInput(dishStorage *ih.IntHeap) (int, error) {
@@ -19,7 +18,7 @@ func GetInput(dishStorage *ih.IntHeap) (int, error) {
 
 	_, err := fmt.Scanln(&numDishes)
 	if err != nil {
-		return 0, errInvNumDishes
+		return 0, fmt.Errorf(errInvNumDishes, err)
 	}
 
 	for range numDishes {
@@ -27,7 +26,7 @@ func GetInput(dishStorage *ih.IntHeap) (int, error) {
 
 		_, err = fmt.Scan(&curDish)
 		if err != nil {
-			return 0, errInvSomeDish
+			return 0, fmt.Errorf(errInvSomeDish, err)
 		}
 
 		heap.Push(dishStorage, curDish)
@@ -38,7 +37,7 @@ func GetInput(dishStorage *ih.IntHeap) (int, error) {
 	_, err = fmt.Scanln(&ordPerfectDish)
 
 	if err != nil {
-		return 0, errInvOrdPerfectDish
+		return 0, fmt.Errorf(errInvOrdPerfectDish, err)
 	}
 
 	return ordPerfectDish, nil

@@ -12,6 +12,8 @@ func main() {
 
 	ordPerfectDish, err := dc.GetInput(&dishStorage)
 	if err != nil {
+		fmt.Println(err.Error())
+
 		return
 	}
 
