@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	errLogicInput       = errors.New("wrong input for >= and <=")
+	errLogicInput       = errors.New("wrong input for logic, it must be >= or <=")
 	errTemperatureInput = errors.New("wrong input for temperature")
 )
 
