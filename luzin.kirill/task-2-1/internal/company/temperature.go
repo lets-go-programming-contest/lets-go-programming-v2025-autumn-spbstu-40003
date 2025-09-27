@@ -29,27 +29,10 @@ func OptimizeTemperature(cEmployee int) error {
 			return errTemperatureInput
 		}
 
-		switch input {
-		case ">=":
-			if tempT <= maxT && optimalT != -1 {
-				if minT < tempT {
-					minT = tempT
-				}
-			} else {
-				optimalT = -1
-			}
+		minT, maxT, err = chooseLogic(minT, maxT, input, tempT)
 
-		case "<=":
-			if tempT >= minT && optimalT != -1 {
-				if maxT > tempT {
-					maxT = tempT
-				}
-			} else {
-				optimalT = -1
-			}
-
-		default:
-			return errLogicInput
+		if err != nil {
+			return err
 		}
 
 		if optimalT != -1 {
@@ -60,4 +43,31 @@ func OptimizeTemperature(cEmployee int) error {
 	}
 
 	return nil
+}
+
+func chooseLogic(min int, max int, str string, temp int) (int, int, error) {
+	switch str {
+	case ">=":
+		if temp <= max {
+			if min < temp {
+				min = temp
+			}
+		} else {
+			return -1, -1, nil
+		}
+
+	case "<=":
+		if temp >= min {
+			if max > temp {
+				max = temp
+			}
+		} else {
+			return -1, -1, nil
+		}
+
+	default:
+		return -1, -1, errLogicInput
+	}
+
+	return min, max, nil
 }
