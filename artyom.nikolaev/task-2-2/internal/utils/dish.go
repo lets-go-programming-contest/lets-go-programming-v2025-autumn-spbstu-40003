@@ -1,4 +1,4 @@
-package internal
+package utils
 
 import (
 	"container/heap"
@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	errInputFail     = errors.New("input error")
-	errInvalidAmount = errors.New("invalid amount")
+	ErrInputFail     = errors.New("input error")
+	ErrInvalidAmount = errors.New("invalid amount")
 )
 
 const (
@@ -52,25 +52,25 @@ func readAndParseInput() ([]int, int, error) {
 
 	_, err := fmt.Scan(&dishesCount)
 	if err != nil {
-		return nil, 0, errInputFail
+		return nil, 0, fmt.Errorf("error reading dishes count: %w", ErrInputFail)
 	}
 
 	if dishesCount <= 0 || dishesCount > MaxDishes {
-		return nil, 0, errInvalidAmount
+		return nil, 0, fmt.Errorf("error of the range of dishes count: %w", ErrInvalidAmount)
 	}
 
 	dishesSlice := make([]int, dishesCount)
 
-	for index := range dishesCount {
+	for index := range dishesSlice {
 		var cost int
 
 		_, err := fmt.Scan(&cost)
 		if err != nil {
-			return nil, 0, errInputFail
+			return nil, 0, fmt.Errorf("error reading dish cost: %w", ErrInputFail)
 		}
 
 		if cost < MinValue || cost > MaxValue {
-			return nil, 0, errInvalidAmount
+			return nil, 0, fmt.Errorf("error of the range of dish cost: %w", ErrInvalidAmount)
 		}
 
 		dishesSlice[index] = cost
@@ -80,11 +80,11 @@ func readAndParseInput() ([]int, int, error) {
 
 	_, err = fmt.Scan(&need)
 	if err != nil {
-		return nil, 0, errInputFail
+		return nil, 0, fmt.Errorf("error reading k value: %w", ErrInputFail)
 	}
 
 	if need <= 0 || need > dishesCount {
-		return nil, 0, errInvalidAmount
+		return nil, 0, fmt.Errorf("error of the range of k value: %w", ErrInvalidAmount)
 	}
 
 	return dishesSlice, need, nil
@@ -108,7 +108,7 @@ func findKthLargest(prices []int, k int) int {
 func FindKDish() error {
 	dishes, k, err := readAndParseInput()
 	if err != nil {
-		return err
+		return fmt.Errorf("error in FindKDish: %w", err)
 	}
 
 	result := findKthLargest(dishes, k)
