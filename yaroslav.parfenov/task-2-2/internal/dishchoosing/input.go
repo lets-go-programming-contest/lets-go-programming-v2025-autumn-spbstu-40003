@@ -35,7 +35,6 @@ func GetInput(dishStorage *ih.IntHeap) (int, error) {
 	var ordPerfectDish int
 
 	_, err = fmt.Scanln(&ordPerfectDish)
-
 	if err != nil {
 		return 0, fmt.Errorf(errInvOrdPerfectDish, err)
 	}
