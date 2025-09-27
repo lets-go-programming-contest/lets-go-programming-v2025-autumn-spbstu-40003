@@ -9,8 +9,8 @@ import (
 
 func main() {
 	var dishStorage ih.IntHeap
-	ordPerfectDish, err := dc.GetInput(&dishStorage)
 
+	ordPerfectDish, err := dc.GetInput(&dishStorage)
 	if err != nil {
 		return
 	}
