@@ -3,23 +3,25 @@ package main
 import "fmt"
 
 func main() {
-	var a, b int
-	var operation string
+	var (
+		a, b      int
+		operation string
+	)
 
-	_, errorOfInvalidFirstOperand := fmt.Scanln(&a)
-	if errorOfInvalidFirstOperand != nil {
+	_, err := fmt.Scanln(&a)
+	if err != nil {
 		fmt.Println("Invalid first operand")
 		return
 	}
 
-	_, errorOfInvalidSecondOperand := fmt.Scanln(&b)
-	if errorOfInvalidSecondOperand != nil {
+	_, err = fmt.Scanln(&b)
+	if err != nil {
 		fmt.Println("Invalid second operand")
 		return
 	}
 
-	_, errorOfInvalidOperation := fmt.Scanln(&operation)
-	if errorOfInvalidOperation != nil {
+	_, err = fmt.Scanln(&operation)
+	if err != nil {
 		fmt.Println("Invalid operation")
 		return
 	}
