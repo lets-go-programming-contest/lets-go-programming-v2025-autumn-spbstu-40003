@@ -13,6 +13,8 @@ func main() {
 
 	_, err := fmt.Fscan(os.Stdin, &size)
 	if err != nil {
+		fmt.Println(err)
+
 		return
 	}
 
@@ -20,6 +22,8 @@ func main() {
 	for i := range size {
 		_, err := fmt.Fscan(os.Stdin, &arr[i])
 		if err != nil {
+			fmt.Println(err)
+
 			return
 		}
 	}
@@ -28,6 +32,8 @@ func main() {
 
 	_, err = fmt.Fscan(os.Stdin, &kValue)
 	if err != nil {
+		fmt.Println(err)
+
 		return
 	}
 
