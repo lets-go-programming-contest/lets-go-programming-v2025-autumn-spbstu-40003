@@ -22,13 +22,18 @@ func processNumbers(firstOperand, secondOperand int, operator string) (float64, 
 	case "/":
 		if secondOperand == 0 {
 			return 0, errors.New("Division by zero")
+		}
 		return float64(firstOperand / secondOperand), nil
+	default:
+		return 0, errors.New("Invalid operation")
+	}
 }
 
 
 func main() {
 	var (
-		firstOperand, secondOperand, result int
+		firstOperand, secondOperand int
+		result float64
 		operator string
 	)
 
@@ -51,9 +56,8 @@ func main() {
 
 	if err != nil {
 		fmt.Println(err)
-	}
-	else {
-		fmt.println(result)
+	} else {
+		fmt.Println(result)
 	}
 }
 
