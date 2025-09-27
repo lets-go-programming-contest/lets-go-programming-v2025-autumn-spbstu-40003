@@ -1,14 +1,13 @@
 package temperatureoptimizer
 
 import (
-	"errors"
 	"fmt"
 )
 
-var (
-	errInvRecord      = errors.New("invalid record format")
-	errInvTemperature = errors.New("invalid temperature")
-	errInvSign        = errors.New("invalid sign")
+const (
+	errInvRecord      = "%w: invalid record format"
+	errInvTemperature = "%w: invalid temperature"
+	errInvSign        = "%w: invalid sign"
 )
 
 func ProcessEmployees(numEmployees *int) error {
@@ -27,7 +26,7 @@ func ProcessEmployees(numEmployees *int) error {
 	for range *numEmployees {
 		_, err := fmt.Scanln(&sign, &curBorder)
 		if err != nil {
-			return errInvRecord
+			return fmt.Errorf(errInvRecord, err)
 		}
 
 		switch sign {
@@ -40,11 +39,11 @@ func ProcessEmployees(numEmployees *int) error {
 				leftBorder = curBorder
 			}
 		default:
-			return errInvSign
+			return fmt.Errorf(errInvSign, err)
 		}
 
 		if curBorder < minTemperature || curBorder > maxTemperature {
-			return errInvTemperature
+			return fmt.Errorf(errInvTemperature, err)
 		}
 
 		if leftBorder <= rightBorder {

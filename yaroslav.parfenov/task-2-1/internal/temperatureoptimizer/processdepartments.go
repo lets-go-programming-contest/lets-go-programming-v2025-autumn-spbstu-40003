@@ -1,11 +1,10 @@
 package temperatureoptimizer
 
 import (
-	"errors"
 	"fmt"
 )
 
-var errInvNumEmployees = errors.New("invalid number of employees")
+const errInvNumEmployees = "invalid number of employees: %w"
 
 func ProcessDepartments(numDepartments *int) error {
 	var numEmployees int
@@ -13,7 +12,7 @@ func ProcessDepartments(numDepartments *int) error {
 	for range *numDepartments {
 		_, err := fmt.Scanln(&numEmployees)
 		if err != nil {
-			return errInvNumEmployees
+			return fmt.Errorf(errInvNumEmployees, err)
 		}
 
 		err = ProcessEmployees(&numEmployees)
