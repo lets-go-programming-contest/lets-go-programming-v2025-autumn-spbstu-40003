@@ -32,8 +32,8 @@ func processNumbers(firstOperand, secondOperand int, operator string) (float64, 
 func main() {
 	var (
 		firstOperand, secondOperand int
-		result float64
-		operator string
+		result                      float64
+		operator                    string
 	)
 
 	firstOperand, err := readNumber()
