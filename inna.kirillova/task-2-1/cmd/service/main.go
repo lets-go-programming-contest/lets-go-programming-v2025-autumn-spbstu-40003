@@ -9,22 +9,22 @@ const (
 )
 
 func main() {
-	var N int
+	var numOfDep int
 
-	_, err := fmt.Scan(&N)
+	_, err := fmt.Scan(&numOfDep)
 	if err != nil {
 		return
 	}
 
-	for i := 0; i < N; i++ {
+	for range numOfDep {
 		handleDepartment()
 	}
 }
 
 func handleDepartment() {
-	var K int
+	var numOfEmpl int
 
-	_, err := fmt.Scan(&K)
+	_, err := fmt.Scan(&numOfEmpl)
 	if err != nil {
 		return
 	}
@@ -32,7 +32,7 @@ func handleDepartment() {
 	lowerLimit, upperLimit := minTemp, maxTemp
 	flag := true
 
-	for j := 0; j < K; j++ {
+	for range numOfEmpl {
 		var sign string
 		var temp int
 
@@ -43,6 +43,7 @@ func handleDepartment() {
 
 		if !flag {
 			fmt.Println(InvalidTemp)
+
 			continue
 		}
 
