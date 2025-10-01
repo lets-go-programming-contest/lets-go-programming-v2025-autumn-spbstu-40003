@@ -33,8 +33,10 @@ func handleDepartment() {
 	flag := true
 
 	for range numOfEmpl {
-		var sign string
-		var temp int
+		var (
+			sign string
+			temp int
+		)
 
 		_, err := fmt.Scan(&sign, &temp)
 		if err != nil {
@@ -61,6 +63,7 @@ func handleDepartment() {
 			fmt.Println(lowerLimit)
 		} else {
 			fmt.Println(InvalidTemp)
+
 			flag = false
 		}
 	}
