@@ -5,7 +5,7 @@ import "fmt"
 const (
 	minTemp     = 15
 	maxTemp     = 30
-	InvalidTemp = -1
+	invalidTemp = -1
 )
 
 func main() {
@@ -44,7 +44,7 @@ func handleDepartment() {
 		}
 
 		if !flag {
-			fmt.Println(InvalidTemp)
+			fmt.Println(invalidTemp)
 
 			continue
 		}
@@ -62,7 +62,7 @@ func handleDepartment() {
 		if lowerLimit <= upperLimit {
 			fmt.Println(lowerLimit)
 		} else {
-			fmt.Println(InvalidTemp)
+			fmt.Println(invalidTemp)
 
 			flag = false
 		}
