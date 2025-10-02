@@ -53,8 +53,10 @@ func readInt() (int, error) {
 }
 
 func processEmployee(currRange *Range, optTemp *int) error {
-	var sign string
-	var value int
+	var (
+		sign  string
+		value int
+	)
 
 	_, err := fmt.Scan(&sign, &value)
 	if err != nil {
