@@ -10,7 +10,13 @@ type Range struct {
 	low, high int
 }
 
-var ErrNoOverlap = errors.New("the intervals do not overlap")
+var (
+	ErrNoOverlap   = errors.New("the intervals do not overlap")
+	ErrInvalidTemp = errors.New("invalid temperature range")
+	ErrInvalidSign = errors.New("invalid sign")
+	ErrReadEmplNum = errors.New("can't read emplNum")
+	ErrReadDepNum  = errors.New("can't read depNum")
+)
 
 /*
 	В задании нет четкого определения "оптимальной температуры".
@@ -19,27 +25,28 @@ var ErrNoOverlap = errors.New("the intervals do not overlap")
 	ещё подходит, то оно сохраняется
 */
 
-func intersection(r1 *Range, r2 *Range) error {
-	if r1.high < r2.low || r1.low > r2.high {
+func intersection(first *Range, second *Range) error {
+	if first.high < second.low || first.low > second.high {
 		return ErrNoOverlap
 	}
 
-	r1.low = max(r1.low, r2.low)
-	r1.high = min(r1.high, r2.high)
+	first.low = max(first.low, second.low)
+	first.high = min(first.high, second.high)
 
 	return nil
 }
 
 func readInt() (int, error) {
 	var input string
+
 	_, err := fmt.Scan(&input)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("read value: %w", err)
 	}
 
 	val, err := strconv.Atoi(input)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("atoi: %w", err)
 	}
 
 	return val, nil
@@ -51,24 +58,25 @@ func processEmployee(currRange *Range, optTemp *int) error {
 
 	_, err := fmt.Scan(&sign, &value)
 	if err != nil {
-		return fmt.Errorf("invalid temperature range")
+		return ErrInvalidTemp
 	}
 
 	var newRange Range
+
 	switch sign {
 	case ">=":
 		newRange = Range{value, 30}
 	case "<=":
 		newRange = Range{15, value}
 	default:
-		return fmt.Errorf("invalid sign: %s", sign)
+		return fmt.Errorf("%w: %s", ErrInvalidSign, sign)
 	}
 
 	err = intersection(currRange, &newRange)
 	if err != nil {
 		fmt.Println(-1)
 
-		return nil
+		return err
 	}
 
 	if *optTemp >= currRange.low && *optTemp <= currRange.high {
@@ -84,14 +92,14 @@ func processEmployee(currRange *Range, optTemp *int) error {
 func processDepartment() error {
 	emplNum, err := readInt()
 	if err != nil {
-		return fmt.Errorf("can`t read emplNum")
+		return fmt.Errorf("%w: %w", ErrReadEmplNum, err)
 	}
 
 	currRange := Range{15, 30}
 	optTemp := -1
 
 	for emplNum > 0 {
-		if err := processEmployee(&currRange, &optTemp); err != nil {
+		if err := processEmployee(&currRange, &optTemp); err != nil && !errors.Is(err, ErrNoOverlap) {
 			fmt.Println("Error:", err)
 
 			return err
@@ -106,7 +114,7 @@ func processDepartment() error {
 func main() {
 	depNum, err := readInt()
 	if err != nil {
-		fmt.Println("Error: can`t read depNum")
+		fmt.Println("Error:", ErrReadDepNum, err)
 
 		return
 	}
