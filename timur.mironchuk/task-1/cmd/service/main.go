@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 )
 
 func main() {
@@ -24,8 +23,14 @@ func main() {
 		fmt.Println("Invalid operation")
 		return
 	}
+
 	if operator != "*" && operator != "/" && operator != "+" && operator != "-" {
 		fmt.Println("Invalid operation")
+		return
+	}
+
+	if operator == "/" && input2 == 0 {
+		fmt.Println("Division by zero")
 		return
 	}
 
@@ -42,10 +47,6 @@ func Count(a, b int, operator string) int {
 	case "*":
 		return a * b
 	case "/":
-		if b == 0 {
-			fmt.Println("Division by zero")
-			os.Exit(1)
-		}
 		return a / b
 	}
 	return 0
