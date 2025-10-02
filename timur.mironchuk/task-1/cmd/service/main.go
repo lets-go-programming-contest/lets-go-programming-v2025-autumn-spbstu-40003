@@ -10,19 +10,16 @@ func main() {
 	var input2 int
 	var operator string
 
-	fmt.Println("Введите первое число: ")
 	if _, err := fmt.Scan(&input1); err != nil {
 		fmt.Println("Invalid first operand")
 		return
 	}
 
-	fmt.Println("Введите второе число: ")
 	if _, err := fmt.Scan(&input2); err != nil {
 		fmt.Println("Invalid second operand")
 		return
 	}
 
-	fmt.Println("Введите оператор: ")
 	if _, err := fmt.Scan(&operator); err != nil {
 		fmt.Println("Invalid operation")
 		return
