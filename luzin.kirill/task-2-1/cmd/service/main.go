@@ -14,7 +14,9 @@ var (
 )
 
 func main() {
-	var cDepartament, cEmployee = 0, 0
+	var (
+		cDepartament, cEmployee = 0, 0
+	)
 
 	_, err := fmt.Scan(&cDepartament)
 	if err != nil {
@@ -40,7 +42,6 @@ func main() {
 		}
 
 		err = company.OptimizeTemperature(cEmployee)
-
 		if err != nil {
 			fmt.Println(err.Error())
 			os.Exit(0)
