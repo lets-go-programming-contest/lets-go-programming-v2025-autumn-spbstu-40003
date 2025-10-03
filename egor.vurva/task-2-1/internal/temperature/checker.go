@@ -9,11 +9,44 @@ const (
 	tempOffset = 15
 )
 
+func applyLessEqual(difference int, temperature []int) ([]int, bool) {
+	if difference < 0 {
+		fmt.Println(-1)
+
+		return temperature, false
+	} else if difference >= len(temperature) {
+		fmt.Println(temperature[0])
+
+		return temperature, true
+	} else {
+		temperature = temperature[:difference+1]
+
+		fmt.Println(temperature[0])
+
+		return temperature, true
+	}
+}
+
+func applyGreaterEqual(difference int, temperature []int) ([]int, bool) {
+	if difference >= len(temperature) {
+		fmt.Println(-1)
+
+		return temperature, false
+	} else if difference <= 0 {
+		fmt.Println(temperature[0])
+
+		return temperature, true
+	} else {
+		temperature = temperature[difference:]
+
+		fmt.Println(temperature[0])
+
+		return temperature, true
+	}
+}
+
 func CheckRange(employeeCount int) {
-	var (
-		currentTemperature TemperatureRange
-		difference         int
-	)
+	var currentTemperature TemperatureRange
 
 	temperature := make([]int, tempSize)
 
@@ -36,40 +69,25 @@ func CheckRange(employeeCount int) {
 
 		if !isValid {
 			fmt.Println(-1)
+
 			employeeCount--
+
 			continue
 		}
 
-		difference = currentTemperature.Value - temperature[0]
+		difference := currentTemperature.Value - temperature[0]
 
 		switch currentTemperature.Range {
 		case "<=":
-			if difference < 0 {
-				fmt.Println(-1)
-				isValid = false
-			} else if difference >= len(temperature) {
-				fmt.Println(temperature[0])
-			} else {
-				temperature = temperature[:difference+1]
-				fmt.Println(temperature[0])
-			}
-
-			employeeCount--
-
+			temperature, isValid = applyLessEqual(difference, temperature)
 		case ">=":
-			if difference >= len(temperature) {
-				fmt.Println(-1)
-				isValid = false
-			} else if difference < 0 {
-				fmt.Println(temperature[0])
-			} else {
-				temperature = temperature[difference:]
-				fmt.Println(temperature[0])
-			}
-			employeeCount--
-
+			temperature, isValid = applyGreaterEqual(difference, temperature)
 		default:
-			return
+			fmt.Println(-1)
+
+			isValid = false
 		}
+
+		employeeCount--
 	}
 }
