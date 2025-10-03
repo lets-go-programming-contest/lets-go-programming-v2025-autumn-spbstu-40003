@@ -10,15 +10,16 @@ const (
 )
 
 func applyLessEqual(difference int, temperature []int) ([]int, bool) {
-	if difference < 0 {
+	switch {
+	case difference < 0:
 		fmt.Println(-1)
 
 		return temperature, false
-	} else if difference >= len(temperature) {
+	case difference >= len(temperature):
 		fmt.Println(temperature[0])
 
 		return temperature, true
-	} else {
+	default:
 		temperature = temperature[:difference+1]
 
 		fmt.Println(temperature[0])
@@ -28,15 +29,16 @@ func applyLessEqual(difference int, temperature []int) ([]int, bool) {
 }
 
 func applyGreaterEqual(difference int, temperature []int) ([]int, bool) {
-	if difference >= len(temperature) {
+	switch {
+	case difference >= len(temperature):
 		fmt.Println(-1)
 
 		return temperature, false
-	} else if difference <= 0 {
+	case difference <= 0:
 		fmt.Println(temperature[0])
 
 		return temperature, true
-	} else {
+	default:
 		temperature = temperature[difference:]
 
 		fmt.Println(temperature[0])
