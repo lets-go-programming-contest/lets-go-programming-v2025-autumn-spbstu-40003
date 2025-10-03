@@ -11,16 +11,25 @@ func main() {
 
 	_, err := fmt.Scan(&deptCount)
 	if err != nil {
+		fmt.Println("failed to scan deptCount:", err)
+
 		return
 	}
 
 	for deptCount > 0 {
 		_, err = fmt.Scan(&employeeCount)
 		if err != nil {
+			fmt.Println("failed to scan employeeCount:", err)
+
 			return
 		}
 
-		temperature.CheckRange(employeeCount)
+		err = temperature.CheckRange(employeeCount)
+		if err != nil {
+			fmt.Println("check range failed:", err)
+
+			return
+		}
 
 		deptCount--
 	}

@@ -47,7 +47,7 @@ func applyGreaterEqual(difference int, temperature []int) ([]int, bool) {
 	}
 }
 
-func CheckRange(employeeCount int) {
+func CheckRange(employeeCount int) error {
 	var currentTemperature TemperatureRange
 
 	temperature := make([]int, tempSize)
@@ -61,12 +61,12 @@ func CheckRange(employeeCount int) {
 	for employeeCount > 0 {
 		_, err := fmt.Scan(&currentTemperature.Range)
 		if err != nil {
-			return
+			return fmt.Errorf("error while scanning range: %w", err)
 		}
 
 		_, err = fmt.Scan(&currentTemperature.Value)
 		if err != nil {
-			return
+			return fmt.Errorf("error while scanning value: %w", err)
 		}
 
 		if !isValid {
@@ -92,4 +92,6 @@ func CheckRange(employeeCount int) {
 
 		employeeCount--
 	}
+
+	return nil
 }
