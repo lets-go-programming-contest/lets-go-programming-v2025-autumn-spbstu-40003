@@ -14,9 +14,8 @@ var (
 )
 
 func main() {
-	var (
-		cDepartament, cEmployee = 0, 0
-	)
+
+	var cDepartament, cEmployee = 0, 0
 
 	_, err := fmt.Scan(&cDepartament)
 	if err != nil {
