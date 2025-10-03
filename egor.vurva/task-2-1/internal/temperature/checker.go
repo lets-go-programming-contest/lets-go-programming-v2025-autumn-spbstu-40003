@@ -21,6 +21,8 @@ func CheckRange(employeeCount int) {
 		temperature[index] = tempOffset + index
 	}
 
+	isValid := true
+
 	for employeeCount > 0 {
 		_, err := fmt.Scan(&currentTemperature.Range)
 		if err != nil {
@@ -32,31 +34,38 @@ func CheckRange(employeeCount int) {
 			return
 		}
 
+		if !isValid {
+			fmt.Println(-1)
+			employeeCount--
+			continue
+		}
+
 		difference = currentTemperature.Value - temperature[0]
 
 		switch currentTemperature.Range {
 		case "<=":
 			if difference < 0 {
 				fmt.Println(-1)
-
-				return
+				isValid = false
+			} else if difference >= len(temperature) {
+				fmt.Println(temperature[0])
+			} else {
+				temperature = temperature[:difference+1]
+				fmt.Println(temperature[0])
 			}
-
-			temperature = temperature[:difference]
-			fmt.Println(temperature[0])
 
 			employeeCount--
 
 		case ">=":
-			if difference > len(temperature) {
+			if difference >= len(temperature) {
 				fmt.Println(-1)
-
-				return
+				isValid = false
+			} else if difference < 0 {
+				fmt.Println(temperature[0])
+			} else {
+				temperature = temperature[difference:]
+				fmt.Println(temperature[0])
 			}
-
-			temperature = temperature[difference:]
-			fmt.Println(temperature[0])
-
 			employeeCount--
 
 		default:
