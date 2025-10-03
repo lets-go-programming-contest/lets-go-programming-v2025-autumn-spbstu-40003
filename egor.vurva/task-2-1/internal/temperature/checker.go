@@ -14,6 +14,7 @@ func CheckRange(employeeCount int) {
 		currentTemperature TemperatureRange
 		difference         int
 	)
+
 	temperature := make([]int, tempSize)
 
 	for index := range temperature {
