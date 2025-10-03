@@ -9,24 +9,22 @@ const errorValue = 0
 
 type IntHeap []int
 
-func (heap IntHeap) Len() int {
-	return len(heap)
+func (heap *IntHeap) Len() int {
+	return len(*heap)
 }
 
-func (heap IntHeap) Less(i, j int) bool {
-	return heap[i] < heap[j]
+func (heap *IntHeap) Less(i, j int) bool {
+	return (*heap)[i] < (*heap)[j]
 }
 
-func (heap IntHeap) Swap(i, j int) {
-	heap[i], heap[j] = heap[j], heap[i]
+func (heap *IntHeap) Swap(i, j int) {
+	(*heap)[i], (*heap)[j] = (*heap)[j], (*heap)[i]
 }
 
 func (heap *IntHeap) Push(value interface{}) {
-	value, flag := value.(int)
-	if !flag {
-		return
+	if intValue, ok := value.(int); ok {
+		*heap = append(*heap, intValue)
 	}
-	*heap = append(*heap, value.(int))
 }
 
 func (heap *IntHeap) Pop() interface{} {
@@ -47,6 +45,7 @@ func main() {
 	_, err := fmt.Scan(&countOfDish)
 	if err != nil || countOfDish < 1 {
 		fmt.Println(errorValue)
+
 		return
 	}
 
@@ -55,6 +54,7 @@ func main() {
 		_, err := fmt.Scan(&dishRate[i])
 		if err != nil {
 			fmt.Println(errorValue)
+
 			return
 		}
 	}
@@ -62,6 +62,7 @@ func main() {
 	_, err = fmt.Scan(&preferenceOfDish)
 	if err != nil || preferenceOfDish < 1 || preferenceOfDish > countOfDish {
 		fmt.Println(errorValue)
+
 		return
 	}
 
