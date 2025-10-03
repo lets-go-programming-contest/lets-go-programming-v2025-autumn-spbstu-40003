@@ -12,6 +12,7 @@ const (
 func CheckRange(employeeCount int) {
 	var currentTemperature TemperatureRange
 	var difference int
+
 	temperature := make([]int, tempSize)
 
 	for index := range temperature {

@@ -21,6 +21,7 @@ func main() {
 		}
 
 		temperature.CheckRange(employeeCount)
+
 		deptCount--
 	}
 }
