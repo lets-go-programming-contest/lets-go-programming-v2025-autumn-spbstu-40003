@@ -78,15 +78,16 @@ func processEmployee(currRange *Range, optTemp *int) error {
 	if err != nil {
 		fmt.Println(-1)
 
+		currRange.low = 1
+		currRange.high = 0
+
+		*optTemp = -1
+
 		return err
 	}
 
-	if *optTemp >= currRange.low && *optTemp <= currRange.high {
-		fmt.Println(*optTemp)
-	} else {
-		*optTemp = currRange.low
-		fmt.Println(*optTemp)
-	}
+	fmt.Println(currRange.low)
+	*optTemp = currRange.low
 
 	return nil
 }
