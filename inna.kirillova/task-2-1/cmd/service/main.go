@@ -14,6 +14,7 @@ func main() {
 	_, err := fmt.Scan(&numOfDep)
 	if err != nil {
 		fmt.Println(invalidValue)
+
 		return
 	}
 
@@ -21,6 +22,7 @@ func main() {
 		err := handleDepartment()
 		if err != nil {
 			fmt.Println(invalidValue)
+
 			return
 		}
 	}
@@ -31,7 +33,7 @@ func handleDepartment() error {
 
 	_, err := fmt.Scan(&numOfEmpl)
 	if err != nil {
-		return fmt.Errorf("Error while reading departments: %w", err)
+		return fmt.Errorf("error while reading departments: %w", err)
 	}
 
 	lowerLimit, upperLimit := minTemp, maxTemp
@@ -45,7 +47,7 @@ func handleDepartment() error {
 
 		_, err := fmt.Scan(&sign, &temp)
 		if err != nil {
-			return fmt.Errorf("Error while reading temperature preference: %w", err)
+			return fmt.Errorf("error while reading temperature preference: %w", err)
 		}
 
 		if !flag {
