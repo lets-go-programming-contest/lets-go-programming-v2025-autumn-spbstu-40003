@@ -11,7 +11,7 @@ func main() {
 
 	_, err := fmt.Scanln(&numDepartments)
 	if err != nil {
-		fmt.Println("Invalid number of departments")
+		fmt.Println("invalid number of departments")
 	}
 
 	err = temperatureoptimizer.ProcessDepartments(&numDepartments)

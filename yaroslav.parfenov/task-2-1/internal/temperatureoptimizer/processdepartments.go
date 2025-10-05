@@ -4,15 +4,13 @@ import (
 	"fmt"
 )
 
-const errInvNumEmployees = "invalid number of employees: %w"
-
 func ProcessDepartments(numDepartments *int) error {
 	var numEmployees int
 
 	for range *numDepartments {
 		_, err := fmt.Scanln(&numEmployees)
 		if err != nil {
-			return fmt.Errorf(errInvNumEmployees, err)
+			return fmt.Errorf("invalid number of employees: %w", err)
 		}
 
 		err = ProcessEmployees(&numEmployees)
