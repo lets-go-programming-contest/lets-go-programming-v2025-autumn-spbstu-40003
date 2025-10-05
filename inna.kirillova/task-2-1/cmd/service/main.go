@@ -3,9 +3,9 @@ package main
 import "fmt"
 
 const (
-	minTemp     = 15
-	maxTemp     = 30
-	invalidTemp = -1
+	minTemp      = 15
+	maxTemp      = 30
+	invalidValue = -1
 )
 
 func main() {
@@ -13,20 +13,25 @@ func main() {
 
 	_, err := fmt.Scan(&numOfDep)
 	if err != nil {
+		fmt.Println(invalidValue)
 		return
 	}
 
 	for range numOfDep {
-		handleDepartment()
+		err := handleDepartment()
+		if err != nil {
+			fmt.Println(invalidValue)
+			return
+		}
 	}
 }
 
-func handleDepartment() {
+func handleDepartment() error {
 	var numOfEmpl int
 
 	_, err := fmt.Scan(&numOfEmpl)
 	if err != nil {
-		return
+		return fmt.Errorf("Error while reading departments: %w", err)
 	}
 
 	lowerLimit, upperLimit := minTemp, maxTemp
@@ -40,11 +45,11 @@ func handleDepartment() {
 
 		_, err := fmt.Scan(&sign, &temp)
 		if err != nil {
-			return
+			return fmt.Errorf("Error while reading temperature preference: %w", err)
 		}
 
 		if !flag {
-			fmt.Println(invalidTemp)
+			fmt.Println(invalidValue)
 
 			continue
 		}
@@ -62,9 +67,11 @@ func handleDepartment() {
 		if lowerLimit <= upperLimit {
 			fmt.Println(lowerLimit)
 		} else {
-			fmt.Println(invalidTemp)
+			fmt.Println(invalidValue)
 
 			flag = false
 		}
 	}
+
+	return nil
 }
