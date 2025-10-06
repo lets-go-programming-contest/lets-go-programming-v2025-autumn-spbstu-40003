@@ -65,6 +65,7 @@ func findPreference(nums []int, preference int) int {
 	heap.Init(dishes)
 
 	var chosen int
+
 	for range make([]struct{}, preference) {
 		v, ok := heap.Pop(dishes).(int)
 		if ok {
@@ -85,7 +86,8 @@ func main() {
 
 	nums := make([]int, dishNum)
 
-	for index := 0; index < dishNum; index++ {
+	for index := range make([]struct{}, dishNum) {
+		// линтер запрещал for i := 0; i < dishNum; i++ { ... }, поэтому костыль
 		nums[index], err = readInt()
 		if err != nil {
 			fmt.Println("Error:", ErrReadDishes, err)
