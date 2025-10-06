@@ -9,13 +9,20 @@ import (
 
 type MaxHeap []int
 
-func (h MaxHeap) Len() int { return len(h) }
+func (h *MaxHeap) Len() int { return len(*h) }
 
-func (h MaxHeap) Less(i, j int) bool { return h[i] > h[j] }
+func (h *MaxHeap) Less(i, j int) bool { return (*h)[i] > (*h)[j] }
 
-func (h MaxHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+func (h *MaxHeap) Swap(i, j int) { (*h)[i], (*h)[j] = (*h)[j], (*h)[i] }
 
-func (h *MaxHeap) Push(x interface{}) { *h = append(*h, x.(int)) }
+func (h *MaxHeap) Push(x interface{}) {
+	value, ok := x.(int)
+	if !ok {
+		return
+	}
+
+	*h = append(*h, value)
+}
 
 func (h *MaxHeap) Pop() interface{} {
 	old := *h
@@ -58,9 +65,13 @@ func findPreference(nums []int, preference int) int {
 	heap.Init(dishes)
 
 	var chosen int
-	for index := 0; index < preference; index++ {
-		chosen = heap.Pop(dishes).(int)
+	for range make([]struct{}, preference) {
+		v, ok := heap.Pop(dishes).(int)
+		if ok {
+			chosen = v
+		}
 	}
+
 	return chosen
 }
 
@@ -78,7 +89,7 @@ func main() {
 		nums[index], err = readInt()
 		if err != nil {
 			fmt.Println("Error:", ErrReadDishes, err)
-	
+
 			return
 		}
 	}

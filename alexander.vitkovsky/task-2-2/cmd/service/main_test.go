@@ -3,6 +3,8 @@ package main
 import "testing"
 
 func TestFindPreference(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		nums []int
 		k    int
