@@ -47,6 +47,5 @@ func main() {
 		}
 	default:
 		fmt.Println(ErrInvalidoperation)
-
 	}
 }
