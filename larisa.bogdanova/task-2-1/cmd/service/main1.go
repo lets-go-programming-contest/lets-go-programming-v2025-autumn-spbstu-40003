@@ -41,13 +41,14 @@ func handleDepartment() error {
 	}
 
 	var lowerLimit, upperLimit int = MinTemperature, MaxTemperature
-	var valid bool = true
+	var valid = true
 
 	for range makeRange(employeeCount) {
 		var (
 			operator string
 			temp     int
 		)
+
 		if _, err := fmt.Scan(&operator, &temp); err != nil {
 			return errReadingEmployee
 		}
