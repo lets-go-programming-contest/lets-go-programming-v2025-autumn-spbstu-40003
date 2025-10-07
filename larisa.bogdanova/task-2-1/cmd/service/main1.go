@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 const (
 	MinTemperature = 15
@@ -41,9 +44,11 @@ func handleDepartment() error {
 	var valid bool = true
 
 	for range makeRange(employeeCount) {
-		var op string
-		var temp int
-		if _, err := fmt.Scan(&op, &temp); err != nil {
+		var (
+			operator string
+			temp     int
+		)
+		if _, err := fmt.Scan(&operator, &temp); err != nil {
 			return errReadingEmployee
 		}
 
@@ -53,7 +58,7 @@ func handleDepartment() error {
 			continue
 		}
 
-		switch op {
+		switch operator {
 		case ">=":
 			if temp > lowerLimit {
 				lowerLimit = temp
@@ -70,6 +75,7 @@ func handleDepartment() error {
 			fmt.Println(lowerLimit)
 		} else {
 			fmt.Println(InvalidValue)
+
 			valid = false
 		}
 	}
@@ -82,8 +88,8 @@ func makeRange(n int) []struct{} {
 }
 
 var (
-	errReadingDepartmentCount = fmt.Errorf("failed to read department count")
-	errReadingEmployeeCount   = fmt.Errorf("failed to read employee count")
-	errReadingEmployee        = fmt.Errorf("failed to read employee input")
-	errInvalidOperator        = fmt.Errorf("invalid operator")
+	errReadingDepartmentCount = errors.New("failed to read department count")
+	errReadingEmployeeCount   = errors.New("failed to read employee count")
+	errReadingEmployee        = errors.New("failed to read employee input")
+	errInvalidOperator        = errors.New("invalid operator")
 )
