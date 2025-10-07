@@ -23,6 +23,7 @@ func main() {
 
 	for countFood > 0 {
 		var someFood string
+
 		_, err = fmt.Scan(&someFood)
 		if err != nil {
 			fmt.Println("Failed to read food sequence: ", err)
