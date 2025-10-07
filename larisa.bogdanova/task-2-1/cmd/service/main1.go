@@ -40,8 +40,10 @@ func handleDepartment() error {
 		return errReadingEmployeeCount
 	}
 
-	var lowerLimit, upperLimit int = MinTemperature, MaxTemperature
-	var valid = true
+	var (
+		lowerLimit, upperLimit int = MinTemperature, MaxTemperature
+		valid                      = true
+	)
 
 	for range makeRange(employeeCount) {
 		var (
