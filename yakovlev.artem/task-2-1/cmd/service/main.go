@@ -9,34 +9,44 @@ import (
 func main() {
 	in := bufio.NewReader(os.Stdin)
 	out := bufio.NewWriter(os.Stdout)
-	defer out.Flush()
+	defer func() {
+		_ = out.Flush()
+	}()
 
-	var n, k int
-	fmt.Fscan(in, &n)
-	fmt.Fscan(in, &k)
+	var numDepartments, numEmployees int
+	if _, err := fmt.Fscan(in, &numDepartments); err != nil {
+		return
+	}
+	if _, err := fmt.Fscan(in, &numEmployees); err != nil {
+		return
+	}
 
-	for dep := 0; dep < n; dep++ {
-		lo, hi := 15, 30
-		for i := 0; i < k; i++ {
+	for depIndex := 0; depIndex < numDepartments; depIndex++ {
+		low, high := 15, 30
+
+		for empIndex := 0; empIndex < numEmployees; empIndex++ {
 			var sign string
 			var temp int
-			fmt.Fscan(in, &sign, &temp)
+			if _, err := fmt.Fscan(in, &sign, &temp); err != nil {
+				return
+			}
 
-			if sign == ">=" {
-				if temp > lo {
-					lo = temp
+			switch sign {
+			case ">=":
+				if temp > low {
+					low = temp
 				}
-			} else if sign == "<=" {
-				if temp < hi {
-					hi = temp
+			case "<=":
+				if temp < high {
+					high = temp
 				}
 			}
 		}
 
-		if lo <= hi {
-			fmt.Fprintln(out, lo)
+		if low <= high {
+			_, _ = fmt.Fprintln(out, low)
 		} else {
-			fmt.Fprintln(out, -1)
+			_, _ = fmt.Fprintln(out, -1)
 		}
 	}
 }
