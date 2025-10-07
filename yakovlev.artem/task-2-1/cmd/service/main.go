@@ -35,14 +35,14 @@ func intersection(first *Range, second *Range) error {
 }
 
 func readInt(reader *bufio.Reader) (int, error) {
-	var n int
+	var value int
 
-	_, err := fmt.Fscan(reader, &n)
+	_, err := fmt.Fscan(reader, &value)
 	if err != nil {
 		return 0, fmt.Errorf("scan int: %w", err)
 	}
 
-	return n, nil
+	return value, nil
 }
 
 func scanConstraint(reader *bufio.Reader) (string, int, error) {
