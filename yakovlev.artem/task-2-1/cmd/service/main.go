@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -13,118 +14,155 @@ type Range struct {
 }
 
 var (
-	ErrNoOverlap = fmt.Errorf("the intervals do not overlap")
+	ErrNoOverlap    = errors.New("the intervals do not overlap")
+	ErrInvalidToken = errors.New("invalid token")
 )
 
 func intersection(first *Range, second *Range) error {
 	if first.high < second.low || first.low > second.high {
 		return ErrNoOverlap
 	}
+
 	if first.low < second.low {
 		first.low = second.low
 	}
+
 	if first.high > second.high {
 		first.high = second.high
 	}
+
 	return nil
 }
 
-func readInt(r *bufio.Reader) (int, error) {
+func readInt(reader *bufio.Reader) (int, error) {
 	var n int
-	_, err := fmt.Fscan(r, &n)
-	return n, err
-}
 
-// читает ограничение одного сотрудника и возвращает (sign, value)
-// поддерживает ">= 18" и ">=18"
-func scanConstraint(r *bufio.Reader) (string, int, error) {
-	var tok string
-	if _, err := fmt.Fscan(r, &tok); err != nil {
-		return "", 0, err
+	_, err := fmt.Fscan(reader, &n)
+	if err != nil {
+		return 0, fmt.Errorf("scan int: %w", err)
 	}
 
-	// склеенный вид
+	return n, nil
+}
+
+func scanConstraint(reader *bufio.Reader) (string, int, error) {
+	var tok string
+
+	if _, err := fmt.Fscan(reader, &tok); err != nil {
+		return "", 0, fmt.Errorf("scan token: %w", err)
+	}
+
 	if strings.HasPrefix(tok, ">=") || strings.HasPrefix(tok, "<=") {
 		sign := tok[:2]
 		num := strings.TrimSpace(tok[2:])
-		if num == "" { // значит формат ">= 18": дочитываем число
-			v, err := readInt(r)
-			return sign, v, err
+
+		if num == "" {
+			v, err := readInt(reader)
+			if err != nil {
+				return "", 0, fmt.Errorf("scan glued number: %w", err)
+			}
+
+			return sign, v, nil
 		}
+
 		v, err := strconv.Atoi(num)
-		return sign, v, err
+		if err != nil {
+			return "", 0, fmt.Errorf("atoi glued number: %w", err)
+		}
+
+		return sign, v, nil
 	}
 
-	// раздельный вид — токен это сам знак
 	if tok == ">=" || tok == "<=" {
-		v, err := readInt(r)
-		return tok, v, err
+		v, err := readInt(reader)
+		if err != nil {
+			return "", 0, fmt.Errorf("scan spaced number: %w", err)
+		}
+
+		return tok, v, nil
 	}
 
-	// неожиданный токен
-	return "", 0, fmt.Errorf("invalid token %q", tok)
+	return "", 0, fmt.Errorf("%w: %q", ErrInvalidToken, tok)
 }
 
-func processEmployee(r *bufio.Reader, w *bufio.Writer, currRange *Range, optTemp *int) {
-	sign, value, err := scanConstraint(r)
+func processEmployee(reader *bufio.Reader, writer *bufio.Writer, currRange *Range, optTemp *int) error {
+	sign, value, err := scanConstraint(reader)
 	if err != nil {
-		// тихо прекращаем чтение отдела: дальше тесты всё равно не проверяют текст ошибок
-		// (но если надо жёстко падать, можно вернуть ошибку)
-		return
+		return fmt.Errorf("read constraint: %w", err)
 	}
 
 	var newRange Range
+
 	switch sign {
 	case ">=":
 		newRange = Range{value, 30}
 	case "<=":
 		newRange = Range{15, value}
 	default:
-		// неизвестный знак — игнорируем ограничение
-		return
+		return fmt.Errorf("%w: %s", ErrInvalidToken, sign)
 	}
 
 	if err := intersection(currRange, &newRange); err != nil {
-		// Конфликт: дальше весь отдел печатает -1
-		fmt.Fprintln(w, -1)
+		if _, werr := fmt.Fprintln(writer, -1); werr != nil {
+			return fmt.Errorf("write -1: %w", werr)
+		}
+
 		currRange.low, currRange.high = 1, 0
 		*optTemp = -1
-		return
+
+		return nil
 	}
 
-	// сохраняем старый оптимум, если он ещё в диапазоне; иначе — минимально возможный
+	out := currRange.low
 	if *optTemp >= currRange.low && *optTemp <= currRange.high {
-		fmt.Fprintln(w, *optTemp)
+		out = *optTemp
 	} else {
 		*optTemp = currRange.low
-		fmt.Fprintln(w, *optTemp)
 	}
+
+	if _, err := fmt.Fprintln(writer, out); err != nil {
+		return fmt.Errorf("write result: %w", err)
+	}
+
+	return nil
 }
 
-func processDepartment(r *bufio.Reader, w *bufio.Writer) {
-	emplNum, err := readInt(r)
+func processDepartment(reader *bufio.Reader, writer *bufio.Writer) error {
+	emplNum, err := readInt(reader)
 	if err != nil {
-		return
+		return fmt.Errorf("read employees count: %w", err)
 	}
 
 	currRange := Range{15, 30}
 	optTemp := -1
 
-	for i := 0; i < emplNum; i++ {
-		processEmployee(r, w, &currRange, &optTemp)
+	for range emplNum {
+		if err := processEmployee(reader, writer, &currRange, &optTemp); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)
-	defer writer.Flush()
+
+	defer func() {
+		if err := writer.Flush(); err != nil {
+			_ = err
+		}
+	}()
 
 	depNum, err := readInt(reader)
 	if err != nil {
 		return
 	}
-	for i := 0; i < depNum; i++ {
-		processDepartment(reader, writer)
+
+	for range depNum {
+		if err := processDepartment(reader, writer); err != nil {
+			return
+		}
 	}
 }
