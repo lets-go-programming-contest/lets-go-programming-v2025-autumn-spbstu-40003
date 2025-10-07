@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"container/heap"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -16,22 +17,24 @@ func (h *IntMinHeap) Less(i, j int) bool { return (*h)[i] < (*h)[j] }
 func (h *IntMinHeap) Swap(i, j int)      { (*h)[i], (*h)[j] = (*h)[j], (*h)[i] }
 
 func (h *IntMinHeap) Push(x any) {
-	v, ok := x.(int)
-	if !ok {
-		return
+	if val, ok := x.(int); ok {
+		*h = append(*h, val)
 	}
-	*h = append(*h, v)
 }
 
 func (h *IntMinHeap) Pop() any {
 	old := *h
+
 	size := len(old)
 	if size == 0 {
 		return 0
 	}
-	v := old[size-1]
+
+	val := old[size-1]
+
 	*h = old[:size-1]
-	return v
+
+	return val
 }
 
 func readInt(r *bufio.Reader) (int, error) {
@@ -40,12 +43,12 @@ func readInt(r *bufio.Reader) (int, error) {
 		return 0, fmt.Errorf("scan int: %w", err)
 	}
 
-	v, err := strconv.Atoi(tok)
+	num, err := strconv.Atoi(tok)
 	if err != nil {
 		return 0, fmt.Errorf("atoi: %w", err)
 	}
 
-	return v, nil
+	return num, nil
 }
 
 func kthPreferred(scores []int, kth int) int {
@@ -53,22 +56,24 @@ func kthPreferred(scores []int, kth int) int {
 		return 0
 	}
 
-	h := &IntMinHeap{}
-	heap.Init(h)
+	minHeap := &IntMinHeap{}
+	heap.Init(minHeap)
 
 	for _, score := range scores {
-		heap.Push(h, score)
-		if h.Len() > kth {
-			heap.Pop(h)
+		heap.Push(minHeap, score)
+
+		if minHeap.Len() > kth {
+			heap.Pop(minHeap)
 		}
 	}
 
-	return (*h)[0]
+	return (*minHeap)[0]
 }
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)
+
 	defer func() {
 		if err := writer.Flush(); err != nil {
 			_, _ = fmt.Fprintln(os.Stderr, "flush:", err)
@@ -76,29 +81,38 @@ func main() {
 	}()
 
 	count, err := readInt(reader)
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		_, _ = fmt.Fprintln(os.Stderr, "read N:", err)
+
 		return
 	}
 
-	values := make([]int, 0, count)
-	for idx := 0; idx < count; idx++ {
-		val, err := readInt(reader)
-		if err != nil {
-			_, _ = fmt.Fprintln(os.Stderr, "read value:", err)
-			return
+	values := make([]int, count)
+	for idx := range values {
+		val, rerr := readInt(reader)
+		if rerr != nil {
+			if !errors.Is(rerr, io.EOF) {
+				_, _ = fmt.Fprintln(os.Stderr, "read value:", rerr)
+
+				return
+			}
+
+			val = 0
 		}
-		values = append(values, val)
+
+		values[idx] = val
 	}
 
 	kth, err := readInt(reader)
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		_, _ = fmt.Fprintln(os.Stderr, "read k:", err)
+
 		return
 	}
 
-	answer := kthPreferred(values, kth)
-	if _, err := fmt.Fprintln(writer, answer); err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, "write:", err)
+	ans := kthPreferred(values, kth)
+
+	if _, werr := fmt.Fprintln(writer, ans); werr != nil {
+		_, _ = fmt.Fprintln(os.Stderr, "write:", werr)
 	}
 }
