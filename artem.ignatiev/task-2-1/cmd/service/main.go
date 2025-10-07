@@ -14,12 +14,14 @@ func main() {
 	var departments int
 	if _, err := fmt.Scan(&departments); err != nil {
 		fmt.Println(noSolution)
+
 		return
 	}
 
-	for i := 0; i < departments; i++ {
+	for range departments {
 		if err := processDepartment(); err != nil {
 			fmt.Println(noSolution)
+
 			return
 		}
 	}
@@ -35,20 +37,22 @@ func processDepartment() error {
 	high := maxAllowed
 	stillPossible := true
 
-	for i := 0; i < employees; i++ {
-		var op string
+	for range employees {
+		var operator string
+
 		var temp int
 
-		if _, err := fmt.Scan(&op, &temp); err != nil {
+		if _, err := fmt.Scan(&operator, &temp); err != nil {
 			return fmt.Errorf("error reading temperature preference: %w", err)
 		}
 
 		if !stillPossible {
 			fmt.Println(noSolution)
+
 			continue
 		}
 
-		switch op {
+		switch operator {
 		case ">=":
 			if temp > low {
 				low = temp
@@ -59,7 +63,9 @@ func processDepartment() error {
 			}
 		default:
 			fmt.Println(noSolution)
+
 			stillPossible = false
+
 			continue
 		}
 
@@ -67,6 +73,7 @@ func processDepartment() error {
 			fmt.Println(low)
 		} else {
 			fmt.Println(noSolution)
+
 			stillPossible = false
 		}
 	}
