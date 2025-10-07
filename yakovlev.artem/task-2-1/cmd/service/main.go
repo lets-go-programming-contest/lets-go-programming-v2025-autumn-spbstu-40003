@@ -7,46 +7,40 @@ import (
 )
 
 func main() {
-	in := bufio.NewReader(os.Stdin)
-	out := bufio.NewWriter(os.Stdout)
+	reader := bufio.NewReader(os.Stdin)
+	writer := bufio.NewWriter(os.Stdout)
 	defer func() {
-		_ = out.Flush()
+		_ = writer.Flush()
 	}()
 
-	var numDepartments, numEmployees int
-	if _, err := fmt.Fscan(in, &numDepartments); err != nil {
+	var n, k int
+	if _, err := fmt.Fscan(reader, &n); err != nil {
 		return
 	}
-	if _, err := fmt.Fscan(in, &numEmployees); err != nil {
+	if _, err := fmt.Fscan(reader, &k); err != nil {
 		return
 	}
 
-	for depIndex := 0; depIndex < numDepartments; depIndex++ {
+	for depIndex := 0; depIndex < n; depIndex++ {
 		low, high := 15, 30
-
-		for empIndex := 0; empIndex < numEmployees; empIndex++ {
+		for empIndex := 0; empIndex < k; empIndex++ {
 			var sign string
 			var temp int
-			if _, err := fmt.Fscan(in, &sign, &temp); err != nil {
+			if _, err := fmt.Fscan(reader, &sign, &temp); err != nil {
 				return
 			}
 
-			switch sign {
-			case ">=":
-				if temp > low {
-					low = temp
-				}
-			case "<=":
-				if temp < high {
-					high = temp
-				}
+			if sign == ">=" && temp > low {
+				low = temp
+			} else if sign == "<=" && temp < high {
+				high = temp
 			}
 		}
 
 		if low <= high {
-			_, _ = fmt.Fprintln(out, low)
+			_, _ = fmt.Fprintln(writer, low)
 		} else {
-			_, _ = fmt.Fprintln(out, -1)
+			_, _ = fmt.Fprintln(writer, -1)
 		}
 	}
 }
