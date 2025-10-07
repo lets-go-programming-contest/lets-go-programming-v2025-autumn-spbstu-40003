@@ -6,47 +6,94 @@ import (
 	"os"
 )
 
+const (
+	minAge = 0
+	maxAge = 120
+)
+
+type AgeMultiset struct {
+	counts [maxAge + 1]int
+	size   int
+}
+
+func (s *AgeMultiset) add(age int) {
+	if age < minAge || age > maxAge {
+		return
+	}
+	s.counts[age]++
+	s.size++
+}
+
+func (s *AgeMultiset) del(age int) {
+	if age < minAge || age > maxAge {
+		return
+	}
+	if s.counts[age] > 0 {
+		s.counts[age]--
+		s.size--
+	}
+}
+
+func (s *AgeMultiset) kth(k int) int {
+	if k <= 0 || k > s.size {
+		return -1
+	}
+	remain := k
+	for age := minAge; age <= maxAge; age++ {
+		if s.counts[age] >= remain {
+			return age
+		}
+		remain -= s.counts[age]
+	}
+	return -1
+}
+
+func readInitialEmployees(reader *bufio.Reader, set *AgeMultiset) {
+	var n int
+	if _, err := fmt.Fscan(reader, &n); err != nil {
+		return
+	}
+	for i := 0; i < n; i++ {
+		var age int
+		if _, err := fmt.Fscan(reader, &age); err != nil {
+			break
+		}
+		set.add(age)
+	}
+}
+
+func processStream(reader *bufio.Reader, writer *bufio.Writer, set *AgeMultiset) {
+	for {
+		var operation string
+		var value int
+
+		_, err := fmt.Fscan(reader, &operation, &value)
+		if err != nil {
+			break
+		}
+
+		switch operation {
+		case "add", "hire", "+":
+			set.add(value)
+		case "del", "fire", "-":
+			set.del(value)
+		case "get", "query", "?", "kth":
+			result := set.kth(value)
+			_, _ = fmt.Fprintln(writer, result)
+		default:
+		}
+	}
+}
+
 func main() {
 	reader := bufio.NewReader(os.Stdin)
+
 	writer := bufio.NewWriter(os.Stdout)
 	defer func() { _ = writer.Flush() }()
 
-	for { // читаем наборы данных до EOF
-		var departments, employees int
-		if _, err := fmt.Fscan(reader, &departments); err != nil {
-			break // EOF — выходим
-		}
-		if _, err := fmt.Fscan(reader, &employees); err != nil {
-			return
-		}
+	var ages AgeMultiset
 
-		for range departments { // Go 1.22: 0..departments-1
-			low, high := 15, 30
+	readInitialEmployees(reader, &ages)
 
-			for range employees { // 0..employees-1
-				var op string
-				var t int
-				if _, err := fmt.Fscan(reader, &op, &t); err != nil {
-					return
-				}
-
-				switch op {
-				case ">=":
-					if t > low {
-						low = t
-					}
-				case "<=":
-					if t < high {
-						high = t
-					}
-				}
-
-				if low <= high {
-					_, _ = fmt.Fprintln(writer, low)
-				} else {
-					_, _ = fmt.Fprintln(writer, -1)
-				}
-			}
-		}
-	}
+	processStream(reader, writer, &ages)
 }
