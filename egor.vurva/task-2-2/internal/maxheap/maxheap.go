@@ -7,9 +7,11 @@ type MaxIntHeap []int
 func (heap *MaxIntHeap) Len() int {
 	return len(*heap)
 }
+
 func (heap *MaxIntHeap) Less(i, j int) bool {
 	return (*heap)[i] > (*heap)[j]
 }
+
 func (heap *MaxIntHeap) Swap(i, j int) {
 	(*heap)[i], (*heap)[j] = (*heap)[j], (*heap)[i]
 }
