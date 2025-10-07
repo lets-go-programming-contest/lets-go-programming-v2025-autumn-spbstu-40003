@@ -3,106 +3,102 @@ package main
 import (
 	"bufio"
 	"container/heap"
-	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 )
 
 type IntMinHeap []int
 
-func (h IntMinHeap) Len() int           { return len(h) }
-func (h IntMinHeap) Less(i, j int) bool { return h[i] < h[j] }
-func (h IntMinHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-func (h *IntMinHeap) Push(x any)        { *h = append(*h, x.(int)) }
-func (h *IntMinHeap) Pop() any {
-	old := *h
-	n := len(old)
-	val := old[n-1]
-	*h = old[:n-1]
+func (h *IntMinHeap) Len() int           { return len(*h) }
+func (h *IntMinHeap) Less(i, j int) bool { return (*h)[i] < (*h)[j] }
+func (h *IntMinHeap) Swap(i, j int)      { (*h)[i], (*h)[j] = (*h)[j], (*h)[i] }
 
-	return val
+func (h *IntMinHeap) Push(x any) {
+	v, ok := x.(int)
+	if !ok {
+		return
+	}
+	*h = append(*h, v)
 }
 
-func readInt(reader *bufio.Reader) (int, error) {
-	var value int
+func (h *IntMinHeap) Pop() any {
+	old := *h
+	size := len(old)
+	if size == 0 {
+		return 0
+	}
+	v := old[size-1]
+	*h = old[:size-1]
+	return v
+}
 
-	_, err := fmt.Fscan(reader, &value)
-	if err != nil {
-		if errors.Is(err, io.EOF) {
-			return 0, fmt.Errorf("unexpected EOF: %w", err)
-		}
-
+func readInt(r *bufio.Reader) (int, error) {
+	var tok string
+	if _, err := fmt.Fscan(r, &tok); err != nil {
 		return 0, fmt.Errorf("scan int: %w", err)
 	}
 
-	return value, nil
-}
-
-func writeInt(writer *bufio.Writer, value int) error {
-	_, err := fmt.Fprintln(writer, value)
+	v, err := strconv.Atoi(tok)
 	if err != nil {
-		return fmt.Errorf("write int: %w", err)
+		return 0, fmt.Errorf("atoi: %w", err)
 	}
 
-	return nil
+	return v, nil
 }
 
-func kthPreferred(scores []int, k int) int {
-	minH := &IntMinHeap{}
+func kthPreferred(scores []int, kth int) int {
+	if kth <= 0 || len(scores) == 0 {
+		return 0
+	}
 
-	heap.Init(minH)
+	h := &IntMinHeap{}
+	heap.Init(h)
 
-	for _, v := range scores {
-		if minH.Len() < k {
-			heap.Push(minH, v)
-
-			continue
-		}
-
-		if v > (*minH)[0] {
-			heap.Pop(minH)
-			heap.Push(minH, v)
+	for _, score := range scores {
+		heap.Push(h, score)
+		if h.Len() > kth {
+			heap.Pop(h)
 		}
 	}
 
-	return (*minH)[0]
+	return (*h)[0]
 }
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)
+	defer func() {
+		if err := writer.Flush(); err != nil {
+			_, _ = fmt.Fprintln(os.Stderr, "flush:", err)
+		}
+	}()
 
-	defer func() { _ = writer.Flush() }()
-
-	n, err := readInt(reader)
-	if err != nil {
+	count, err := readInt(reader)
+	if err != nil && err != io.EOF {
+		_, _ = fmt.Fprintln(os.Stderr, "read N:", err)
 		return
 	}
 
-	scores := make([]int, 0, n)
-
-	for range n {
-		val, scanErr := readInt(reader)
-		if scanErr != nil {
+	values := make([]int, 0, count)
+	for idx := 0; idx < count; idx++ {
+		val, err := readInt(reader)
+		if err != nil {
+			_, _ = fmt.Fprintln(os.Stderr, "read value:", err)
 			return
 		}
-
-		scores = append(scores, val)
+		values = append(values, val)
 	}
 
-	k, err := readInt(reader)
-	if err != nil {
+	kth, err := readInt(reader)
+	if err != nil && err != io.EOF {
+		_, _ = fmt.Fprintln(os.Stderr, "read k:", err)
 		return
 	}
 
-	if k < 1 || k > n {
-		return
-	}
-
-	answer := kthPreferred(scores, k)
-
-	if err := writeInt(writer, answer); err != nil {
-		return
+	answer := kthPreferred(values, kth)
+	if _, err := fmt.Fprintln(writer, answer); err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, "write:", err)
 	}
 }
