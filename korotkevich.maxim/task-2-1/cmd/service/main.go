@@ -24,7 +24,6 @@ func main() {
 	var numDep int
 
 	_, err := fmt.Scan(&numDep)
-
 	if err != nil {
 		fmt.Println(ErrNumOfDep)
 
@@ -32,12 +31,11 @@ func main() {
 	}
 	if numDep < minValue || numDep > maxValue {
 		fmt.Println(ErrNumOfDep)
-		
 		return
 	}
 	
 	for range numDep {
-		if err := processDepartment(); err != nil {
+		if err = processDepartment(); err != nil {
 			fmt.Println(err)
 
 			return
@@ -65,7 +63,7 @@ func processDepartment() error {
 			tempValue int
 		)
 		
-		if _, err := fmt.Scan(&operator, &tempValue); err != nil {
+		if _, err = fmt.Scan(&operator, &tempValue); err != nil {
 			return fmt.Errorf("error with reading temperature preference: %w", err)
 		}
 
