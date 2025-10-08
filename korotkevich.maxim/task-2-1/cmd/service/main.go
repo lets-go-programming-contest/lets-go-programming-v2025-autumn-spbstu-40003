@@ -6,7 +6,10 @@ import (
 )
 
 var (
-	ErrNumOfDep = errors.New("incorrect value for number of departments")
+	ErrNumOfDep           = errors.New("incorrect value for number of departments")
+	ErrNumOfEmployees     = errors.New("incorrect value for number of employees")
+	ErrInvalidTemperature = errors.New("invalid temperature value")
+	ErrInvalidOperator    = errors.New("invalid operator")
 )
 
 const (
@@ -46,7 +49,7 @@ func processDepartment() error {
 	}
 
 	if employees < minValue || employees > maxValue {
-		return fmt.Errorf("incorrect value for number of employees: %d", employees)
+		return fmt.Errorf("%w: %d", ErrNumOfEmployees, employees)
 	}
 
 	lowerLimit := minTemp
@@ -63,7 +66,7 @@ func processDepartment() error {
 		}
 
 		if tempValue < minTemp || tempValue > maxTemp {
-			return fmt.Errorf("invalid temperature value: %d", tempValue)
+			return fmt.Errorf("%w: %d", ErrInvalidTemperature, tempValue)
 		}
 
 		switch operator {
@@ -72,7 +75,7 @@ func processDepartment() error {
 		case ">=":
 			lowerLimit = Max(lowerLimit, tempValue)
 		default:
-			return fmt.Errorf("invalid operator %q", operator)
+			return fmt.Errorf("%w: %s", ErrInvalidOperator, operator)
 		}
 
 		if lowerLimit <= upperLimit {
