@@ -56,7 +56,7 @@ func processDepartment() error {
 			operator  string
 			tempValue int
 		)
-		
+
 		if _, err := fmt.Scan(&operator, &tempValue); err != nil {
 			return fmt.Errorf("error with reading temperature preference: %w", err)
 		}
