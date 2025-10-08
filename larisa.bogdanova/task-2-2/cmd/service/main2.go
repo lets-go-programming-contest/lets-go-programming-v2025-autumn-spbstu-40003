@@ -24,7 +24,6 @@ func (h *IntHeap) Swap(i, j int) {
 
 func (h *IntHeap) Push(x interface{}) {
 	value, okey := x.(int)
-
 	if !okey {
 
 		return
@@ -48,7 +47,7 @@ func main() {
 	)
 
 	if _, err := fmt.Scan(&dishCount); err != nil {
-		handleError(fmt.Errorf("%w: %v", ErrReadInput, err))
+		handleError(fmt.Errorf("%w: %w", ErrReadInput, err))
 
 		return
 	}
@@ -62,7 +61,7 @@ func main() {
 	dishRatings := make([]int, dishCount)
 	for index := range dishRatings {
 		if _, err := fmt.Scan(&dishRatings[index]); err != nil {
-			handleError(fmt.Errorf("%w: %v", ErrReadInput, err))
+			handleError(fmt.Errorf("%w: %w", ErrReadInput, err))
 
 			return
 		}
@@ -75,7 +74,7 @@ func main() {
 	}
 
 	if _, err := fmt.Scan(&dishPreference); err != nil {
-		handleError(fmt.Errorf("%w: %v", ErrReadInput, err))
+		handleError(fmt.Errorf("%w: %w", ErrReadInput, err))
 
 		return
 	}
