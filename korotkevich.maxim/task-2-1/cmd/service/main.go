@@ -29,9 +29,10 @@ func main() {
 
 		return
 	}
-	for index := 0; index < numDep; index++ {
+	for range numDep {
 		if err := processDepartment(); err != nil {
 			fmt.Println(err)
+
 			return
 		}
 	}
@@ -50,7 +51,7 @@ func processDepartment() error {
 	lowerLimit := minTemp
 	upperLimit := maxTemp
 
-	for index := 0; index < employees; index++ {
+	for range employees {
 		var (
 			operator  string
 			tempValue int
