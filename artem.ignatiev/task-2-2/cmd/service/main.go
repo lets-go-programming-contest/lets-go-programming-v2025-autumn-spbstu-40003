@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/heap"
+	"errors"
 	"fmt"
 )
 
@@ -13,14 +14,18 @@ const (
 	maxRating  = 10000
 )
 
+var errEmptyHeap = errors.New("empty heap")
+
 type MinHeap []int
 
-func (h MinHeap) Len() int           { return len(h) }
-func (h MinHeap) Less(i, j int) bool { return h[i] < h[j] }
-func (h MinHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *MinHeap) Len() int           { return len(*h) }
+func (h *MinHeap) Less(i, j int) bool { return (*h)[i] < (*h)[j] }
+func (h *MinHeap) Swap(i, j int)      { (*h)[i], (*h)[j] = (*h)[j], (*h)[i] }
 
 func (h *MinHeap) Push(x interface{}) {
-	*h = append(*h, x.(int))
+	if val, ok := x.(int); ok {
+		*h = append(*h, val)
+	}
 }
 
 func (h *MinHeap) Pop() interface{} {
@@ -28,67 +33,77 @@ func (h *MinHeap) Pop() interface{} {
 	n := len(old)
 	x := old[n-1]
 	*h = old[:n-1]
+
 	return x
 }
 
 func main() {
-	var n, k int
+	var numDishes, preferenceIndex int
 
-	if _, err := fmt.Scan(&n); err != nil {
+	if _, err := fmt.Scan(&numDishes); err != nil {
 		fmt.Println(errorValue)
+
 		return
 	}
 
-	if n < minDishes || n > maxDishes {
+	if numDishes < minDishes || numDishes > maxDishes {
 		fmt.Println(errorValue)
+
 		return
 	}
 
-	dishes := make([]int, n)
-	for i := range dishes {
-		if _, err := fmt.Scan(&dishes[i]); err != nil {
+	dishRatings := make([]int, numDishes)
+	for index := range dishRatings {
+		if _, err := fmt.Scan(&dishRatings[index]); err != nil {
 			fmt.Println(errorValue)
+
 			return
 		}
-		if dishes[i] < minRating || dishes[i] > maxRating {
+
+		if dishRatings[index] < minRating || dishRatings[index] > maxRating {
 			fmt.Println(errorValue)
+
 			return
 		}
 	}
 
-	if _, err := fmt.Scan(&k); err != nil {
+	if _, err := fmt.Scan(&preferenceIndex); err != nil {
 		fmt.Println(errorValue)
+
 		return
 	}
 
-	if k < minDishes || k > n {
+	if preferenceIndex < minDishes || preferenceIndex > numDishes {
 		fmt.Println(errorValue)
+
 		return
 	}
 
-	result, err := findKthPreference(dishes, k)
+	result, err := findKthPreference(dishRatings, preferenceIndex)
 	if err != nil {
 		fmt.Println(errorValue)
+
 		return
 	}
 
 	fmt.Println(result)
 }
 
-func findKthPreference(dishes []int, k int) (int, error) {
-	h := &MinHeap{}
-	heap.Init(h)
+func findKthPreference(dishRatings []int, preferenceIndex int) (int, error) {
+	heapInstance := &MinHeap{}
+	heap.Init(heapInstance)
 
-	for _, rating := range dishes {
-		heap.Push(h, rating)
-		if h.Len() > k {
-			heap.Pop(h)
+	for _, rating := range dishRatings {
+		heap.Push(heapInstance, rating)
+
+		if heapInstance.Len() > preferenceIndex {
+			heap.Pop(heapInstance)
 		}
 	}
 
-	if h.Len() == 0 {
-		return errorValue, fmt.Errorf("empty heap")
+	if heapInstance.Len() == 0 {
+		return errorValue, errEmptyHeap
 	}
 
-	return (*h)[0], nil
+	return (*heapInstance)[0], nil
 }
