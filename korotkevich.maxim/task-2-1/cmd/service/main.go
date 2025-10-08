@@ -29,10 +29,9 @@ func main() {
 
 		return
 	}
-	for range numDep {
-		if err = processDepartment(); err != nil {
+	for index := 0; index < numDep; index++ {
+		if err := processDepartment(); err != nil {
 			fmt.Println(err)
-
 			return
 		}
 	}
@@ -40,9 +39,7 @@ func main() {
 
 func processDepartment() error {
 	var employees int
-	
-	_, err := fmt.Scan(&employees)
-	if err != nil {
+	if _, err := fmt.Scan(&employees); err != nil {
 		return fmt.Errorf("error with reading number of employees: %w", err)
 	}
 
@@ -53,13 +50,13 @@ func processDepartment() error {
 	lowerLimit := minTemp
 	upperLimit := maxTemp
 
-	for range employees {
+	for index := 0; index < employees; index++ {
 		var (
 			operator  string
 			tempValue int
 		)
 		
-		if _, err = fmt.Scan(&operator, &tempValue); err != nil {
+		if _, err := fmt.Scan(&operator, &tempValue); err != nil {
 			return fmt.Errorf("error with reading temperature preference: %w", err)
 		}
 
