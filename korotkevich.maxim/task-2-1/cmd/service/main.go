@@ -29,10 +29,6 @@ func main() {
 
 		return
 	}
-	if numDep < minValue || numDep > maxValue {
-		fmt.Println(ErrNumOfDep)
-		return
-	}
 	
 	for range numDep {
 		if err = processDepartment(); err != nil {
