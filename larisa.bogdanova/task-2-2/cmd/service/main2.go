@@ -25,9 +25,9 @@ func (h *IntHeap) Swap(i, j int) {
 func (h *IntHeap) Push(x interface{}) {
 	value, okey := x.(int)
 	if !okey {
-
 		return
 	}
+
 	*h = append(*h, value)
 }
 
