@@ -29,7 +29,6 @@ func main() {
 
 		return
 	}
-	
 	for range numDep {
 		if err = processDepartment(); err != nil {
 			fmt.Println(err)
@@ -41,6 +40,7 @@ func main() {
 
 func processDepartment() error {
 	var employees int
+	
 	_, err := fmt.Scan(&employees)
 	if err != nil {
 		return fmt.Errorf("error with reading number of employees: %w", err)
