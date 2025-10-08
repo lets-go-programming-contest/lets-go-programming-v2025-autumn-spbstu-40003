@@ -13,11 +13,11 @@ var (
 )
 
 const (
-	minTemp = 15
-	maxTemp = 30 
+	minTemp     = 15
+	maxTemp     = 30 
 	invalidTemp = -1
-	minValue = 1
-	maxValue = 1000
+	minValue    = 1
+	maxValue    = 1000
 )
 
 func main() {
@@ -43,7 +43,6 @@ func main() {
 func processDepartment() error {
 	var employees int
 	_, err := fmt.Scan(&employees)
-
 	if err != nil {
 		return fmt.Errorf("error with reading number of employees: %w", err)
 	}
