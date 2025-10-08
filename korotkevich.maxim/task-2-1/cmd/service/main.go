@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 )
 
 var (
@@ -21,14 +21,17 @@ func main() {
 	var numDep int
 
 	_, err := fmt.Scan(&numDep)
+
 	if err != nil || numDep < minValue || numDep > maxValue {
 		fmt.Println(ErrNumOfDep)
+
 		return
 	}
 	
 	for range numDep {
 		if err := processDepartment(); err != nil {
 			fmt.Println(err)
+
 			return
 		}
 	}
@@ -37,9 +40,11 @@ func main() {
 func processDepartment() error {
 	var employees int
 	_, err := fmt.Scan(&employees)
+
 	if err != nil {
 		return fmt.Errorf("error with reading number of employees: %w", err)
 	}
+
 	if employees < minValue || employees > maxValue {
 		return fmt.Errorf("incorrect value for number of employees: %d", employees)
 	}
@@ -47,7 +52,7 @@ func processDepartment() error {
 	lowerLimit := minTemp
 	upperLimit := maxTemp
 
-	for j := 0; j < employees; j++ {
+	for range employees {
 		var (
 			operator  string
 			tempValue int
@@ -80,16 +85,18 @@ func processDepartment() error {
 	return nil
 }
 
-func Max(FirstNumber, SecondNumber int) int {
-	if FirstNumber > SecondNumber {
-		return FirstNumber
+func Max(firstNumber, secondNumber int) int {
+	if firstNumber > secondNumber {
+		return firstNumber
 	}
-	return SecondNumber
+
+	return secondNumber
 }
 
-func Min(FirstNumber, SecondNumber int) int {
-	if FirstNumber < SecondNumber {
-		return FirstNumber
+func Min(firstNumber, secondNumber int) int {
+	if firstNumber < secondNumber {
+		return firstNumber
 	}
-	return SecondNumber
+
+	return secondNumber
 }
