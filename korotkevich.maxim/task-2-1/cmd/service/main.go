@@ -18,6 +18,7 @@ const (
 	invalidTemp = -1
 	minValue    = 1
 	maxValue    = 1000
+	invalidVal  = -1
 )
 
 func main() {
@@ -32,7 +33,7 @@ func main() {
 	for range numDep {
 		err := processDepartment()
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println(invalidVal)
 
 			return
 		}
