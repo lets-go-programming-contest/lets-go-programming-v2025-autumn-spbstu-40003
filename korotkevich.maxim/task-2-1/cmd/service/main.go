@@ -14,7 +14,7 @@ var (
 
 const (
 	minTemp     = 15
-	maxTemp     = 30 
+	maxTemp     = 30
 	invalidTemp = -1
 	minValue    = 1
 	maxValue    = 1000
@@ -25,9 +25,14 @@ func main() {
 
 	_, err := fmt.Scan(&numDep)
 
-	if err != nil || numDep < minValue || numDep > maxValue {
+	if err != nil {
 		fmt.Println(ErrNumOfDep)
 
+		return
+	}
+	if numDep < minValue || numDep > maxValue {
+		fmt.Println(ErrNumOfDep)
+		
 		return
 	}
 	
