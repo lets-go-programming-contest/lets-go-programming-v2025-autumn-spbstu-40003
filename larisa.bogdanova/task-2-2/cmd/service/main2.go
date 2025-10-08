@@ -10,20 +10,26 @@ const errorValue = 0
 
 type IntHeap []int
 
-func (h IntHeap) Len() int {
-	return len(h)
+func (h *IntHeap) Len() int {
+	return len(*h)
 }
 
-func (h IntHeap) Less(i, j int) bool {
-	return h[i] < h[j]
+func (h *IntHeap) Less(i, j int) bool {
+	return (*h)[i] < (*h)[j]
 }
 
-func (h IntHeap) Swap(i, j int) {
-	h[i], h[j] = h[j], h[i]
+func (h *IntHeap) Swap(i, j int) {
+	(*h)[i], (*h)[j] = (*h)[j], (*h)[i]
 }
 
 func (h *IntHeap) Push(x interface{}) {
-	*h = append(*h, x.(int))
+	value, okey := x.(int)
+
+	if !okey {
+
+		return
+	}
+	*h = append(*h, value)
 }
 
 func (h *IntHeap) Pop() interface{} {
@@ -31,6 +37,7 @@ func (h *IntHeap) Pop() interface{} {
 	n := len(old)
 	val := old[n-1]
 	*h = old[:n-1]
+
 	return val
 }
 
@@ -53,14 +60,14 @@ func main() {
 	}
 
 	dishRatings := make([]int, dishCount)
-	for i := range dishRatings {
-		if _, err := fmt.Scan(&dishRatings[i]); err != nil {
+	for index := range dishRatings {
+		if _, err := fmt.Scan(&dishRatings[index]); err != nil {
 			handleError(fmt.Errorf("%w: %v", ErrReadInput, err))
 
 			return
 		}
 
-		if dishRatings[i] < -10000 || dishRatings[i] > 10000 {
+		if dishRatings[index] < -10000 || dishRatings[index] > 10000 {
 			handleError(ErrRatingRange)
 
 			return
@@ -100,6 +107,7 @@ func getPreference(dishRatings []int, preference int) int {
 
 func handleError(err error) {
 	_ = err
+
 	fmt.Println(errorValue)
 }
 
