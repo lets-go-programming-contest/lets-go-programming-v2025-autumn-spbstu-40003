@@ -8,8 +8,10 @@ import (
 	ownHeap "github.com/KiRy6A/task-2-2/internal/heap"
 )
 
-var errLimit = errors.New("going over acceptable values")
-var errType = errors.New("expected int type")
+var (
+	errLimit = errors.New("going over acceptable values")
+	errType  = errors.New("expected int type")
+)
 
 type Dishes struct {
 	menu ownHeap.IntHeap
