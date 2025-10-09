@@ -2,8 +2,8 @@ package main
 
 import (
 	"container/heap"
-	"fmt"
 	"errors"
+	"fmt"
 )
 
 var (
@@ -60,31 +60,46 @@ func main() {
 		return
 	}
 
-	h := &IntHeap{}
-	heap.Init(h)
+	heapData, err := readAndValidateDishes(countOfDish, MinValue, MaxValue)
+	if err != nil {
+		fmt.Println(err)
 
-	for i := 0; i < countOfDish; i++ {
-		var value int
-		_, err = fmt.Scan(&value)
-		if err != nil || value < MinValue || value > MaxValue {
-			fmt.Println(ErrInvalidValue)
-
-			return
-		}
-		heap.Push(h, value)
+		return
 	}
-	
+
 	_, err = fmt.Scan(&preferenceOfDish)
 	if err != nil || preferenceOfDish < 1 || preferenceOfDish > countOfDish {
 		fmt.Println(ErrInvalidPreference)
+
 		return
 	}
 
 	for preferenceOfDish > 0 {
-		result := heap.Pop(h).(int)
+		result, isInt := heap.Pop(heapData).(int)
+		if !isInt {
+			fmt.Println(-1)
+
+			return
+		}
 		preferenceOfDish--
+
 		if preferenceOfDish == 0 {
 			fmt.Println(result)
 		}
 	}
+}
+
+func readAndValidateDishes(count, min, max int) (*IntHeap, error) {
+	heapData := &IntHeap{}
+	heap.Init(heapData)
+
+	for range count {
+		var value int
+		_, err := fmt.Scan(&value)
+		if err != nil || value < min || value > max {
+			return nil, ErrInvalidValue
+		}
+		heap.Push(heapData, value)
+	}
+	return heapData, nil
 }
