@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 func Save(valutes []JSONValute, path string) error {
@@ -12,14 +13,17 @@ func Save(valutes []JSONValute, path string) error {
 		return fmt.Errorf("json marshal: %w", err)
 	}
 
-	const permissionCode = 0o0644
+	const (
+		filePermissionCode      = 0o600
+		directoryPermissionCode = 0o755
+	)
 
-	_, err = os.Create(path)
-	if err != nil {
-		return fmt.Errorf("json file create: %w", err)
+	directory := filepath.Dir(path)
+	if err := os.MkdirAll(directory, directoryPermissionCode); err != nil {
+		return fmt.Errorf("create directory: %w", err)
 	}
 
-	err = os.WriteFile(path, valutesJSON, permissionCode)
+	err = os.WriteFile(path, valutesJSON, filePermissionCode)
 	if err != nil {
 		return fmt.Errorf("json write: %w", err)
 	}
