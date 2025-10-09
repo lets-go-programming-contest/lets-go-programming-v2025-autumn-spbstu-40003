@@ -1,4 +1,4 @@
-package dishesMenu
+package dishesmenu
 
 import (
 	"container/heap"
@@ -9,6 +9,7 @@ import (
 )
 
 var errLimit = errors.New("going over acceptable values")
+var errType = errors.New("expected int type")
 
 type Dishes struct {
 	menu ownHeap.IntHeap
@@ -35,19 +36,24 @@ func (dishes *Dishes) WriteMenu() error {
 }
 
 func (dishes *Dishes) SelectDishe() (int, error) {
-	var k, foundedDish int
+	var selectedNumber, foundedDish int
 
-	_, err := fmt.Scan(&k)
+	_, err := fmt.Scan(&selectedNumber)
 	if err != nil {
 		return 0, fmt.Errorf("error scanning number of selected dish: %w", err)
 	}
 
-	if k < 1 || k > dishes.menu.Len() {
+	if selectedNumber < 1 || selectedNumber > dishes.menu.Len() {
 		return 0, fmt.Errorf("error limit selected dish: %w", errLimit)
 	}
 
-	for range k {
-		foundedDish = heap.Pop(&dishes.menu).(int)
+	for range selectedNumber - 1 {
+		heap.Pop(&dishes.menu)
+	}
+
+	foundedDish, ok := heap.Pop(&dishes.menu).(int)
+	if !ok {
+		return 0, fmt.Errorf("error type when popping: %w", errType)
 	}
 
 	return foundedDish, nil

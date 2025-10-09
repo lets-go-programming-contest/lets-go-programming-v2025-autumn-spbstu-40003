@@ -1,4 +1,4 @@
-package ownHeap
+package ownheap
 
 type IntHeap []int
 
@@ -15,7 +15,10 @@ func (h *IntHeap) Swap(i, j int) {
 }
 
 func (h *IntHeap) Push(x interface{}) {
-	*h = append(*h, x.(int))
+	data, ok := x.(int)
+	if ok {
+		*h = append(*h, data)
+	}
 }
 
 func (h *IntHeap) Pop() any {
