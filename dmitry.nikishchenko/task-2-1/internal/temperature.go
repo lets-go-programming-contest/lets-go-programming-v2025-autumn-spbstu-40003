@@ -65,6 +65,7 @@ func TemperatureControl() error {
 	var (
 		departments int
 		employees   int
+		temperature Temperature
 		input       string
 		err         error
 	)
@@ -75,18 +76,18 @@ func TemperatureControl() error {
 		return errDepartments
 	}
 
-	for d := 0; d < departments; d++ {
+	for range departments {
 		if _, err := fmt.Scanln(&employees); err != nil {
 			return errEmployees
 		}
 
-		temperature := Temperature{
+		temperature = Temperature{
 			lowerTemperatureBound,
 			higherTemperatureBound,
 			false,
 		}
 
-		for e := 0; e < departments; e++ {
+		for range employees {
 			input, err = reader.ReadString('\n')
 			if err != nil {
 				return errTemperature
