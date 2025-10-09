@@ -2,15 +2,10 @@ package utils
 
 import (
 	"encoding/xml"
-	"errors"
+	"fmt"
 	"os"
 
 	"golang.org/x/net/html/charset"
-)
-
-var (
-	errInputFileRead  = errors.New("cannot read input file")
-	errInputFileParse = errors.New("cannot parse input file")
 )
 
 type Valute struct {
@@ -26,7 +21,7 @@ type Exchange struct {
 func Read(path string) (*Exchange, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, errInputFileRead
+		return nil, fmt.Errorf("open input file: %w", err)
 	}
 
 	defer func() {
@@ -40,7 +35,7 @@ func Read(path string) (*Exchange, error) {
 
 	exchange := Exchange{nil}
 	if err := decoder.Decode(&exchange); err != nil {
-		return nil, errInputFileParse
+		return nil, fmt.Errorf("decode input file: %w", err)
 	}
 
 	return &exchange, nil

@@ -1,15 +1,10 @@
 package utils
 
 import (
-	"errors"
+	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
-)
-
-var (
-	errRead  = errors.New("config file read error")
-	errParse = errors.New("config file parse error")
 )
 
 type Config struct {
@@ -20,13 +15,13 @@ type Config struct {
 func ParseConfig(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, errRead
+		return nil, fmt.Errorf("read config file %q: %w", path, err)
 	}
 
 	cfg := Config{"", ""}
 
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, errParse
+		return nil, fmt.Errorf("unmarshal config file: %w", err)
 	}
 
 	return &cfg, nil

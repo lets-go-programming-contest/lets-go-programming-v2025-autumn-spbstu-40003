@@ -1,13 +1,11 @@
 package utils
 
 import (
-	"errors"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 )
-
-var errNormalize = errors.New("normalization error")
 
 type JSONValute struct {
 	NumCode  int     `json:"num_code"`
@@ -18,7 +16,7 @@ type JSONValute struct {
 func Sort(valutes []Valute) ([]JSONValute, error) {
 	normalized, err := normalize(valutes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("normalize data: %w", err)
 	}
 
 	sort.Slice(normalized, func(i, j int) bool {
@@ -36,7 +34,7 @@ func normalize(valutes []Valute) ([]JSONValute, error) {
 
 		floatValue, err := strconv.ParseFloat(value, 64)
 		if err != nil {
-			return nil, errNormalize
+			return nil, fmt.Errorf("float parse: %w", err)
 		}
 
 		normalized[valuteIndex] = JSONValute{valutes[valuteIndex].NumCode, valutes[valuteIndex].CharCode, floatValue}
