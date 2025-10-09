@@ -19,17 +19,17 @@ func OptimizeTemperature(cEmployee int) error {
 	for range cEmployee {
 		_, err := fmt.Scan(&input)
 		if err != nil {
-			return errLogicInput
+			return fmt.Errorf("error reading employee preferences: %w, %w", errLogicInput, err)
 		}
 
 		_, err = fmt.Scan(&tempT)
 		if err != nil {
-			return errTemperatureInput
+			return fmt.Errorf("error reading temperature: %w, %w", errTemperatureInput, err)
 		}
 
 		minT, maxT, err = chooseLogic(minT, maxT, input, tempT)
 		if err != nil {
-			return err
+			return fmt.Errorf("error in choosing logic: %w", err)
 		}
 
 		if optimalT != -1 {

@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	errDepartament = errors.New("wrong number of departaments")
-	errEmployee    = errors.New("wrong number of employees")
+	errDepartament = errors.New("going over limits of possible departament values")
+	errEmployee    = errors.New("going over limits of possible employee values")
 )
 
 func main() {
@@ -18,30 +18,30 @@ func main() {
 
 	_, err := fmt.Scan(&cDepartament)
 	if err != nil {
-		println(errDepartament.Error())
+		fmt.Println("error reading departament count:", err.Error())
 		os.Exit(0)
 	}
 
 	if cDepartament < 1 || cDepartament > 1000 {
-		println(errDepartament.Error())
+		fmt.Println(errDepartament.Error())
 		os.Exit(0)
 	}
 
 	for range cDepartament {
 		_, err = fmt.Scan(&cEmployee)
 		if err != nil {
-			println(errEmployee.Error())
+			fmt.Println("error reading employee count:", err.Error())
 			os.Exit(0)
 		}
 
 		if cEmployee < 1 || cEmployee > 1000 {
-			println(errEmployee.Error())
+			fmt.Println(errEmployee.Error())
 			os.Exit(0)
 		}
 
 		err = company.OptimizeTemperature(cEmployee)
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println("error temperature optimization:", err)
 			os.Exit(0)
 		}
 	}
