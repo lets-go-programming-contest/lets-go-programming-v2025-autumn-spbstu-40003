@@ -87,12 +87,12 @@ func TemperatureControl() error {
 		}
 
 		for range employees {
-			if input, err = reader.ReadString('\n'); err != nil {
+			input, err = reader.ReadString('\n')
+			if err != nil {
 				return errTemperature
 			}
-			input = strings.TrimSpace(input)
 
-			if err := updateTemperature(input, &temperature); err != nil {
+			if err := updateTemperature(strings.TrimSpace(input), &temperature); err != nil {
 				return err
 			}
 
