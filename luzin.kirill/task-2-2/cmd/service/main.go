@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	dishesmenu "github.com/KiRy6A/task-2-2/internal/dishesmenu"
+	"github.com/KiRy6A/task-2-2/internal/dishesmenu"
 )
 
 func main() {
