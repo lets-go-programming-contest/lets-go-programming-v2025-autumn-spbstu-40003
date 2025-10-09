@@ -81,6 +81,7 @@ func main() {
 
 			return
 		}
+
 		preferenceOfDish--
 
 		if preferenceOfDish == 0 {
@@ -89,17 +90,20 @@ func main() {
 	}
 }
 
-func readAndValidateDishes(count, min, max int) (*IntHeap, error) {
+func readAndValidateDishes(count, minValue, maxValue int) (*IntHeap, error) {
 	heapData := &IntHeap{}
 	heap.Init(heapData)
 
 	for range count {
 		var value int
 		_, err := fmt.Scan(&value)
-		if err != nil || value < min || value > max {
+
+		if err != nil || value < minValue || value > maxValue {
 			return nil, ErrInvalidValue
 		}
+
 		heap.Push(heapData, value)
 	}
+
 	return heapData, nil
 }
