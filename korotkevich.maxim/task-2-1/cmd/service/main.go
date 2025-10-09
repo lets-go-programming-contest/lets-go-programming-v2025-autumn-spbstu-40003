@@ -30,6 +30,7 @@ func main() {
 
 		return
 	}
+
 	for range numDep {
 		err := processDepartment()
 		if err != nil {
