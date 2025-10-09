@@ -14,7 +14,7 @@ func Save(valutes []JSONValute, path string) error {
 	}
 
 	const (
-		filePermissionCode      = 0o600
+		filePermissionCode      = 0o644
 		directoryPermissionCode = 0o755
 	)
 

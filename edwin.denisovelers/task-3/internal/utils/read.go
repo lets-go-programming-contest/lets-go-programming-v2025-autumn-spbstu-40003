@@ -33,7 +33,7 @@ func Read(path string) (*Exchange, error) {
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
 
-	exchange := Exchange{nil}
+	var exchange Exchange
 	if err := decoder.Decode(&exchange); err != nil {
 		return nil, fmt.Errorf("decode input file: %w", err)
 	}

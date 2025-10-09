@@ -18,10 +18,9 @@ func ParseConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("read config file %q: %w", path, err)
 	}
 
-	cfg := Config{"", ""}
-
+	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("unmarshal config file: %w", err)
+		return nil, fmt.Errorf("unmarshal config file %q: %w", path, err)
 	}
 
 	return &cfg, nil
