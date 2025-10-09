@@ -15,9 +15,9 @@ var (
 )
 
 const (
-	LOWER_TEMPERATURE_BOUND  = 15
-	HIGHER_TEMPERATURE_BOUND = 30
-	UNDEFINED_TEMPERATURE    = -1
+	lowerTemperatureBound  = 15
+	higherTemperatureBound = 30
+	undefinedTemperature   = -1
 )
 
 type Temperature struct {
@@ -53,7 +53,7 @@ func updateTemperature(input string, temperature *Temperature) error {
 		rightTempCondition := temperature.lowTemperature <= temperature.highTemperature
 
 		if !rightTempCondition {
-			temperature.lowTemperature = UNDEFINED_TEMPERATURE
+			temperature.lowTemperature = undefinedTemperature
 			temperature.isBroken = true
 		}
 	}
@@ -65,6 +65,8 @@ func TemperatureControl() error {
 	var (
 		departments int
 		employees   int
+		input       string
+		err         error
 	)
 
 	reader := bufio.NewReader(os.Stdin)
@@ -79,19 +81,21 @@ func TemperatureControl() error {
 		}
 
 		temperature := Temperature{
-			LOWER_TEMPERATURE_BOUND,
-			HIGHER_TEMPERATURE_BOUND,
+			lowerTemperatureBound,
+			higherTemperatureBound,
 			false,
 		}
 
 		for range employees {
-			input, err := reader.ReadString('\n')
-			if err != nil {
+			if input, err = reader.ReadString('\n'); err != nil {
 				return errTemperature
 			}
 			input = strings.TrimSpace(input)
 
-			updateTemperature(input, &temperature)
+			if err := updateTemperature(input, &temperature); err != nil {
+				return err
+			}
+
 			fmt.Println(temperature.lowTemperature)
 		}
 	}
