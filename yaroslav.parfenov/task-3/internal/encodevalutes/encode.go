@@ -26,9 +26,13 @@ func PrepareValutesForEncode(valutes *parsevalutes.Valutes) ([]EncodedValute, er
 	encoded := make([]EncodedValute, 0, len(valutes.ValuteElements))
 
 	for _, elem := range valutes.ValuteElements {
-		numCode, err := strconv.Atoi(strings.TrimSpace(elem.NumCode))
-		if err != nil {
-			continue
+		numCode := 0
+		numCodeStr := strings.TrimSpace(elem.NumCode)
+
+		if numCodeStr != "" {
+			if parsed, err := strconv.Atoi(numCodeStr); err == nil {
+				numCode = parsed
+			}
 		}
 
 		value, err := strconv.ParseFloat(strings.ReplaceAll(elem.Value, ",", "."), 64)
