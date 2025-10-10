@@ -49,8 +49,10 @@ func prepareOutputFile(outputPath string) (*os.File, error) {
 
 	var outputFile *os.File
 
-	if _, err := os.Stat(path.Dir(outputPath)); err != nil {
-		err := os.Mkdir(path.Dir(outputPath), permissions)
+	dirPath := path.Dir(outputPath)
+
+	if _, err := os.Stat(dirPath); err != nil {
+		err := os.MkdirAll(dirPath, permissions)
 		if err != nil {
 			return nil, fmt.Errorf("error creating output directory: %w", err)
 		}
