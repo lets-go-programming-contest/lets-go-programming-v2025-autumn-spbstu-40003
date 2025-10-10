@@ -17,7 +17,7 @@ type EncodedValutes struct {
 }
 
 type EncodedValute struct {
-	NumCode  int64   `json:"num_code"`
+	NumCode  int     `json:"num_code"`
 	CharCode string  `json:"char_code"`
 	Value    float64 `json:"value"`
 }
@@ -26,14 +26,14 @@ func PrepareValutesForEncode(valutes *parsevalutes.Valutes) ([]EncodedValute, er
 	encoded := make([]EncodedValute, 0, len(valutes.ValuteElements))
 
 	for _, elem := range valutes.ValuteElements {
-		numCode, err := strconv.ParseInt(elem.NumCode, 10, 0)
+		numCode, err := strconv.Atoi(strings.TrimSpace(elem.NumCode))
 		if err != nil {
-			return nil, fmt.Errorf("error preparing NumCode of valute: %w", err)
+			continue
 		}
 
 		value, err := strconv.ParseFloat(strings.ReplaceAll(elem.Value, ",", "."), 64)
 		if err != nil {
-			return nil, fmt.Errorf("error preparing Value of valute: %w", err)
+			continue
 		}
 
 		encoded = append(encoded, EncodedValute{numCode, elem.CharCode, value})
