@@ -17,10 +17,7 @@ func main() {
 		panic(err)
 	}
 
-	valutes, err := parsevalutes.ParseInput(cfg.InputFile)
-	if err != nil {
-		panic(err)
-	}
+	valutes := parsevalutes.ParseInput(cfg.InputFile)
 
 	preparedValutes, err := encodevalutes.PrepareValutesForEncode(&valutes)
 	if err != nil {

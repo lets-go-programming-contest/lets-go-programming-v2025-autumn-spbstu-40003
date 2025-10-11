@@ -20,7 +20,7 @@ type ValuteElement struct {
 	Value    string `xml:"Value"`
 }
 
-func ParseInput(filePath string) (Valutes, error) {
+func ParseInput(filePath string) Valutes {
 	inputFile, err := os.Open(filePath)
 	if err != nil {
 		panic(fmt.Errorf("error opening input file: %w", err))
@@ -41,5 +41,5 @@ func ParseInput(filePath string) (Valutes, error) {
 		panic(fmt.Errorf("invalid signature of input file: %w", err))
 	}
 
-	return curValute, nil
+	return curValute
 }
