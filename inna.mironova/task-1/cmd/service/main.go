@@ -2,26 +2,26 @@ package main
 
 import "fmt"
 
-func plus (a float64, b float64) float64 {
+func plus(a float64, b float64) float64 {
 	return a + b
 }
 
-func minus (a float64, b float64) float64 {
+func minus(a float64, b float64) float64 {
 	return a - b
 }
 
-func multiply (a float64, b float64) float64 {
+func multiply(a float64, b float64) float64 {
 	return a * b
 }
 
-func divide (a, b float64) (float64, error) {
+func divide(a, b float64) (float64, error) {
 	if b == 0 {
 		return 0, fmt.Errorf("Division by zero")
 	}
 	return a / b, nil
 }
 
-func readCommands () (float64, float64, string, error) {
+func readCommands() (float64, float64, string, error) {
 	var a, b float64
 	var operation string
 
@@ -44,18 +44,18 @@ func readCommands () (float64, float64, string, error) {
 	return a, b, operation, nil
 }
 
-func executeCommand (a float64, b float64, operation string) (float64, error) {
+func executeCommand(a float64, b float64, operation string) (float64, error) {
 	switch operation {
-		case "+":
-			return plus (a, b), nil
-		case "-":
-			return minus (a, b), nil
-		case "*":
-			return multiply (a, b), nil
-		case "/":
-			return divide (a, b)
-		default:
-			return -1, fmt.Errorf("Invalid operation")
+	case "+":
+		return plus(a, b), nil
+	case "-":
+		return minus(a, b), nil
+	case "*":
+		return multiply(a, b), nil
+	case "/":
+		return divide(a, b)
+	default:
+		return -1, fmt.Errorf("Invalid operation")
 	}
 }
 
@@ -71,10 +71,10 @@ func main() {
 		return
 	}
 
-	result, errr := executeCommand (a, b, operation)
+	result, errr := executeCommand(a, b, operation)
 
 	if errr != nil {
-		fmt.Println (errr.Error())
+		fmt.Println(errr.Error())
 		return
 	}
 
