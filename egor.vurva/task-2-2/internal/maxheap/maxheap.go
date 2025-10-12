@@ -1,7 +1,5 @@
 package maxheap
 
-import "fmt"
-
 type MaxIntHeap []int
 
 func (heap *MaxIntHeap) Len() int {
@@ -18,13 +16,9 @@ func (heap *MaxIntHeap) Swap(i, j int) {
 
 func (heap *MaxIntHeap) Push(data any) {
 	value, ok := data.(int)
-	if !ok {
-		fmt.Printf("maxheap: expected int, got %T, value ignored\n", data)
-
-		return
+	if ok {
+		*heap = append(*heap, value)
 	}
-
-	*heap = append(*heap, value)
 }
 
 func (heap *MaxIntHeap) Pop() any {
