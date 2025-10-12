@@ -2,38 +2,66 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
 )
 
+func readLine(r *bufio.Reader) (string, error) {
+	s, err := r.ReadString('\n')
+	if errors.Is(err, io.EOF) {
+		if len(s) == 0 {
+			return "", err
+		}
+		err = nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimRight(s, "\r\n"), nil
+}
+
 func main() {
 	in := bufio.NewReader(os.Stdin)
 	out := bufio.NewWriter(os.Stdout)
-	defer out.Flush()
+	defer func() {
+		if err := out.Flush(); err != nil {
+			// не печатаем в stdout, чтобы не ломать протокол вывода
+			fmt.Fprintln(os.Stderr, "flush error:", err)
+		}
+	}()
 
-	firstLine, _ := in.ReadString('\n')
-	secondLine, _ := in.ReadString('\n')
-	opLine, _ := in.ReadString('\n')
+	firstLine, err := readLine(in)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "read first line:", err)
+		return
+	}
+	secondLine, err := readLine(in)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "read second line:", err)
+		return
+	}
+	opLine, err := readLine(in)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "read operation:", err)
+		return
+	}
 
-	firstLine = strings.TrimSpace(firstLine)
-	secondLine = strings.TrimSpace(secondLine)
-	opLine = strings.TrimSpace(opLine)
-
-	a, err := strconv.Atoi(firstLine)
+	a, err := strconv.Atoi(strings.TrimSpace(firstLine))
 	if err != nil {
 		fmt.Fprintln(out, "Invalid first operand")
 		return
 	}
-
-	b, err := strconv.Atoi(secondLine)
+	b, err := strconv.Atoi(strings.TrimSpace(secondLine))
 	if err != nil {
 		fmt.Fprintln(out, "Invalid second operand")
 		return
 	}
 
-	switch opLine {
+	switch strings.TrimSpace(opLine) {
 	case "+":
 		fmt.Fprintln(out, a+b)
 	case "-":
