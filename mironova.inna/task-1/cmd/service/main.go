@@ -25,19 +25,21 @@ func readCommands() (float64, float64, string, error) {
 	var a, b float64
 	var operation string
 
-	_, err1 := fmt.Scanln(&a)
-	_, err2 := fmt.Scanln(&b)
-	_, err3 := fmt.Scanln(&operation)
+	_, err := fmt.Scanln(&a)
 
-	if err1 != nil {
+	if err != nil {
 		return -1, -1, "", fmt.Errorf("Invalid first operand")
 	}
 
-	if err2 != nil {
+	_, err = fmt.Scanln(&b)
+
+	if err != nil {
 		return -1, -1, "", fmt.Errorf("Invalid second operand")
 	}
 
-	if err3 != nil {
+	_, err = fmt.Scanln(&operation)
+
+	if err != nil {
 		return -1, -1, "", fmt.Errorf("Invalid operation")
 	}
 
@@ -60,9 +62,11 @@ func executeCommand(a float64, b float64, operation string) (float64, error) {
 }
 
 func main() {
-	var a, b float64
-	var operation string
-	var result float64
+
+	var (
+		a, b, result float64
+		operation    string
+	)
 
 	a, b, operation, err := readCommands()
 
@@ -71,10 +75,10 @@ func main() {
 		return
 	}
 
-	result, errr := executeCommand(a, b, operation)
+	result, err = executeCommand(a, b, operation)
 
-	if errr != nil {
-		fmt.Println(errr.Error())
+	if err != nil {
+		fmt.Println(err.Error())
 		return
 	}
 
