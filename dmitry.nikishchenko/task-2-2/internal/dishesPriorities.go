@@ -10,6 +10,7 @@ var (
 	errDishes      = errors.New("failed to read the number of dishes")
 	errPriorities  = errors.New("failed to read the priorities")
 	errPriorityNum = errors.New("failed to read priority num")
+	errFormat      = errors.New("failed to convert heap element to int")
 )
 
 type DishesHeap []int
@@ -19,7 +20,12 @@ func (h DishesHeap) Less(i, j int) bool { return h[i] > h[j] }
 func (h DishesHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 
 func (h *DishesHeap) Push(x any) {
-	*h = append(*h, x.(int))
+	val, ok := x.(int)
+	if !ok {
+		return
+	}
+
+	*h = append(*h, val)
 }
 
 func (h *DishesHeap) Pop() any {
@@ -27,37 +33,46 @@ func (h *DishesHeap) Pop() any {
 	n := len(old)
 	x := old[n-1]
 	*h = old[0 : n-1]
+
 	return x
 }
 
 func PickBestDish() error {
 	var (
-		n      int
-		val    int
-		k      int
-		result int
+		numberOfDishes int
+		val            int
+		priorityNum    int
+		result         int
 	)
 
-	if _, err := fmt.Scan(&n); err != nil {
+	if _, err := fmt.Scan(&numberOfDishes); err != nil {
 		return errDishes
 	}
 
-	h := &DishesHeap{}
-	heap.Init(h)
+	priorityHeap := &DishesHeap{}
+	heap.Init(priorityHeap)
 
-	for i := 0; i < n; i++ {
+	for range numberOfDishes {
 		if _, err := fmt.Scan(&val); err != nil {
 			return errPriorities
 		}
-		heap.Push(h, val)
+
+		heap.Push(priorityHeap, val)
 	}
 
-	if _, err := fmt.Scan(&k); err != nil {
+	_, err := fmt.Scan(&priorityNum)
+
+	if err != nil || priorityNum > priorityHeap.Len() || priorityNum < 1 {
 		return errPriorityNum
 	}
 
-	for i := 0; i < k; i++ {
-		result = heap.Pop(h).(int)
+	for range priorityNum {
+		val := heap.Pop(priorityHeap)
+		if valInt, ok := val.(int); ok {
+			result = valInt
+		} else {
+			return errFormat
+		}
 	}
 
 	fmt.Println(result)
