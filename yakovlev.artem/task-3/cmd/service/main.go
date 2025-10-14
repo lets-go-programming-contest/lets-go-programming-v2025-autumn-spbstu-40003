@@ -11,6 +11,7 @@ import (
 func main() {
 	cfgPath := flag.String("config", "", "path to YAML config")
 	flag.Parse()
+
 	if *cfgPath == "" {
 		panic("config flag must be set: -config=/path/to/config.yaml")
 	}

@@ -7,28 +7,34 @@ import (
 	"path/filepath"
 )
 
+const dirPerm = 0o755
+
+// WriteJSONToFile creates directories (if needed) and writes pretty JSON.
 func WriteJSONToFile(path string, data any) error {
 	dir := filepath.Dir(path)
 	if dir != "." {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
+		if err := os.MkdirAll(dir, dirPerm); err != nil {
 			return fmt.Errorf("mkdir %s: %w", dir, err)
 		}
 	}
 
-	f, err := os.Create(path)
+	file, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
+
 	defer func() {
-		if err := f.Close(); err != nil {
-			panic(fmt.Errorf("close file: %w", err))
+		if cerr := file.Close(); cerr != nil {
+			panic(fmt.Errorf("close file: %w", cerr))
 		}
 	}()
 
-	enc := json.NewEncoder(f)
+	enc := json.NewEncoder(file)
 	enc.SetIndent("", "  ")
+
 	if err := enc.Encode(data); err != nil {
 		return fmt.Errorf("encode json: %w", err)
 	}
+
 	return nil
 }
