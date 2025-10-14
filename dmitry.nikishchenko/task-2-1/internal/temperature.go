@@ -72,7 +72,12 @@ func TemperatureControl() error {
 
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)
-	defer writer.Flush()
+
+	defer func() {
+		if err := writer.Flush(); err != nil {
+			fmt.Fprintf(os.Stderr, "flush error: %v\n", err)
+		}
+	}()
 
 	if _, err := fmt.Scanln(&departments); err != nil {
 		return errDepartments
@@ -99,7 +104,9 @@ func TemperatureControl() error {
 				return err
 			}
 
-			fmt.Fprintln(writer, temperature.lowTemperature)
+			if _, err := fmt.Fprintln(writer, temperature.lowTemperature); err != nil {
+				return fmt.Errorf("write error: %w", err)
+			}
 		}
 	}
 
