@@ -73,6 +73,7 @@ func TemperatureControl() error {
 	if !scanner.Scan() {
 		return errDepartments
 	}
+
 	if _, err := fmt.Sscanf(scanner.Text(), "%d", &departments); err != nil {
 		return errDepartments
 	}
@@ -81,6 +82,7 @@ func TemperatureControl() error {
 		if !scanner.Scan() {
 			return errEmployees
 		}
+
 		if _, err := fmt.Sscanf(scanner.Text(), "%d", &employees); err != nil {
 			return errEmployees
 		}
