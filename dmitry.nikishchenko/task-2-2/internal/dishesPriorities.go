@@ -1,4 +1,4 @@
-package dishesPriorities
+package dishespriorities
 
 import (
 	"container/heap"
@@ -15,9 +15,9 @@ var (
 
 type DishesHeap []int
 
-func (h DishesHeap) Len() int           { return len(h) }
-func (h DishesHeap) Less(i, j int) bool { return h[i] > h[j] }
-func (h DishesHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *DishesHeap) Len() int           { return len(*h) }
+func (h *DishesHeap) Less(i, j int) bool { return (*h)[i] > (*h)[j] }
+func (h *DishesHeap) Swap(i, j int)      { (*h)[i], (*h)[j] = (*h)[j], (*h)[i] }
 
 func (h *DishesHeap) Push(x any) {
 	val, ok := x.(int)
@@ -76,5 +76,6 @@ func PickBestDish() error {
 	}
 
 	fmt.Println(result)
+
 	return nil
 }
