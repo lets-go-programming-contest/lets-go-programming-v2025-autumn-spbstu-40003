@@ -76,7 +76,7 @@ func TemperatureControl() error {
 		return errDepartments
 	}
 
-	for range departments {
+	for range make([]struct{}, departments) {
 		if _, err := fmt.Scanln(&employees); err != nil {
 			return errEmployees
 		}
