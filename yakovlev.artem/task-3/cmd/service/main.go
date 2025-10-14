@@ -4,9 +4,9 @@ import (
 	"flag"
 	"log"
 
-	"github.com/<your-user-name>/task-3/internal/config"
-	"github.com/<your-user-name>/task-3/internal/parser"
-	"github.com/<your-user-name>/task-3/internal/utils"
+	"github.com/nxgmwv/task-3/internal/config"
+	"github.com/nxgmwv/task-3/internal/parser"
+	"github.com/nxgmwv/task-3/internal/utils"
 )
 
 func main() {
