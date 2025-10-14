@@ -61,35 +61,16 @@ func updateTemperature(input string, temperature *Temperature) error {
 	return nil
 }
 
-func EmployeeTemperatureControl(employees int, reader *bufio.Reader,
-	writer *bufio.Writer, temperature *Temperature) error {
-	for range employees {
-		input, err := reader.ReadString('\n')
-		if err != nil {
-			return errTemperature
-		}
-
-		if err := updateTemperature(strings.TrimSpace(input), temperature); err != nil {
-			return err
-		}
-
-		if _, err := fmt.Fprintln(writer, temperature.lowTemperature); err != nil {
-			return fmt.Errorf("write error: %w", err)
-		}
-	}
-
-	return nil
-}
-
 func TemperatureControl() error {
 	var (
 		departments int
 		employees   int
 		temperature Temperature
+		input       string
+		err         error
 	)
 
 	reader := bufio.NewReader(os.Stdin)
-	writer := bufio.NewWriter(os.Stdout)
 
 	if _, err := fmt.Scanln(&departments); err != nil {
 		return errDepartments
@@ -106,9 +87,17 @@ func TemperatureControl() error {
 			false,
 		}
 
-		err := EmployeeTemperatureControl(employees, reader, writer, &temperature)
-		if err != nil {
-			return err
+		for range make([]struct{}, employees) {
+			input, err = reader.ReadString('\n')
+			if err != nil {
+				return errTemperature
+			}
+
+			if err := updateTemperature(strings.TrimSpace(input), &temperature); err != nil {
+				return err
+			}
+
+			fmt.Println(temperature.lowTemperature)
 		}
 	}
 
