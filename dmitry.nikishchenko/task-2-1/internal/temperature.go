@@ -76,7 +76,7 @@ func TemperatureControl() error {
 		return errDepartments
 	}
 
-	for range make([]struct{}, departments) {
+	for i := 0; i < departments; i++ {
 		if _, err := fmt.Scanln(&employees); err != nil {
 			return errEmployees
 		}
@@ -87,7 +87,7 @@ func TemperatureControl() error {
 			false,
 		}
 
-		for range make([]struct{}, employees) {
+		for j := 0; j < employees; j++ {
 			input, err = reader.ReadString('\n')
 			if err != nil {
 				return errTemperature
