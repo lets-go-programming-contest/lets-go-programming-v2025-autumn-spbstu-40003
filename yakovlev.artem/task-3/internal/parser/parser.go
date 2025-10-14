@@ -62,37 +62,37 @@ func parseFile(path string) ([]Currency, error) {
 		return nil, fmt.Errorf("decode xml: %w", err)
 	}
 
-	out := convertToModel(curs.Values)
+	result := convertToModel(curs.Values)
 
-	sortCurrencies(out)
+	sortCurrencies(result)
 
-	return out, nil
+	return result, nil
 }
 
 func convertToModel(vals []valute) []Currency {
 	result := make([]Currency, len(vals))
 
-	for i, vv := range vals {
-		result[i] = convertSingle(vv)
+	for i, valuteItem := range vals {
+		result[i] = convertSingle(valuteItem)
 	}
 
 	return result
 }
 
-func convertSingle(vv valute) Currency {
-	numCode, err := parseInt(vv.NumCode)
+func convertSingle(valuteItem valute) Currency {
+	numCode, err := parseInt(valuteItem.NumCode)
 	if err != nil {
 		numCode = 0
 	}
 
-	value, err := parseFloat(vv.Value)
+	value, err := parseFloat(valuteItem.Value)
 	if err != nil {
 		value = 0
 	}
 
 	return Currency{
 		NumCode:  numCode,
-		CharCode: strings.TrimSpace(vv.CharCode),
+		CharCode: strings.TrimSpace(valuteItem.CharCode),
 		Value:    value,
 	}
 }
