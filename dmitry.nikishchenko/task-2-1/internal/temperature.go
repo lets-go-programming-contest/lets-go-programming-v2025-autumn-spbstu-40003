@@ -61,12 +61,8 @@ func updateTemperature(input string, temperature *Temperature) error {
 	return nil
 }
 
-func EmployeeTemperatureControl(
-	employees int,
-	reader *bufio.Reader,
-	writer *bufio.Writer,
-	temperature *Temperature) error {
-
+func EmployeeTemperatureControl(employees int, reader *bufio.Reader,
+	writer *bufio.Writer, temperature *Temperature) error {
 	for range employees {
 		input, err := reader.ReadString('\n')
 		if err != nil {
@@ -94,11 +90,6 @@ func TemperatureControl() error {
 
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)
-	defer func() {
-		if err := writer.Flush(); err != nil {
-			fmt.Fprintf(os.Stderr, "flush error: %v\n", err)
-		}
-	}()
 
 	if _, err := fmt.Scanln(&departments); err != nil {
 		return errDepartments
