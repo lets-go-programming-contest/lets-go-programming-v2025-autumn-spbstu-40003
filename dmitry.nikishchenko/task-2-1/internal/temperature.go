@@ -66,18 +66,22 @@ func TemperatureControl() error {
 		departments int
 		employees   int
 		temperature Temperature
-		input       string
-		err         error
 	)
 
-	reader := bufio.NewReader(os.Stdin)
+	scanner := bufio.NewScanner(os.Stdin)
 
-	if _, err := fmt.Scanln(&departments); err != nil {
+	if !scanner.Scan() {
+		return errDepartments
+	}
+	if _, err := fmt.Sscanf(scanner.Text(), "%d", &departments); err != nil {
 		return errDepartments
 	}
 
-	for i := 0; i < departments; i++ {
-		if _, err := fmt.Scanln(&employees); err != nil {
+	for range departments {
+		if !scanner.Scan() {
+			return errEmployees
+		}
+		if _, err := fmt.Sscanf(scanner.Text(), "%d", &employees); err != nil {
 			return errEmployees
 		}
 
@@ -87,13 +91,13 @@ func TemperatureControl() error {
 			false,
 		}
 
-		for j := 0; j < employees; j++ {
-			input, err = reader.ReadString('\n')
-			if err != nil {
+		for range employees {
+			if !scanner.Scan() {
 				return errTemperature
 			}
 
-			if err := updateTemperature(strings.TrimSpace(input), &temperature); err != nil {
+			line := strings.TrimSpace(scanner.Text())
+			if err := updateTemperature(line, &temperature); err != nil {
 				return err
 			}
 
