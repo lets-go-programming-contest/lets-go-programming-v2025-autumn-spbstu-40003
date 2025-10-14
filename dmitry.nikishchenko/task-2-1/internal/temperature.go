@@ -71,6 +71,8 @@ func TemperatureControl() error {
 	)
 
 	reader := bufio.NewReader(os.Stdin)
+	writer := bufio.NewWriter(os.Stdout)
+	defer writer.Flush()
 
 	if _, err := fmt.Scanln(&departments); err != nil {
 		return errDepartments
@@ -97,7 +99,7 @@ func TemperatureControl() error {
 				return err
 			}
 
-			fmt.Println(temperature.lowTemperature)
+			fmt.Fprintln(writer, temperature.lowTemperature)
 		}
 	}
 
