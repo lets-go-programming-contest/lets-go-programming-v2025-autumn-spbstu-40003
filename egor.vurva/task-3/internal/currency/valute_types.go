@@ -14,10 +14,10 @@ type ValCurs struct {
 
 type Valute struct {
 	ID        string  `xml:"ID"        json:"-"`
-	NumCode   int     `xml:"NumCode"   json:"NumCode"`
-	CharCode  string  `xml:"CharCode"  json:"CharCode"`
+	NumCode   int     `xml:"NumCode"   json:"num_code"`
+	CharCode  string  `xml:"CharCode"  json:"char_code"`
 	Nominal   int     `xml:"Nominal"   json:"-"`
 	Name      string  `xml:"Name"      json:"-"`
-	Value     Value64 `xml:"Value"     json:"Value"`
+	Value     Value64 `xml:"Value"     json:"value"`
 	VunitRate string  `xml:"VunitRate" json:"-"`
 }
