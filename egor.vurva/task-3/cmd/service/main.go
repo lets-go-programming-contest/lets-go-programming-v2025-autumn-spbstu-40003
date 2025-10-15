@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"encoding/xml"
 	"flag"
 	"fmt"
 	"os"
@@ -21,7 +20,6 @@ func main() {
 	flag.Parse()
 
 	if configFile == "" {
-		flag.Usage()
 		panic("missing required -config path")
 	}
 
@@ -39,18 +37,9 @@ func main() {
 		return
 	}
 
-	fileXML, err := os.ReadFile(config.InputFile)
+	valCurs, err := currency.ReadValCurs(config.InputFile)
 	if err != nil {
-		panic(fmt.Errorf("read %q: %w", config.InputFile, err))
-	}
-
-	var valCurs currency.ValCurs
-
-	err = xml.Unmarshal(fileXML, &valCurs)
-	if err != nil {
-		fmt.Printf("unmarshal config %q: %v", config.InputFile, err)
-
-		return
+		fmt.Printf("read config %q: %v", configFile, err)
 	}
 
 	currency.SortValute(valCurs.Valutes)
