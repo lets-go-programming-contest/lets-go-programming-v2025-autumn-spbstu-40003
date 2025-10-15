@@ -16,11 +16,13 @@ import (
 func ReadValCurs(path string) (curs ValCurs, err error) {
 	file, err := os.Open(path)
 	if err != nil {
+
 		return ValCurs{}, fmt.Errorf("open %q: %w", path, err)
 	}
+
 	defer func() {
-		if cerr := file.Close(); cerr != nil && err == nil {
-			err = fmt.Errorf("close %q: %w", path, cerr)
+		if cerr := file.Close(); cerr != nil {
+			panic(cerr)
 		}
 	}()
 
