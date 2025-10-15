@@ -2,11 +2,36 @@ package currency
 
 import (
 	"cmp"
+	"encoding/xml"
 	"fmt"
+	"io"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
+
+	"golang.org/x/net/html/charset"
 )
+
+func ReadValCurs(path string) (curs ValCurs, err error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return ValCurs{}, fmt.Errorf("open %q: %w", path, err)
+	}
+	defer func() {
+		if cerr := file.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("close %q: %w", path, cerr)
+		}
+	}()
+
+	dec := xml.NewDecoder(file)
+	dec.CharsetReader = charset.NewReaderLabel
+
+	if derr := dec.Decode(&curs); derr != nil && derr != io.EOF {
+		return ValCurs{}, fmt.Errorf("decode xml %q: %w", path, derr)
+	}
+	return curs, nil
+}
 
 func SortValute(valutes []Valute) {
 	slices.SortFunc(valutes, func(first, second Valute) int {
