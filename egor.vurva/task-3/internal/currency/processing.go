@@ -3,6 +3,7 @@ package currency
 import (
 	"cmp"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,10 +14,9 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
-func ReadValCurs(path string) (curs ValCurs, err error) {
+func ReadValCurs(path string) (ValCurs, error) {
 	file, err := os.Open(path)
 	if err != nil {
-
 		return ValCurs{}, fmt.Errorf("open %q: %w", path, err)
 	}
 
@@ -29,9 +29,13 @@ func ReadValCurs(path string) (curs ValCurs, err error) {
 	dec := xml.NewDecoder(file)
 	dec.CharsetReader = charset.NewReaderLabel
 
-	if derr := dec.Decode(&curs); derr != nil && derr != io.EOF {
+	curs := ValCurs{}
+
+	derr := dec.Decode(&curs)
+	if derr != nil && !errors.Is(derr, io.EOF) {
 		return ValCurs{}, fmt.Errorf("decode xml %q: %w", path, derr)
 	}
+
 	return curs, nil
 }
 
@@ -41,12 +45,14 @@ func SortValute(valutes []Valute) {
 	})
 }
 
+var ErrValue64Parse = errors.New("cannot convert to float64")
+
 func (value *Value64) UnmarshalText(text []byte) error {
 	strValue := strings.Replace(string(text), ",", ".", 1)
 
 	number, err := strconv.ParseFloat(strValue, 64)
 	if err != nil {
-		return fmt.Errorf("cannot convert %s to float64", string(text))
+		return fmt.Errorf("%w: %q", ErrValue64Parse, string(text))
 	}
 
 	*value = Value64(number)
