@@ -21,6 +21,7 @@ func saveJSON(path string, data []ExchangeTrade) {
 	if err != nil {
 		panic("error while creating output file: " + err.Error())
 	}
+
 	defer func() {
 		if err := file.Close(); err != nil {
 			panic("error while closing file: " + err.Error())

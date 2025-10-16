@@ -16,6 +16,7 @@ func loadConfig(path string) *Config {
 	if err != nil {
 		panic("error while opening configuration file: " + err.Error())
 	}
+
 	defer func() {
 		if err := file.Close(); err != nil {
 			panic("error while closing file: " + err.Error())
