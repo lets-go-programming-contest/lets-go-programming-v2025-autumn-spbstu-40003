@@ -18,9 +18,9 @@ type ExchangeTrade struct {
 
 type xmlData struct {
 	Items []struct {
-		NumCode  string `xml:"NumCode"
-		CharCode string `xml:"CharCode"
-		Value    string `xml:"Value"
+		NumCode  string `xml:"NumCode"`
+		CharCode string `xml:"CharCode"`
+		Value    string `xml:"Value"`
 	} `xml:"Valute"`
 }
 
