@@ -84,7 +84,7 @@ func processDepartment() error {
 			fmt.Println(depLow)
 		} else {
 			fmt.Println(invalidT)
-			
+
 			valid = false
 		}
 	}
