@@ -12,6 +12,11 @@ import (
 	"github.com/Vurvaa/task-3/internal/currency"
 )
 
+const (
+	dirPerm  = 0o755
+	filePerm = 0o644
+)
+
 func main() {
 	var configFile string
 
@@ -47,12 +52,12 @@ func main() {
 		panic(err)
 	}
 
-	err = os.MkdirAll(filepath.Dir(config.OutputFile), 0o755)
+	err = os.MkdirAll(filepath.Dir(config.OutputFile), dirPerm)
 	if err != nil {
 		panic(fmt.Errorf("make parent dirs %q: %w", config.OutputFile, err))
 	}
 
-	fileJSON, err := os.OpenFile(config.OutputFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o666)
+	fileJSON, err := os.OpenFile(config.OutputFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
 	if err != nil {
 		panic(fmt.Errorf("open output file %q: %w", config.OutputFile, err))
 	}
