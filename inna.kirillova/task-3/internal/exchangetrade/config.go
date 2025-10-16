@@ -39,3 +39,6 @@ func loadConfig(path string) *Config {
 	return &config
 }
 
+
+
+

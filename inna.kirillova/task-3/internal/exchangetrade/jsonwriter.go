@@ -49,3 +49,6 @@ func Process(configPath string) {
 	fmt.Printf("processing completed: %d exchange trades sorted and saved\n", len(trades))
 }
 
+
+
+

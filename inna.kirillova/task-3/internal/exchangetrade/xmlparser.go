@@ -68,3 +68,6 @@ func parseXML(path string) []ExchangeTrade {
 	return trades
 }
 
+
+
+
