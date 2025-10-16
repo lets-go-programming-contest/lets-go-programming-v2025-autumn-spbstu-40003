@@ -83,9 +83,9 @@ func processDepartment(empCount int) error {
 
 		switch sign {
 		case "<=":
-			depHigh = min(depHigh, temp)
+			depHigh = minInt(depHigh, temp)
 		case ">=":
-			depLow = max(depLow, temp)
+			depLow = maxInt(depLow, temp)
 		default:
 			return ErrSign
 		}
@@ -108,16 +108,18 @@ func loopCount(total int) []struct{} {
 	return make([]struct{}, total)
 }
 
-func max(first, second int) int {
+func maxInt(first, second int) int {
 	if first > second {
 		return first
 	}
+
 	return second
 }
 
-func min(first, second int) int {
+func minInt(first, second int) int {
 	if first < second {
 		return first
 	}
+
 	return second
 }
