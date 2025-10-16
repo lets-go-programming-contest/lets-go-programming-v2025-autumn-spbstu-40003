@@ -29,7 +29,11 @@ func parseXML(path string) []ExchangeTrade {
 	if err != nil {
 		panic("XML error: " + err.Error())
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic("error while closing file: " + err.Error())
+		}
+	}()
 
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
@@ -39,10 +43,12 @@ func parseXML(path string) []ExchangeTrade {
 		panic("bad XML: " + err.Error())
 	}
 
-	var trades []ExchangeTrade
+	trades := make([]ExchangeTrade, 0, len(data.Items))
+
 	for _, item := range data.Items {
 		numCode, _ := strconv.Atoi(strings.TrimSpace(item.NumCode))
-		value, err := strconv.ParseFloat(strings.Replace(item.Value, ",", ".", -1), 64)
+		value, err := strconv.ParseFloat(strings.ReplaceAll(item.Value, ",", "."), 64)
+
 		if err != nil {
 			continue
 		}
