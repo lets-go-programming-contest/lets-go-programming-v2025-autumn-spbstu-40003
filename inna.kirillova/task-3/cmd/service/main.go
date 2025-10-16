@@ -1,15 +1,14 @@
 package main
 
 import (
-"flag"
+task-"flag"
 
-"github.com/kirinnah/task-3/internal/currencyparser"
+task-"github.com/kirinnah/task-3/internal/currencyparser"
 )
 
 func main() {
-configPath := flag.String("config", "config.yaml", "path to configuration file")
-flag.Parse()
+task-configPath := flag.String("config", "config.yaml", "path to configuration file")
+task-flag.Parse()
 
-exchangetrade.Process(*configPath)
+task-currencyparser.Process(*configPath)
 }
-
