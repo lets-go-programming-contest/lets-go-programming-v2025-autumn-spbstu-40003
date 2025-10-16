@@ -47,12 +47,12 @@ func main() {
 		panic(err)
 	}
 
-	err = os.MkdirAll(filepath.Dir(config.OutputFile), 0755)
+	err = os.MkdirAll(filepath.Dir(config.OutputFile), 0o755)
 	if err != nil {
 		panic(fmt.Errorf("make parent dirs %q: %w", config.OutputFile, err))
 	}
 
-	fileJSON, err := os.OpenFile(config.OutputFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	fileJSON, err := os.OpenFile(config.OutputFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o666)
 	if err != nil {
 		panic(fmt.Errorf("open output file %q: %w", config.OutputFile, err))
 	}
