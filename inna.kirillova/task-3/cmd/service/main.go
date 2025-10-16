@@ -1,14 +1,14 @@
 package main
 
 import (
-	"flag"
+"flag"
 
-	"github.com/kirinnah/task-3/internal/exchangetrade"
+"github.com/kirinnah/task-3/internal/exchangetrade"
 )
 
 func main() {
-	configPath := flag.String("config", "config.yaml", "path to configuration file")
-	flag.Parse()
+configPath := flag.String("config", "config.yaml", "path to configuration file")
+flag.Parse()
 
-	exchangetrade.Process(*configPath)
+exchangetrade.Process(*configPath)
 }
