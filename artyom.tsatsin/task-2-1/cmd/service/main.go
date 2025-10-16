@@ -65,8 +65,10 @@ func processDepartment(empCount int) error {
 	valid := true
 
 	for range loopCount(empCount) {
-		var sign string
-		var temp int
+		var (
+			sign string
+			temp int
+		)
 
 		_, err := fmt.Scan(&sign, &temp)
 		if err != nil {
@@ -78,6 +80,7 @@ func processDepartment(empCount int) error {
 		}
 
 		if !valid {
+			fmt.Println(invalidT)
 			continue
 		}
 
@@ -92,6 +95,9 @@ func processDepartment(empCount int) error {
 
 		if depLow > depHigh {
 			valid = false
+			fmt.Println(invalidT)
+		} else {
+			fmt.Println(depLow)
 		}
 	}
 
