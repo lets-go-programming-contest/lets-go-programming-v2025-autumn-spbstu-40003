@@ -7,9 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/Vurvaa/task-3/internal/currency"
+	"gopkg.in/yaml.v3"
 )
 
 const (
