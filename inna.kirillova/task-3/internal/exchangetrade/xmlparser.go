@@ -41,20 +41,15 @@ func parseXML(path string) []ExchangeTrade {
 
 	var trades []ExchangeTrade
 	for _, item := range data.Items {
-		if strings.TrimSpace(item.CharCode) == "" {
-			continue
-		}
-
-		value, err := strconv.ParseFloat(strings.Replace(item.Value, ",", ".", -1), 64)
-		if err != nil || value == 0 {
-			continue
-		}
-
 		numCode, _ := strconv.Atoi(strings.TrimSpace(item.NumCode))
+		value, err := strconv.ParseFloat(strings.Replace(item.Value, ",", ".", -1), 64)
+		if err != nil {
+			continue
+		}
 
 		trades = append(trades, ExchangeTrade{
 			NumCode:  numCode,
-			CharCode: item.CharCode,
+			CharCode: strings.TrimSpace(item.CharCode),
 			Value:    value,
 		})
 	}
