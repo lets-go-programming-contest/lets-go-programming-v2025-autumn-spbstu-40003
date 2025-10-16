@@ -3,7 +3,7 @@ package main
 import (
 "flag"
 
-"github.com/kirinnah/task-3/internal/exchangetrade"
+"github.com/kirinnah/task-3/internal/currencyparser"
 )
 
 func main() {

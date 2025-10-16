@@ -1,4 +1,4 @@
-package exchangetrade
+package currencyparser
 
 import (
 "encoding/xml"
