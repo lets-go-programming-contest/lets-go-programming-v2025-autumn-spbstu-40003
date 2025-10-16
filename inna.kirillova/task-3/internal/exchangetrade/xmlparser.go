@@ -48,7 +48,9 @@ func parseXML(path string) []ExchangeTrade {
 
 	for _, item := range data.Items {
 		numCode, _ := strconv.Atoi(strings.TrimSpace(item.NumCode))
-		value, err := strconv.ParseFloat(strings.ReplaceAll(item.Value, ",", "."), 64)
+		
+		valueStr := strings.ReplaceAll(item.Value, ",", ".")
+		value, err := strconv.ParseFloat(valueStr, 64)
 		if err != nil {
 			continue
 		}
