@@ -8,12 +8,13 @@ import (
 )
 
 func saveJSON(path string, data []ExchangeTrade) {
+	const dirPerm = 0o755
+
 	if len(data) == 0 {
 		panic("error: no data to save to JSON file")
 	}
 
 	dir := filepath.Dir(path)
-	const dirPerm = 0o755
 
 	if err := os.MkdirAll(dir, dirPerm); err != nil {
 		panic("error while creating output directory: " + err.Error())
