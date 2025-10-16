@@ -16,7 +16,11 @@ func loadConfig(path string) *Config {
 	if err != nil {
 		panic("error while opening configuration file: " + err.Error())
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic("error while closing file: " + err.Error())
+		}
+	}()
 
 	var config Config
 	if err := yaml.NewDecoder(file).Decode(&config); err != nil {

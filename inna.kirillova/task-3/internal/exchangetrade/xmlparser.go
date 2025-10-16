@@ -29,6 +29,7 @@ func parseXML(path string) []ExchangeTrade {
 	if err != nil {
 		panic("XML error: " + err.Error())
 	}
+
 	defer func() {
 		if err := file.Close(); err != nil {
 			panic("error while closing file: " + err.Error())
