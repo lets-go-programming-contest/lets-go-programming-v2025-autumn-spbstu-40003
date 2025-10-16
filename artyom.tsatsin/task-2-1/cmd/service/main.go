@@ -15,48 +15,35 @@ var (
 const (
 	minT     = 15
 	maxT     = 30
-	minV     = 1
-	maxV     = 1000
 	invalidT = -1
 )
 
 func main() {
-	var depCount int
-
-	_, err := fmt.Scan(&depCount)
-	if err != nil {
-		fmt.Println(ErrDep)
-		return
-	}
-
-	if depCount < minV || depCount > maxV {
+	if err := run(); err != nil {
 		fmt.Println(invalidT)
-		return
-	}
-
-	for range loopCount(depCount) {
-		var empCount int
-
-		_, err := fmt.Scan(&empCount)
-		if err != nil {
-			fmt.Println(invalidT)
-			continue
-		}
-
-		if empCount < minV || empCount > maxV {
-			fmt.Println(invalidT)
-			continue
-		}
-
-		err = processDepartment(empCount)
-		if err != nil {
-			fmt.Println(invalidT)
-		}
 	}
 }
 
-func processDepartment(empCount int) error {
-	if empCount < minV || empCount > maxV {
+func run() error {
+	var depCount int
+	if _, err := fmt.Scan(&depCount); err != nil {
+		return ErrDep
+	}
+
+	for range loopCount(depCount) {
+		if err := processDepartment(); err != nil {
+			fmt.Println(invalidT)
+
+			continue
+		}
+	}
+
+	return nil
+}
+
+func processDepartment() error {
+	var empCount int
+	if _, err := fmt.Scan(&empCount); err != nil {
 		return ErrEmp
 	}
 
@@ -70,62 +57,40 @@ func processDepartment(empCount int) error {
 			temp int
 		)
 
-		_, err := fmt.Scan(&sign, &temp)
-		if err != nil {
-			return ErrTemp
-		}
-
-		if temp < minT || temp > maxT {
+		if _, err := fmt.Scan(&sign, &temp); err != nil {
 			return ErrTemp
 		}
 
 		if !valid {
 			fmt.Println(invalidT)
+
 			continue
 		}
 
 		switch sign {
-		case "<=":
-			depHigh = minInt(depHigh, temp)
 		case ">=":
-			depLow = maxInt(depLow, temp)
+			if temp > depLow {
+				depLow = temp
+			}
+		case "<=":
+			if temp < depHigh {
+				depHigh = temp
+			}
 		default:
 			return ErrSign
 		}
 
-		if depLow > depHigh {
-			valid = false
-			fmt.Println(invalidT)
-		} else {
+		if depLow <= depHigh {
 			fmt.Println(depLow)
+		} else {
+			fmt.Println(invalidT)
+			valid = false
 		}
-	}
-
-	if valid {
-		fmt.Println(depLow)
-	} else {
-		fmt.Println(invalidT)
 	}
 
 	return nil
 }
 
-func loopCount(total int) []struct{} {
-	return make([]struct{}, total)
-}
-
-func maxInt(first, second int) int {
-	if first > second {
-		return first
-	}
-
-	return second
-}
-
-func minInt(first, second int) int {
-	if first < second {
-		return first
-	}
-
-	return second
+func loopCount(n int) []struct{} {
+	return make([]struct{}, n)
 }
