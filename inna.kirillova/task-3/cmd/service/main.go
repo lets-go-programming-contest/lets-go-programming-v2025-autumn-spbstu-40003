@@ -12,3 +12,4 @@ flag.Parse()
 
 exchangetrade.Process(*configPath)
 }
+

@@ -38,3 +38,4 @@ panic("error: output-file is not specified in configuration")
 
 return &config
 }
+
