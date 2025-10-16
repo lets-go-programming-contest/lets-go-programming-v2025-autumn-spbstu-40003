@@ -29,7 +29,7 @@ func ReadValCurs(path string) (ValCurs, error) {
 	dec := xml.NewDecoder(file)
 	dec.CharsetReader = charset.NewReaderLabel
 
-	curs := ValCurs{}
+	var curs ValCurs
 
 	derr := dec.Decode(&curs)
 	if derr != nil && !errors.Is(derr, io.EOF) {
