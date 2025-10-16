@@ -18,9 +18,9 @@ type ExchangeTrade struct {
 
 type xmlData struct {
 	Items []struct {
-		NumCode  string `xml:"NumCode"`
-		CharCode string `xml:"CharCode"`
-		Value    string `xml:"Value"`
+		NumCode  string `xml:"NumCode"
+		CharCode string `xml:"CharCode"
+		Value    string `xml:"Value"
 	} `xml:"Valute"`
 }
 
@@ -48,7 +48,13 @@ func parseXML(path string) []ExchangeTrade {
 
 	for _, item := range data.Items {
 		numCode, _ := strconv.Atoi(strings.TrimSpace(item.NumCode))
-		if value, err := strconv.ParseFloat(strings.ReplaceAll(item.Value, ",", "."), 64); err != nil {
+		
+		var (
+			value float64
+			err   error
+		)
+		value, err = strconv.ParseFloat(strings.ReplaceAll(item.Value, ",", "."), 64)
+		if err != nil {
 			continue
 		}
 
