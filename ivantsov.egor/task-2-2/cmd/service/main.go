@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-// IntHeap — реализация min-heap для хранения чисел
 type IntHeap []int
 
 func (h *IntHeap) Len() int           { return len(*h) }
