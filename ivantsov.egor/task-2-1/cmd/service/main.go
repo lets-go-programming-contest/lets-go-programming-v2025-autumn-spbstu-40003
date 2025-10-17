@@ -1,51 +1,55 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
+)
+
+const (
+	minTemp      = 15
+	maxTemp      = 30
+	invalidValue = -1
 )
 
 func main() {
-	const minTemp = 15
-	const maxTemp = 30
+	var departments int
+	if _, err := fmt.Scan(&departments); err != nil {
+		fmt.Println(invalidValue)
+		return
+	}
 
-	in := bufio.NewScanner(os.Stdin)
-	in.Split(bufio.ScanWords)
+	for d := 0; d < departments; d++ {
+		var employees int
+		if _, err := fmt.Scan(&employees); err != nil {
+			fmt.Println(invalidValue)
+			return
+		}
 
-	// Читаем количество отделов N и сотрудников K
-	var n, k int
-	in.Scan()
-	fmt.Sscan(in.Text(), &n)
-	in.Scan()
-	fmt.Sscan(in.Text(), &k)
+		minBound, maxBound := minTemp, maxTemp
 
-	for i := 0; i < n; i++ {
-		minBound := minTemp
-		maxBound := maxTemp
+		for e := 0; e < employees; e++ {
+			var sign string
+			var temp int
+			if _, err := fmt.Scan(&sign, &temp); err != nil {
+				fmt.Println(invalidValue)
+				return
+			}
 
-		for j := 0; j < k; j++ {
-			in.Scan()
-			sign := in.Text()
-			in.Scan()
-			var t int
-			fmt.Sscan(in.Text(), &t)
-
-			if sign == ">=" {
-				if t > minBound {
-					minBound = t
+			switch sign {
+			case ">=":
+				if temp > minBound {
+					minBound = temp
 				}
-			} else if sign == "<=" {
-				if t < maxBound {
-					maxBound = t
+			case "<=":
+				if temp < maxBound {
+					maxBound = temp
 				}
 			}
 		}
 
 		if minBound <= maxBound {
-			fmt.Println(maxBound)
+			fmt.Println(minBound)
 		} else {
-			fmt.Println(-1)
+			fmt.Println(invalidValue)
 		}
 	}
 }
