@@ -3,68 +3,65 @@ package main
 import "fmt"
 
 const (
-	minLimit   = 15
-	maxLimit   = 30
-	errorValue = -1
+	minBase  = 15
+	maxBase  = 30
+	errValue = -1
 )
 
 func main() {
 	var depCount int
-
 	if _, err := fmt.Scan(&depCount); err != nil {
-		fmt.Println(errorValue)
+		fmt.Println(errValue)
 		return
 	}
 
-	for dep := 0; dep < depCount; dep++ {
-		if err := processDepartment(); err != nil {
-			fmt.Println(errorValue)
+	handleAllDepartments(depCount)
+}
+
+func handleAllDepartments(depCount int) {
+	for i := 0; i < depCount; i++ {
+		if err := analyzeDepartment(); err != nil {
+			fmt.Println(errValue)
 			return
 		}
 	}
 }
 
-func processDepartment() error {
+func analyzeDepartment() error {
 	var empCount int
-
 	if _, err := fmt.Scan(&empCount); err != nil {
-		return fmt.Errorf("failed to read employee count: %w", err)
+		return fmt.Errorf("department input error: %w", err)
 	}
 
-	lower, upper := minLimit, maxLimit
-	valid := true
+	minLimit := minBase
+	maxLimit := maxBase
+	isOk := true
 
 	for i := 0; i < empCount; i++ {
-		var op string
-		var temp int
+		var sign string
+		var value int
 
-		if _, err := fmt.Scan(&op, &temp); err != nil {
-			return fmt.Errorf("failed to read input: %w", err)
+		if _, err := fmt.Scan(&sign, &value); err != nil {
+			return fmt.Errorf("temperature read error: %w", err)
 		}
 
-		if !valid {
+		if !isOk {
+			fmt.Println(errValue)
 			continue
 		}
 
-		switch op {
-		case ">=":
-			if temp > lower {
-				lower = temp
-			}
-		case "<=":
-			if temp < upper {
-				upper = temp
-			}
+		if sign == ">=" && value > minLimit {
+			minLimit = value
+		} else if sign == "<=" && value < maxLimit {
+			maxLimit = value
 		}
 
-		if lower > upper {
-			fmt.Println(errorValue)
-			valid = false
+		if minLimit <= maxLimit {
+			fmt.Println(maxLimit)
+		} else {
+			fmt.Println(errValue)
+			isOk = false
 		}
-	}
-
-	if valid {
-		fmt.Println(lower)
 	}
 
 	return nil
