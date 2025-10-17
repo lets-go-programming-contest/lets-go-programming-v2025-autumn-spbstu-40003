@@ -9,7 +9,7 @@ import (
 var (
 	ErrItRat  = errors.New("invalid rating value")
 	ErrSel    = errors.New("invalid k value")
-	ErriCount = errors.New("invalid number of menu items")
+	ErrICount = errors.New("invalid number of menu items")
 )
 
 const (
@@ -54,9 +54,8 @@ func main() {
 	)
 
 	_, scanErr1 := fmt.Scan(&iCount)
-	failedCountCheck := scanErr1 != nil || iCount < minIt || iCount > hRat
-	if failedCountCheck {
-		fmt.Println(ErriCount)
+	if scanErr1 != nil || iCount < minIt || iCount > hRat {
+		fmt.Println(ErrICount)
 
 		return
 	}
@@ -69,8 +68,7 @@ func main() {
 	}
 
 	_, scanErr2 := fmt.Scan(&selection)
-	failedSelectionCheck := scanErr2 != nil || selection < 1 || selection > iCount
-	if failedSelectionCheck {
+	if scanErr2 != nil || selection < 1 || selection > iCount {
 		fmt.Println(ErrSel)
 
 		return
