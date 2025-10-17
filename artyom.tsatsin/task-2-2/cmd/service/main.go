@@ -100,7 +100,7 @@ func getRatings(count, minVal, maxVal int) (*RatingHeap, error) {
 		if err != nil || score < minVal || score > maxVal {
 			return nil, ErrWrongRating
 		}
-		
+
 		heap.Push(data, score)
 	}
 
