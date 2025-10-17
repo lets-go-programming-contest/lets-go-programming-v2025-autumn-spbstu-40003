@@ -27,9 +27,7 @@ func main() {
 
 func execute() error {
 	var departmentNum int
-	_, err := fmt.Scan(&departmentNum)
-	if err != nil {
-
+	if _, err := fmt.Scan(&departmentNum); err != nil {
 		return ErrDepartment
 	}
 
@@ -48,9 +46,7 @@ func execute() error {
 
 func handleDepartment() error {
 	var employeeNumber int
-	_, err := fmt.Scan(&employeeNumber)
-	if err != nil {
-
+	if _, err := fmt.Scan(&employeeNumber); err != nil {
 		return ErrEmployee
 	}
 
