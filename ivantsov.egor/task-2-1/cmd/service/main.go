@@ -63,6 +63,7 @@ func processDepartment(empCount int) {
 			}
 		default:
 			fmt.Println(invalidIndicator)
+
 			isPossible = false
 
 			continue
