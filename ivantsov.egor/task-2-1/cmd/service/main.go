@@ -3,59 +3,74 @@ package main
 import "fmt"
 
 const (
-	minTemp  = 15
-	maxTemp  = 30
-	failCode = -1
+	minTemperature   = 15
+	maxTemperature   = 30
+	invalidIndicator = -1
 )
 
 func main() {
 	var depCount int
-	if _, err := fmt.Scan(&depCount); err != nil {
-		fmt.Println(failCode)
+
+	if _, scanError := fmt.Scan(&depCount); scanError != nil {
+		fmt.Println(invalidIndicator)
+
 		return
 	}
 
-	for i := 0; i < depCount; i++ {
-		if err := evaluateDepartment(); err != nil {
-			fmt.Println(failCode)
+	for range depCount {
+		var empCount int
+		if _, scanError := fmt.Scan(&empCount); scanError != nil {
+			fmt.Println(invalidIndicator)
+
 			return
 		}
+
+		processDepartment(empCount)
 	}
 }
 
-func evaluateDepartment() error {
-	var empCount int
-	if _, err := fmt.Scan(&empCount); err != nil {
-		return fmt.Errorf("cannot read employee count: %w", err)
-	}
+func processDepartment(empCount int) {
+	currentMin := minTemperature
+	currentMax := maxTemperature
+	isPossible := true
 
-	minLimit, maxLimit := minTemp, maxTemp
+	for range empCount {
+		var condition string
+		var desiredTemp int
 
-	for i := 0; i < empCount; i++ {
-		var sign string
-		var t int
+		if _, err := fmt.Scan(&condition, &desiredTemp); err != nil {
+			fmt.Println(invalidIndicator)
 
-		if _, err := fmt.Scan(&sign, &t); err != nil {
-			return fmt.Errorf("cannot read preference: %w", err)
+			return
 		}
 
-		switch sign {
+		if !isPossible {
+			fmt.Println(invalidIndicator)
+
+			continue
+		}
+
+		switch condition {
 		case ">=":
-			if t > minLimit {
-				minLimit = t
+			if desiredTemp > currentMin {
+				currentMin = desiredTemp
 			}
 		case "<=":
-			if t < maxLimit {
-				maxLimit = t
+			if desiredTemp < currentMax {
+				currentMax = desiredTemp
 			}
+		default:
+			fmt.Println(invalidIndicator)
+			isPossible = false
+
+			continue
+		}
+
+		if currentMin <= currentMax {
+			fmt.Println(currentMin)
+		} else {
+			fmt.Println(invalidIndicator)
+			isPossible = false
 		}
 	}
-
-	if minLimit <= maxLimit {
-		fmt.Println(maxLimit)
-	} else {
-		fmt.Println(failCode)
-	}
-
-	return nil
 }
