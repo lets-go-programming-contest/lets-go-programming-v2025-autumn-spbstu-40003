@@ -29,6 +29,7 @@ func execute() error {
 	var departmentNum int
 	_, err := fmt.Scan(&departmentNum)
 	if err != nil {
+
 		return ErrDepartment
 	}
 
@@ -49,6 +50,7 @@ func handleDepartment() error {
 	var employeeNumber int
 	_, err := fmt.Scan(&employeeNumber)
 	if err != nil {
+
 		return ErrEmployee
 	}
 
