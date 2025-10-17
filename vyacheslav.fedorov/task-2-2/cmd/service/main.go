@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	ErrorItRat  = errors.New("invalid rating value")
-	ErrorSel    = errors.New("invalid k value")
-	ErroriCount = errors.New("invalid number of menu items")
+	ErrItRat  = errors.New("invalid rating value")
+	ErrSel    = errors.New("invalid k value")
+	ErriCount = errors.New("invalid number of menu items")
 )
 
 const (
@@ -56,7 +56,7 @@ func main() {
 	_, scanErr1 := fmt.Scan(&iCount)
 	failedCountCheck := scanErr1 != nil || iCount < minIt || iCount > hRat
 	if failedCountCheck {
-		fmt.Println(ErroriCount)
+		fmt.Println(ErriCount)
 
 		return
 	}
@@ -71,16 +71,13 @@ func main() {
 	_, scanErr2 := fmt.Scan(&selection)
 	failedSelectionCheck := scanErr2 != nil || selection < 1 || selection > iCount
 	if failedSelectionCheck {
-		fmt.Println(ErrorSel)
+		fmt.Println(ErrSel)
 
 		return
 	}
 
 	remaining := selection
-	for {
-		if remaining <= 0 {
-			break
-		}
+	for remaining > 0 {
 		result, Tr := heap.Pop(mData).(int)
 		if !Tr {
 			fmt.Println(-1)
@@ -99,12 +96,12 @@ func collectScores(count, minB, maxB int) (*Score, error) {
 	data := &Score{}
 	heap.Init(data)
 
-	for i := 0; i < count; i++ {
+	for range count {
 		var score int
 		_, scanErr := fmt.Scan(&score)
 
 		if scanErr != nil || score < minB || score > maxB {
-			return nil, ErrorItRat
+			return nil, ErrItRat
 		}
 
 		heap.Push(data, score)
