@@ -70,6 +70,7 @@ func main() {
 	_, err = fmt.Scan(&kSelect)
 	if err != nil || kSelect < 1 || kSelect > dishCount {
 		fmt.Println(ErrWrongChoice)
+
 		return
 	}
 
@@ -77,6 +78,7 @@ func main() {
 		result, ok := heap.Pop(menuHeap).(int)
 		if !ok {
 			fmt.Println(-1)
+
 			return
 		}
 
