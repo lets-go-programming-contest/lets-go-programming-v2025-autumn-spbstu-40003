@@ -3,65 +3,58 @@ package main
 import "fmt"
 
 const (
-	minBase  = 15
-	maxBase  = 30
-	errValue = -1
+	minTemp  = 15
+	maxTemp  = 30
+	failCode = -1
 )
 
 func main() {
 	var depCount int
 	if _, err := fmt.Scan(&depCount); err != nil {
-		fmt.Println(errValue)
+		fmt.Println(failCode)
 		return
 	}
 
-	handleAllDepartments(depCount)
-}
-
-func handleAllDepartments(depCount int) {
 	for i := 0; i < depCount; i++ {
-		if err := analyzeDepartment(); err != nil {
-			fmt.Println(errValue)
+		if err := evaluateDepartment(); err != nil {
+			fmt.Println(failCode)
 			return
 		}
 	}
 }
 
-func analyzeDepartment() error {
+func evaluateDepartment() error {
 	var empCount int
 	if _, err := fmt.Scan(&empCount); err != nil {
-		return fmt.Errorf("department input error: %w", err)
+		return fmt.Errorf("cannot read employee count: %w", err)
 	}
 
-	minLimit := minBase
-	maxLimit := maxBase
-	isOk := true
+	minLimit, maxLimit := minTemp, maxTemp
 
 	for i := 0; i < empCount; i++ {
 		var sign string
-		var value int
+		var t int
 
-		if _, err := fmt.Scan(&sign, &value); err != nil {
-			return fmt.Errorf("temperature read error: %w", err)
+		if _, err := fmt.Scan(&sign, &t); err != nil {
+			return fmt.Errorf("cannot read preference: %w", err)
 		}
 
-		if !isOk {
-			fmt.Println(errValue)
-			continue
+		switch sign {
+		case ">=":
+			if t > minLimit {
+				minLimit = t
+			}
+		case "<=":
+			if t < maxLimit {
+				maxLimit = t
+			}
 		}
+	}
 
-		if sign == ">=" && value > minLimit {
-			minLimit = value
-		} else if sign == "<=" && value < maxLimit {
-			maxLimit = value
-		}
-
-		if minLimit <= maxLimit {
-			fmt.Println(maxLimit)
-		} else {
-			fmt.Println(errValue)
-			isOk = false
-		}
+	if minLimit <= maxLimit {
+		fmt.Println(maxLimit)
+	} else {
+		fmt.Println(failCode)
 	}
 
 	return nil
