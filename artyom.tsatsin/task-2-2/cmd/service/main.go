@@ -43,6 +43,7 @@ func (h *RatingHeap) Pop() interface{} {
 	n := len(current)
 	elem := current[n-1]
 	*h = current[:n-1]
+
 	return elem
 }
 
@@ -55,12 +56,14 @@ func main() {
 	_, err := fmt.Scan(&dishCount)
 	if err != nil || dishCount < minItems || dishCount > maxRating {
 		fmt.Println(ErrWrongCount)
+
 		return
 	}
 
 	menuHeap, err := getRatings(dishCount, minRating, maxRating)
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -91,9 +94,11 @@ func getRatings(count, minVal, maxVal int) (*RatingHeap, error) {
 	for range make([]struct{}, count) {
 		var score int
 		_, err := fmt.Scan(&score)
+
 		if err != nil || score < minVal || score > maxVal {
 			return nil, ErrWrongRating
 		}
+		
 		heap.Push(data, score)
 	}
 
