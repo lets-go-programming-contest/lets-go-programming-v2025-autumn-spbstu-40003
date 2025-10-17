@@ -19,6 +19,7 @@ func main() {
 
 	for range depCount {
 		var empCount int
+
 		if _, scanError := fmt.Scan(&empCount); scanError != nil {
 			fmt.Println(invalidIndicator)
 
@@ -36,6 +37,7 @@ func processDepartment(empCount int) {
 
 	for range empCount {
 		var condition string
+
 		var desiredTemp int
 
 		if _, err := fmt.Scan(&condition, &desiredTemp); err != nil {
@@ -70,6 +72,7 @@ func processDepartment(empCount int) {
 			fmt.Println(currentMin)
 		} else {
 			fmt.Println(invalidIndicator)
+
 			isPossible = false
 		}
 	}
