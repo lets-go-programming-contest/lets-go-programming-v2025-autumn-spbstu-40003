@@ -26,12 +26,12 @@ func main() {
 }
 
 func execute() error {
-	var departmentNum int
-	if _, err := fmt.Scan(&departmentNum); err != nil {
+	var departNum int
+	if _, err := fmt.Scan(&departNum); err != nil {
 		return ErrDepartment
 	}
 
-	departments := createSlice(departmentNum)
+	departments := createSlice(departNum)
 	for range departments {
 		err := handleDepartment()
 		if err != nil {
