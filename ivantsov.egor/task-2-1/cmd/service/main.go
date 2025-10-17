@@ -1,55 +1,71 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
 const (
-	minTemp      = 15
-	maxTemp      = 30
-	invalidValue = -1
+	minLimit   = 15
+	maxLimit   = 30
+	errorValue = -1
 )
 
 func main() {
-	var departments int
-	if _, err := fmt.Scan(&departments); err != nil {
-		fmt.Println(invalidValue)
+	var depCount int
+
+	if _, err := fmt.Scan(&depCount); err != nil {
+		fmt.Println(errorValue)
 		return
 	}
 
-	for d := 0; d < departments; d++ {
-		var employees int
-		if _, err := fmt.Scan(&employees); err != nil {
-			fmt.Println(invalidValue)
+	for dep := 0; dep < depCount; dep++ {
+		if err := processDepartment(); err != nil {
+			fmt.Println(errorValue)
 			return
 		}
+	}
+}
 
-		minBound, maxBound := minTemp, maxTemp
+func processDepartment() error {
+	var empCount int
 
-		for e := 0; e < employees; e++ {
-			var sign string
-			var temp int
-			if _, err := fmt.Scan(&sign, &temp); err != nil {
-				fmt.Println(invalidValue)
-				return
+	if _, err := fmt.Scan(&empCount); err != nil {
+		return fmt.Errorf("failed to read employee count: %w", err)
+	}
+
+	lower, upper := minLimit, maxLimit
+	valid := true
+
+	for i := 0; i < empCount; i++ {
+		var op string
+		var temp int
+
+		if _, err := fmt.Scan(&op, &temp); err != nil {
+			return fmt.Errorf("failed to read input: %w", err)
+		}
+
+		if !valid {
+			continue
+		}
+
+		switch op {
+		case ">=":
+			if temp > lower {
+				lower = temp
 			}
-
-			switch sign {
-			case ">=":
-				if temp > minBound {
-					minBound = temp
-				}
-			case "<=":
-				if temp < maxBound {
-					maxBound = temp
-				}
+		case "<=":
+			if temp < upper {
+				upper = temp
 			}
 		}
 
-		if minBound <= maxBound {
-			fmt.Println(minBound)
-		} else {
-			fmt.Println(invalidValue)
+		if lower > upper {
+			fmt.Println(errorValue)
+			valid = false
 		}
 	}
+
+	if valid {
+		fmt.Println(lower)
+	}
+
+	return nil
 }
