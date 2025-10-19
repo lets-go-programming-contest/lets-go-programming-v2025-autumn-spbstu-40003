@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/Vurvaa/task-3/internal/config"
 	"github.com/Vurvaa/task-3/internal/currency"
-	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -24,22 +24,15 @@ func main() {
 	flag.Parse()
 
 	if configFile == "" {
-		panic("missing required -config path")
+		panic("missing required -cfg path")
 	}
 
-	data, err := os.ReadFile(configFile)
+	cfg, err := config.ParseConfig(configFile)
 	if err != nil {
 		panic(err)
 	}
 
-	var config currency.Config
-
-	err = yaml.Unmarshal(data, &config)
-	if err != nil {
-		panic(err)
-	}
-
-	valCurs, err := currency.ReadValCurs(config.InputFile)
+	valCurs, err := currency.ReadValCurs(cfg.InputFile)
 	if err != nil {
 		panic(err)
 	}
@@ -51,14 +44,14 @@ func main() {
 		panic(err)
 	}
 
-	err = os.MkdirAll(filepath.Dir(config.OutputFile), dirPerm)
+	err = os.MkdirAll(filepath.Dir(cfg.OutputFile), dirPerm)
 	if err != nil {
-		panic(fmt.Errorf("make parent dirs %q: %w", config.OutputFile, err))
+		panic(fmt.Errorf("make parent dirs %q: %w", cfg.OutputFile, err))
 	}
 
-	fileJSON, err := os.OpenFile(config.OutputFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
+	fileJSON, err := os.OpenFile(cfg.OutputFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
 	if err != nil {
-		panic(fmt.Errorf("open output file %q: %w", config.OutputFile, err))
+		panic(fmt.Errorf("open output file %q: %w", cfg.OutputFile, err))
 	}
 
 	_, err = fileJSON.Write(valutsJSON)
