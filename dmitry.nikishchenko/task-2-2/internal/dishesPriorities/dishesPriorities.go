@@ -47,7 +47,7 @@ func PickBestDish() error {
 	)
 
 	if _, err := fmt.Scan(&numberOfDishes); err != nil {
-		return fmt.Errorf("%w: %v", errDishes, err)
+		return errors.Join(errDishes, err)
 	}
 
 	priorityHeap := &DishesHeap{}
@@ -55,14 +55,14 @@ func PickBestDish() error {
 
 	for range numberOfDishes {
 		if _, err := fmt.Scan(&val); err != nil {
-			return fmt.Errorf("%w: %v", errPriorities, err)
+			return errors.Join(errPriorities, err)
 		}
 
 		heap.Push(priorityHeap, val)
 	}
 
 	if _, err := fmt.Scan(&priorityNum); err != nil {
-		return fmt.Errorf("%w: %v", errPriorityNum, err)
+		return errors.Join(errPriorityNum, err)
 	}
 
 	if priorityNum > priorityHeap.Len() || priorityNum < 1 {
