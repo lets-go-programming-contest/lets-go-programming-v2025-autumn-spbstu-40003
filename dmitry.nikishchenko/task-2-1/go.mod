@@ -1,0 +1,3 @@
+module github.com/d1mene/task-2-1
+
+go 1.22.7
