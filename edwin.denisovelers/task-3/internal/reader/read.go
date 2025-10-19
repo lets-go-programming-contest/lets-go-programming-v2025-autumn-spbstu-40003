@@ -1,4 +1,4 @@
-package utils
+package reader
 
 import (
 	"encoding/xml"
@@ -8,20 +8,10 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
-type Valute struct {
-	NumCode  int    `xml:"NumCode"`
-	CharCode string `xml:"CharCode"`
-	Value    string `xml:"Value"`
-}
-
-type Exchange struct {
-	Valutes []Valute `xml:"Valute"`
-}
-
 func Read(path string) (*Exchange, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("open input file: %w", err)
+		return nil, fmt.Errorf("failed to open input file: %w", err)
 	}
 
 	defer func() {
@@ -35,7 +25,7 @@ func Read(path string) (*Exchange, error) {
 
 	var exchange Exchange
 	if err := decoder.Decode(&exchange); err != nil {
-		return nil, fmt.Errorf("decode input file: %w", err)
+		return nil, fmt.Errorf("failed to decode input file: %w", err)
 	}
 
 	return &exchange, nil
