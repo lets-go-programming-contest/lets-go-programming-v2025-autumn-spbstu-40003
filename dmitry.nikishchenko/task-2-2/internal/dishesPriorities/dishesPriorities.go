@@ -11,6 +11,7 @@ var (
 	errPriorities  = errors.New("failed to read the priorities")
 	errPriorityNum = errors.New("failed to read priority num")
 	errFormat      = errors.New("failed to convert heap element to int")
+	errHeapRange   = errors.New("priority num out of range")
 )
 
 type DishesHeap []int
@@ -46,7 +47,7 @@ func PickBestDish() error {
 	)
 
 	if _, err := fmt.Scan(&numberOfDishes); err != nil {
-		return errDishes
+		return fmt.Errorf("%w: %v", errDishes, err)
 	}
 
 	priorityHeap := &DishesHeap{}
@@ -54,16 +55,18 @@ func PickBestDish() error {
 
 	for range numberOfDishes {
 		if _, err := fmt.Scan(&val); err != nil {
-			return errPriorities
+			return fmt.Errorf("%w: %v", errPriorities, err)
 		}
 
 		heap.Push(priorityHeap, val)
 	}
 
-	_, err := fmt.Scan(&priorityNum)
+	if _, err := fmt.Scan(&priorityNum); err != nil {
+		return fmt.Errorf("%w: %v", errPriorityNum, err)
+	}
 
-	if err != nil || priorityNum > priorityHeap.Len() || priorityNum < 1 {
-		return errPriorityNum
+	if priorityNum > priorityHeap.Len() || priorityNum < 1 {
+		return errHeapRange
 	}
 
 	for range priorityNum {

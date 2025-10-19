@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	dishesPriorities "github.com/d1mene/task-2-2/internal"
+	dishesPriorities "github.com/d1mene/task-2-2/internal/dishesPriorities"
 )
 
 func main() {
