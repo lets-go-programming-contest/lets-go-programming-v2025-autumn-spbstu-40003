@@ -8,9 +8,7 @@ import (
 	"path/filepath"
 )
 
-var (
-	ErrNoDataToSave = errors.New("no data to save")
-)
+var ErrNoDataToSave = errors.New("no data to save")
 
 const dirPerm = 0o755
 
@@ -28,10 +26,8 @@ func SaveJSON(path string, data interface{}) error {
 	if err != nil {
 		return fmt.Errorf("create output file: %w", err)
 	}
-	defer func() {
-		if cerr := file.Close(); cerr != nil {
-		}
-	}()
+
+	defer file.Close()
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")

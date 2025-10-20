@@ -52,10 +52,8 @@ func ParseXML(path string) ([]ExchangeTrade, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open XML file: %w", err)
 	}
-	defer func() {
-		if cerr := file.Close(); cerr != nil {
-		}
-	}()
+
+	defer file.Close()
 
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel

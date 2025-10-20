@@ -23,10 +23,8 @@ func LoadConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open config file: %w", err)
 	}
-	defer func() {
-		if cerr := file.Close(); cerr != nil {
-		}
-	}()
+
+	defer file.Close()
 
 	var config Config
 	if err := yaml.NewDecoder(file).Decode(&config); err != nil {
