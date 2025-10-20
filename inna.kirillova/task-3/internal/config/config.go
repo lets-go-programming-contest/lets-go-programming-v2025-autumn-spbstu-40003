@@ -1,10 +1,16 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
+)
+
+var (
+	ErrInputFileNotSet  = errors.New("input-file must be set")
+	ErrOutputFileNotSet = errors.New("output-file must be set")
 )
 
 type Config struct {
@@ -15,21 +21,24 @@ type Config struct {
 func LoadConfig(path string) (*Config, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open config file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+		}
+	}()
 
 	var config Config
 	if err := yaml.NewDecoder(file).Decode(&config); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("decode config file: %w", err)
 	}
 
 	if config.InputFile == "" {
-		return nil, fmt.Errorf("input-file must be set")
+		return nil, ErrInputFileNotSet
 	}
 
 	if config.OutputFile == "" {
-		return nil, fmt.Errorf("output-file must be set")
+		return nil, ErrOutputFileNotSet
 	}
 
 	return &config, nil

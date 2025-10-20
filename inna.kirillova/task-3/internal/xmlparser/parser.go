@@ -2,6 +2,7 @@ package xmlparser
 
 import (
 	"encoding/xml"
+	"fmt"
 	"os"
 	"sort"
 	"strconv"
@@ -11,12 +12,12 @@ import (
 )
 
 type ExchangeTrade struct {
-	NumCode  int     `json:"num_code" xml:"NumCode"`
+	NumCode  int     `json:"num_code"  xml:"NumCode"`
 	CharCode string  `json:"char_code" xml:"CharCode"`
-	Value    float64 `json:"value" xml:"Value"`
+	Value    float64 `json:"value"     xml:"Value"`
 }
 
-func (e *ExchangeTrade) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+func (e *ExchangeTrade) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error {
 	type exchangeTradeXML struct {
 		NumCode  string `xml:"NumCode"`
 		CharCode string `xml:"CharCode"`
@@ -24,8 +25,8 @@ func (e *ExchangeTrade) UnmarshalXML(d *xml.Decoder, start xml.StartElement) err
 	}
 
 	var xmlData exchangeTradeXML
-	if err := d.DecodeElement(&xmlData, &start); err != nil {
-		return err
+	if err := decoder.DecodeElement(&xmlData, &start); err != nil {
+		return fmt.Errorf("decode XML element: %w", err)
 	}
 
 	if strings.TrimSpace(xmlData.NumCode) != "" {
@@ -49,16 +50,19 @@ type ExchangeData struct {
 func ParseXML(path string) ([]ExchangeTrade, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open XML file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+		}
+	}()
 
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
 
 	var data ExchangeData
 	if err := decoder.Decode(&data); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parse XML: %w", err)
 	}
 
 	sort.Slice(data.Trades, func(i, j int) bool {
