@@ -2,7 +2,6 @@ package xmlparser
 
 import (
 	"encoding/xml"
-	"fmt"
 	"os"
 	"sort"
 	"strconv"
@@ -50,7 +49,7 @@ type ExchangeData struct {
 func ParseXML(path string) ([]ExchangeTrade, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("open XML file: %w", err)
+		return nil, err
 	}
 	defer file.Close()
 
@@ -59,7 +58,7 @@ func ParseXML(path string) ([]ExchangeTrade, error) {
 
 	var data ExchangeData
 	if err := decoder.Decode(&data); err != nil {
-		return nil, fmt.Errorf("parse XML: %w", err)
+		return nil, err
 	}
 
 	sort.Slice(data.Trades, func(i, j int) bool {
