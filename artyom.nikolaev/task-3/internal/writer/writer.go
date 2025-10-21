@@ -1,4 +1,4 @@
-package utils
+package writer
 
 import (
 	"encoding/json"

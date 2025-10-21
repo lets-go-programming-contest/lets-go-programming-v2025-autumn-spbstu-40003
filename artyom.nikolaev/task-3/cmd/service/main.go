@@ -6,7 +6,7 @@ import (
 
 	"github.com/ArtttNik/task-3/internal/config"
 	"github.com/ArtttNik/task-3/internal/parser"
-	"github.com/ArtttNik/task-3/internal/utils"
+	"github.com/ArtttNik/task-3/internal/writer"
 )
 
 func main() {
@@ -23,7 +23,7 @@ func main() {
 		panic(err)
 	}
 
-	err = utils.WriteJSONToFile(cfg.OutputFile, currencies)
+	err = writer.WriteJSONToFile(cfg.OutputFile, currencies)
 	if err != nil {
 		panic(fmt.Errorf("unable to write output JSON: %w", err))
 	}
