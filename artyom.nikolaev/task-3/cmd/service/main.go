@@ -18,7 +18,7 @@ func main() {
 		panic(err)
 	}
 
-	currencies, err := parser.ParseCBR(cfg.InputFile)
+	currencies, err := parser.ParseFile(cfg.InputFile)
 	if err != nil {
 		panic(err)
 	}

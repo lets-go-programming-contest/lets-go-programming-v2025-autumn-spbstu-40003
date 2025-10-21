@@ -2,7 +2,9 @@ package parser
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"sort"
 	"strconv"
@@ -12,39 +14,114 @@ import (
 )
 
 type Currency struct {
-	NumCode  int     `json:"num_code"`
-	CharCode string  `json:"char_code"`
-	Value    float64 `json:"value"`
+	NumCode  int     `json:"num_code"  xml:"NumCode"`
+	CharCode string  `json:"char_code" xml:"CharCode"`
+	Value    float64 `json:"value"     xml:"Value"`
 }
 
-type valCurs struct {
-	Valutes []valute `xml:"Valute"`
-}
+func (currency *Currency) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error {
+	for {
+		token, err := decoder.Token()
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
 
-type valute struct {
-	NumCode  string `xml:"NumCode"`
-	CharCode string `xml:"CharCode"`
-	Nominal  string `xml:"Nominal"`
-	Value    string `xml:"Value"`
-}
+			return fmt.Errorf("decode token error: %w", err)
+		}
 
-func ParseCBR(path string) ([]Currency, error) {
-	currencies, err := ParseFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse file: %w", err)
+		switch elem := token.(type) {
+		case xml.StartElement:
+			err := currency.processElement(decoder, elem)
+			if err != nil {
+				return err
+			}
+		case xml.EndElement:
+			if elem.Name.Local == start.Name.Local {
+				return nil
+			}
+		}
 	}
 
-	return currencies, nil
+	return nil
+}
+
+func (currency *Currency) processElement(decoder *xml.Decoder, elem xml.StartElement) error {
+	switch elem.Name.Local {
+	case "NumCode":
+		return currency.decodeNumCode(decoder, elem)
+	case "CharCode":
+		return currency.decodeCharCode(decoder, elem)
+	case "Value":
+		return currency.decodeValue(decoder, elem)
+	}
+
+	return nil
+}
+
+func (currency *Currency) decodeNumCode(decoder *xml.Decoder, elem xml.StartElement) error {
+	var codeValue string
+
+	err := decoder.DecodeElement(&codeValue, &elem)
+	if err != nil {
+		return fmt.Errorf("failed to decode element: %w", err)
+	}
+
+	codeValue = strings.TrimSpace(codeValue)
+	if codeValue == "" {
+		return nil
+	}
+
+	parsedCode, err := strconv.Atoi(codeValue)
+	if err != nil {
+		return fmt.Errorf("invalid NumCode: %w", err)
+	}
+
+	currency.NumCode = parsedCode
+
+	return nil
+}
+
+func (currency *Currency) decodeCharCode(decoder *xml.Decoder, element xml.StartElement) error {
+	var charCodeValue string
+
+	err := decoder.DecodeElement(&charCodeValue, &element)
+	if err != nil {
+		return fmt.Errorf("failed to decode element: %w", err)
+	}
+
+	currency.CharCode = strings.TrimSpace(charCodeValue)
+
+	return nil
+}
+
+func (currency *Currency) decodeValue(decoder *xml.Decoder, element xml.StartElement) error {
+	var valueString string
+
+	err := decoder.DecodeElement(&valueString, &element)
+	if err != nil {
+		return fmt.Errorf("failed to decode element: %w", err)
+	}
+
+	valueString = strings.ReplaceAll(strings.TrimSpace(valueString), ",", ".")
+	if valueString == "" {
+		return nil
+	}
+
+	parsedValue, err := strconv.ParseFloat(valueString, 64)
+	if err != nil {
+		return fmt.Errorf("invalid Value: %w", err)
+	}
+
+	currency.Value = parsedValue
+
+	return nil
 }
 
 func ParseFile(path string) ([]Currency, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("no such file or directory: %w", err)
-		}
-
-		return nil, fmt.Errorf("failed to open file: %w", err)
+		return nil, fmt.Errorf("no such file or directory: %w", err)
 	}
 
 	defer func() {
@@ -56,71 +133,36 @@ func ParseFile(path string) ([]Currency, error) {
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
 
-	var curs valCurs
+	var currencies []Currency
 
-	err = decoder.Decode(&curs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode XML: %w", err)
+	for {
+		token, err := decoder.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+
+			return nil, fmt.Errorf("failed to read token: %w", err)
+		}
+
+		startElem, ok := token.(xml.StartElement)
+		if !ok || startElem.Name.Local != "Valute" {
+			continue
+		}
+
+		var currency Currency
+
+		err = decoder.DecodeElement(&currency, &startElem)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode currency: %w", err)
+		}
+
+		currencies = append(currencies, currency)
 	}
 
-	currencies := convertToModel(curs.Valutes)
-	sortCurrencies(currencies)
-
-	return currencies, nil
-}
-
-func convertToModel(valutes []valute) []Currency {
-	result := make([]Currency, len(valutes))
-	for i, val := range valutes {
-		result[i] = convertSingle(val)
-	}
-
-	return result
-}
-
-func convertSingle(valute valute) Currency {
-	numCode, err := parseInt(strings.TrimSpace(valute.NumCode))
-	if err != nil {
-		numCode = 0
-	}
-
-	charCode := strings.TrimSpace(valute.CharCode)
-
-	value, err := parseValue(valute.Value)
-	if err != nil {
-		value = 0
-	}
-
-	return Currency{
-		NumCode:  numCode,
-		CharCode: charCode,
-		Value:    value,
-	}
-}
-
-func parseInt(s string) (int, error) {
-	value, err := strconv.Atoi(strings.TrimSpace(s))
-	if err != nil {
-		return 0, fmt.Errorf("failed to convert to int: %w", err)
-	}
-
-	return value, nil
-}
-
-func parseValue(s string) (float64, error) {
-	s = strings.TrimSpace(s)
-	s = strings.ReplaceAll(s, ",", ".")
-
-	value, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return 0, fmt.Errorf("parse float: %w", err)
-	}
-
-	return value, nil
-}
-
-func sortCurrencies(currencies []Currency) {
 	sort.Slice(currencies, func(i, j int) bool {
 		return currencies[i].Value > currencies[j].Value
 	})
+
+	return currencies, nil
 }

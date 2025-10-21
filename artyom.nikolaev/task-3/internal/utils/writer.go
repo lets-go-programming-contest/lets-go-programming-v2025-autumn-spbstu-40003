@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
+	"path/filepath"
 
 	"github.com/ArtttNik/task-3/internal/parser"
 )
@@ -12,14 +12,9 @@ import (
 func WriteJSONToFile(path string, data []parser.Currency) error {
 	const permissions = 0o755
 
-	lastSlash := strings.LastIndex(path, "/")
-	if lastSlash != -1 {
-		dir := path[:lastSlash]
-
-		err := os.MkdirAll(dir, permissions)
-		if err != nil {
-			return fmt.Errorf("failed to create directory: %w", err)
-		}
+	err := os.MkdirAll(filepath.Dir(path), permissions)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	file, err := os.Create(path)
@@ -28,7 +23,8 @@ func WriteJSONToFile(path string, data []parser.Currency) error {
 	}
 
 	defer func() {
-		if err := file.Close(); err != nil {
+		err := file.Close()
+		if err != nil {
 			panic(fmt.Errorf("failed to close file: %w", err))
 		}
 	}()
