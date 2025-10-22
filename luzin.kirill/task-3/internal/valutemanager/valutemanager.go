@@ -7,9 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"golang.org/x/net/html/charset"
-
 	"github.com/KiRy6A/task-3/internal/data"
+	"golang.org/x/net/html/charset"
 )
 
 const (
@@ -42,7 +41,7 @@ func Read(path string) (data.Valutes, error) {
 }
 
 func Write(path string, valutes data.Valutes) error {
-	data, err := json.Marshal(valutes.AllValutes)
+	data, err := json.MarshalIndent(valutes.AllValutes, "", "\t")
 	if err != nil {
 		return fmt.Errorf("failed serialization data: %w", err)
 	}

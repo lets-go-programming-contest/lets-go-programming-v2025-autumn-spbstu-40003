@@ -3,6 +3,7 @@ package data
 import (
 	"encoding/xml"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -10,13 +11,21 @@ import (
 type DotFloat float64
 
 type Valute struct {
-	NumCode  int      `json:"num_code" xml:"NumCode"`
+	NumCode  int      `json:"num_code"  xml:"NumCode"`
 	CharCode string   `json:"char_code" xml:"CharCode"`
-	Value    DotFloat `json:"value" xml:"Value"`
+	Value    DotFloat `json:"value"     xml:"Value"`
 }
 
 type Valutes struct {
 	AllValutes []Valute `xml:"Valute"`
+}
+
+func Sort(valutes []Valute) []Valute {
+	sort.Slice(valutes, func(i, j int) bool {
+		return valutes[i].Value > valutes[j].Value
+	})
+
+	return valutes
 }
 
 func (dotFloat *DotFloat) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error {
