@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 
 	"golang.org/x/net/html/charset"
+
+	"github.com/KiRy6A/task-3/internal/data"
 )
 
 const (
@@ -15,18 +17,8 @@ const (
 	directoryPermission = 0o755
 )
 
-type Valute struct {
-	NumCode  int     `xml:"NumCode" json:"num_code"`
-	CharCode string  `xml:"CharCode" json:"char_code"`
-	Value    float64 `xml:"Value" json:"value"`
-}
-
-type Valutes struct {
-	AllValutes []Valute `xml:"Valute"`
-}
-
-func Read(path string) (Valutes, error) {
-	var valutesData Valutes
+func Read(path string) (data.Valutes, error) {
+	var valutesData data.Valutes
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -38,16 +30,18 @@ func Read(path string) (Valutes, error) {
 
 	err = decoder.Decode(&valutesData)
 	if err != nil {
-		file.Close()
 		return valutesData, fmt.Errorf("failed decoding data: %w", err)
 	}
 
-	file.Close()
+	err = file.Close()
+	if err != nil {
+		return valutesData, fmt.Errorf("failed closing file: %w", err)
+	}
 
 	return valutesData, nil
 }
 
-func Write(path string, valutes Valutes) error {
+func Write(path string, valutes data.Valutes) error {
 	data, err := json.Marshal(valutes.AllValutes)
 	if err != nil {
 		return fmt.Errorf("failed serialization data: %w", err)

@@ -1,12 +1,15 @@
 package configreader
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v2"
 )
+
+var errEmptyFlag = errors.New("config flag is empty")
 
 type Config struct {
 	Input  string `yaml:"input-file"`
@@ -20,7 +23,7 @@ func Parse() (Config, error) {
 	flag.Parse()
 
 	if *configPath == "" {
-		return config, fmt.Errorf("config flag is empty")
+		return config, errEmptyFlag
 	}
 
 	data, err := os.ReadFile(*configPath)
