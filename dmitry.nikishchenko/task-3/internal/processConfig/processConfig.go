@@ -1,12 +1,18 @@
 package processconfig
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 
 	"gopkg.in/yaml.v3"
+)
+
+var (
+	errInput  = errors.New("invalid config: missing input-file")
+	errOutput = errors.New("invalid config: missing output-file")
 )
 
 type Config struct {
@@ -40,11 +46,11 @@ func LoadConfig() (*Config, error) {
 	}
 
 	if cfg.InputFile == "" {
-		return nil, fmt.Errorf("invalid config: missing input-file")
+		return nil, errInput
 	}
 
 	if cfg.OutputFile == "" {
-		return nil, fmt.Errorf("invalid config: missing output-file")
+		return nil, errOutput
 	}
 
 	return &cfg, nil
