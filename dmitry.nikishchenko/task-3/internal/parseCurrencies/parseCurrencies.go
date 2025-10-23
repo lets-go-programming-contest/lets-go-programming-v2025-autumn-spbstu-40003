@@ -18,9 +18,12 @@ func (f *FloatComma) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error 
 	if err := d.DecodeElement(&s, &start); err != nil {
 		return err
 	}
+	if s == "" {
+		*f = 0.0
+		return nil
+	}
 
 	s = strings.ReplaceAll(s, ",", ".")
-
 	v, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return err
