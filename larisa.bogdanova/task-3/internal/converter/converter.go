@@ -19,9 +19,14 @@ func ReadCurrencies(filename string) ([]models.Currency, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open XML file: %w", err)
 	}
-	defer file.Close()
+
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+		}
+	}()
 
 	var data models.ValCurs
+
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
 
@@ -38,6 +43,7 @@ func ReadCurrencies(filename string) ([]models.Currency, error) {
 
 func WriteCurrencies(currencies []models.Currency, filename string) error {
 	dir := filepath.Dir(filename)
+
 	if err := os.MkdirAll(dir, dirPerm); err != nil {
 		return fmt.Errorf("create output directory: %w", err)
 	}
@@ -46,10 +52,15 @@ func WriteCurrencies(currencies []models.Currency, filename string) error {
 	if err != nil {
 		return fmt.Errorf("create output file: %w", err)
 	}
-	defer file.Close()
+
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+		}
+	}()
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
+
 	if err := encoder.Encode(currencies); err != nil {
 		return fmt.Errorf("encode JSON: %w", err)
 	}

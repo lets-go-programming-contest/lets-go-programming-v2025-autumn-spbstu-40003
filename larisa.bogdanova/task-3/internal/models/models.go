@@ -8,9 +8,9 @@ import (
 )
 
 type Currency struct {
-	NumCode  int     `json:"num_code" xml:"NumCode"`
+	NumCode  int     `json:"num_code"  xml:"NumCode"`
 	CharCode string  `json:"char_code" xml:"CharCode"`
-	Value    float64 `json:"value" xml:"Value"`
+	Value    float64 `json:"value"     xml:"Value"`
 }
 
 type ValCurs struct {
@@ -25,15 +25,16 @@ func (c *Currency) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) er
 		Value    string `xml:"Value"`
 	}
 
-	var t temp
-	if err := decoder.DecodeElement(&t, &start); err != nil {
+	var tempData temp
+
+	if err := decoder.DecodeElement(&tempData, &start); err != nil {
 		return fmt.Errorf("decode XML element: %w", err)
 	}
 
-	c.NumCode, _ = strconv.Atoi(strings.TrimSpace(t.NumCode))
-	c.CharCode = strings.TrimSpace(t.CharCode)
+	c.NumCode, _ = strconv.Atoi(strings.TrimSpace(tempData.NumCode))
+	c.CharCode = strings.TrimSpace(tempData.CharCode)
 
-	cleanValue := strings.Replace(t.Value, ",", ".", 1)
+	cleanValue := strings.Replace(tempData.Value, ",", ".", 1)
 	c.Value, _ = strconv.ParseFloat(cleanValue, 64)
 
 	return nil
