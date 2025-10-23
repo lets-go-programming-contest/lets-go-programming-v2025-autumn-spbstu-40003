@@ -16,7 +16,7 @@ type FloatComma float64
 func (floatField *FloatComma) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	var inputField string
 	if err := d.DecodeElement(&inputField, &start); err != nil {
-		return err
+		return fmt.Errorf("failed to decode element: %w", err)
 	}
 	if inputField == "" {
 		*floatField = 0.0
@@ -42,13 +42,13 @@ type ValCurs struct {
 }
 
 type Valute struct {
-	ID        string     `xml:"ID,attr" json:"id"`
-	NumCode   int        `xml:"NumCode" json:"num_code"`
-	CharCode  string     `xml:"CharCode" json:"char_code"`
-	Nominal   int        `xml:"Nominal" json:"nominal"`
-	Name      string     `xml:"Name" json:"name"`
-	Value     FloatComma `xml:"Value" json:"value"`
-	VunitRate FloatComma `xml:"VunitRate" json:"vunit_rate"`
+	ID        string     `json:"id"         xml:"ID,attr"`
+	NumCode   int        `json:"num_code"   xml:"NumCode"`
+	CharCode  string     `json:"char_code"  xml:"CharCode"`
+	Nominal   int        `json:"nominal"    xml:"Nominal"`
+	Name      string     `json:"name"		xml:"Name"`
+	Value     FloatComma `json:"value"		xml:"Value"`
+	VunitRate FloatComma `json:"vunit_rate"	xml:"VunitRate"`
 }
 
 func LoadCurrencies(path string) ([]Valute, error) {
@@ -56,7 +56,9 @@ func LoadCurrencies(path string) ([]Valute, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot open file: %w", err)
 	}
-	defer file.Close()
+	if err := file.Close(); err != nil {
+		return nil, fmt.Errorf("cannot close file: %w", err)
+	}
 
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel

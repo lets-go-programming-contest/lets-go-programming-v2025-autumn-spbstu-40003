@@ -13,13 +13,15 @@ func SaveCurrencies(path string, data interface{}) error {
 		return fmt.Errorf("cannot create directories: %w", err)
 	}
 
-	f, err := os.Create(path)
+	file, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("cannot create file: %w", err)
 	}
-	defer f.Close()
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("cannot close file: %w", err)
+	}
 
-	enc := json.NewEncoder(f)
+	enc := json.NewEncoder(file)
 	enc.SetIndent("", "    ")
 	if err := enc.Encode(data); err != nil {
 		return fmt.Errorf("cannot encode file properly: %w", err)

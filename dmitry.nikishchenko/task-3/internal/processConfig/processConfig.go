@@ -1,4 +1,4 @@
-package processConfig
+package processconfig
 
 import (
 	"flag"
@@ -18,13 +18,15 @@ func LoadConfig() (*Config, error) {
 	configPath := flag.String("config", "config.yaml", "path to .yaml config file")
 	flag.Parse()
 
-	f, err := os.Open(*configPath)
+	file, err := os.Open(*configPath)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open config file: %w", err)
 	}
-	defer f.Close()
+	if err := file.Close(); err != nil {
+		return nil, fmt.Errorf("cannot close file: %w", err)
+	}
 
-	data, err := io.ReadAll(f)
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return nil, fmt.Errorf("cannot raed config file: %w", err)
 	}
@@ -34,8 +36,11 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("cannot unmarshal file: %w", err)
 	}
 
-	if cfg.InputFile == "" || cfg.OutputFile == "" {
-		return nil, fmt.Errorf("invalid config: missing input-file or output-file")
+	if cfg.InputFile == "" {
+		return nil, fmt.Errorf("invalid config: missing input-file")
+	}
+	if cfg.OutputFile == "" {
+		return nil, fmt.Errorf("invalid config: missing output-file")
 	}
 
 	return &cfg, nil
