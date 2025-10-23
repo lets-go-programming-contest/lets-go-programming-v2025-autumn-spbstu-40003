@@ -22,9 +22,12 @@ func LoadConfig() (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot open config file: %w", err)
 	}
-	if err := file.Close(); err != nil {
-		return nil, fmt.Errorf("cannot close file: %w", err)
-	}
+
+	defer func() {
+		if err := file.Close(); err != nil {
+			fmt.Printf("cannot close file: %v", err)
+		}
+	}()
 
 	data, err := io.ReadAll(file)
 	if err != nil {
@@ -39,6 +42,7 @@ func LoadConfig() (*Config, error) {
 	if cfg.InputFile == "" {
 		return nil, fmt.Errorf("invalid config: missing input-file")
 	}
+
 	if cfg.OutputFile == "" {
 		return nil, fmt.Errorf("invalid config: missing output-file")
 	}

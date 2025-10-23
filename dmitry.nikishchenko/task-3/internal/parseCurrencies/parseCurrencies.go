@@ -1,4 +1,4 @@
-package parseCurrencies
+package parsecurrencies
 
 import (
 	"encoding/xml"
@@ -18,15 +18,18 @@ func (floatField *FloatComma) UnmarshalXML(d *xml.Decoder, start xml.StartElemen
 	if err := d.DecodeElement(&inputField, &start); err != nil {
 		return fmt.Errorf("failed to decode element: %w", err)
 	}
+
 	if inputField == "" {
 		*floatField = 0.0
+
 		return nil
 	}
 
 	inputField = strings.ReplaceAll(inputField, ",", ".")
+
 	v, err := strconv.ParseFloat(inputField, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse float: %w", err)
 	}
 
 	*floatField = FloatComma(v)
@@ -46,9 +49,9 @@ type Valute struct {
 	NumCode   int        `json:"num_code"   xml:"NumCode"`
 	CharCode  string     `json:"char_code"  xml:"CharCode"`
 	Nominal   int        `json:"nominal"    xml:"Nominal"`
-	Name      string     `json:"name"		xml:"Name"`
-	Value     FloatComma `json:"value"		xml:"Value"`
-	VunitRate FloatComma `json:"vunit_rate"	xml:"VunitRate"`
+	Name      string     `json:"name"       xml:"Name"`
+	Value     FloatComma `json:"value"      xml:"Value"`
+	VunitRate FloatComma `json:"vunit_rate" xml:"VunitRate"`
 }
 
 func LoadCurrencies(path string) ([]Valute, error) {
@@ -56,9 +59,12 @@ func LoadCurrencies(path string) ([]Valute, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot open file: %w", err)
 	}
-	if err := file.Close(); err != nil {
-		return nil, fmt.Errorf("cannot close file: %w", err)
-	}
+
+	defer func() {
+		if err := file.Close(); err != nil {
+			fmt.Printf("cannot close file: %v", err)
+		}
+	}()
 
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel

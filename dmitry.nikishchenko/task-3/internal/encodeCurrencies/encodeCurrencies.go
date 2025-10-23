@@ -1,4 +1,4 @@
-package encodeCurrencies
+package encodecurrencies
 
 import (
 	"encoding/json"
@@ -17,12 +17,16 @@ func SaveCurrencies(path string, data interface{}) error {
 	if err != nil {
 		return fmt.Errorf("cannot create file: %w", err)
 	}
-	if err := file.Close(); err != nil {
-		return fmt.Errorf("cannot close file: %w", err)
-	}
+
+	defer func() {
+		if err := file.Close(); err != nil {
+			fmt.Printf("cannot close file: %v", err)
+		}
+	}()
 
 	enc := json.NewEncoder(file)
 	enc.SetIndent("", "    ")
+
 	if err := enc.Encode(data); err != nil {
 		return fmt.Errorf("cannot encode file properly: %w", err)
 	}
