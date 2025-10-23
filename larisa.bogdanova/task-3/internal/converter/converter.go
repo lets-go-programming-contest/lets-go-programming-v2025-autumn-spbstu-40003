@@ -21,8 +21,7 @@ func ReadCurrencies(filename string) ([]models.Currency, error) {
 	}
 
 	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-		}
+		_ = file.Close()
 	}()
 
 	var data models.ValCurs
@@ -54,8 +53,7 @@ func WriteCurrencies(currencies []models.Currency, filename string) error {
 	}
 
 	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-		}
+		_ = file.Close()
 	}()
 
 	encoder := json.NewEncoder(file)

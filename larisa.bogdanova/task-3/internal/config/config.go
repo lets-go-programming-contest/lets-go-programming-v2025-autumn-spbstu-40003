@@ -25,8 +25,7 @@ func LoadSettings(path string) (*Settings, error) {
 	}
 
 	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-		}
+		_ = file.Close()
 	}()
 
 	var settings Settings
