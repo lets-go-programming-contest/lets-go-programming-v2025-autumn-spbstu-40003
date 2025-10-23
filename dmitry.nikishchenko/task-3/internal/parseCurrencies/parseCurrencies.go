@@ -31,14 +31,20 @@ func (f *FloatComma) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error 
 }
 
 type ValCurs struct {
-	XMLrootName xml.Name `xml:"Valuta"`
-	Valutes     []Valute `xml:"Item"`
+	XMLName xml.Name `xml:"ValCurs"`
+	Date    string   `xml:"Date,attr"`
+	Name    string   `xml:"name,attr"`
+	Valutes []Valute `xml:"Valute"`
 }
 
 type Valute struct {
-	NumCode  int        `xml:"ISO_Num_Code" json:"num_code"`
-	CharCode string     `xml:"ISO_Char_Code" json:"char_code"`
-	Value    FloatComma `xml:"Nominal" json:"nominal"`
+	ID        string     `xml:"ID,attr" json:"id"`
+	NumCode   int        `xml:"NumCode" json:"num_code"`
+	CharCode  string     `xml:"CharCode" json:"char_code"`
+	Nominal   int        `xml:"Nominal" json:"nominal"`
+	Name      string     `xml:"Name" json:"name"`
+	Value     FloatComma `xml:"Value" json:"value"`
+	VunitRate FloatComma `xml:"VunitRate" json:"vunit_rate"`
 }
 
 func LoadCurrencies(path string) ([]Valute, error) {
