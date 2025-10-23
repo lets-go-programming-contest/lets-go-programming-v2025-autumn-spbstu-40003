@@ -3,11 +3,12 @@ package parseCurrencies
 import (
 	"encoding/xml"
 	"fmt"
-	"io"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
+
+	"golang.org/x/net/html/charset"
 )
 
 type FloatComma float64
@@ -47,13 +48,11 @@ func LoadCurrencies(path string) ([]Valute, error) {
 	}
 	defer f.Close()
 
-	data, err := io.ReadAll(f)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read file: %w", err)
-	}
+	decoder := xml.NewDecoder(f)
+	decoder.CharsetReader = charset.NewReaderLabel
 
 	var valCurs ValCurs
-	if err := xml.Unmarshal(data, &valCurs); err != nil {
+	if err := decoder.Decode(&valCurs); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal file: %w", err)
 	}
 

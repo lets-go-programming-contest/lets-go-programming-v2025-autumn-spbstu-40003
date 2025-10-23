@@ -19,6 +19,6 @@ func main() {
 
 	saveErr := encodeCurrencies.SaveCurrencies(cfg.OutputFile, valutes)
 	if saveErr != nil {
-		panic(err)
+		panic(saveErr)
 	}
 }
