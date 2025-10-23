@@ -13,23 +13,24 @@ import (
 
 type FloatComma float64
 
-func (f *FloatComma) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var s string
-	if err := d.DecodeElement(&s, &start); err != nil {
+func (floatField *FloatComma) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var inputField string
+	if err := d.DecodeElement(&inputField, &start); err != nil {
 		return err
 	}
-	if s == "" {
-		*f = 0.0
+	if inputField == "" {
+		*floatField = 0.0
 		return nil
 	}
 
-	s = strings.ReplaceAll(s, ",", ".")
-	v, err := strconv.ParseFloat(s, 64)
+	inputField = strings.ReplaceAll(inputField, ",", ".")
+	v, err := strconv.ParseFloat(inputField, 64)
 	if err != nil {
 		return err
 	}
 
-	*f = FloatComma(v)
+	*floatField = FloatComma(v)
+
 	return nil
 }
 
@@ -51,13 +52,13 @@ type Valute struct {
 }
 
 func LoadCurrencies(path string) ([]Valute, error) {
-	f, err := os.Open(path)
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open file: %w", err)
 	}
-	defer f.Close()
+	defer file.Close()
 
-	decoder := xml.NewDecoder(f)
+	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
 
 	var valCurs ValCurs
