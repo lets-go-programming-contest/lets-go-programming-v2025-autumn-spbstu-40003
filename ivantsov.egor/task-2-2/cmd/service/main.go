@@ -1,78 +1,62 @@
 package main
 
-import "fmt"
-
-const (
-	minTemperature   = 15
-	maxTemperature   = 30
-	invalidIndicator = -1
+import (
+	"container/heap"
+	"fmt"
 )
 
-func main() {
-	var elementCount int
+type IntHeap []int
 
-	if _, err := fmt.Scan(&elementCount); err != nil {
-		fmt.Printf("Error reading input (context: elementCount): %v\n", err)
+func (h *IntHeap) Len() int           { return len(*h) }
+func (h *IntHeap) Less(i, j int) bool { return (*h)[i] < (*h)[j] }
+func (h *IntHeap) Swap(i, j int)      { (*h)[i], (*h)[j] = (*h)[j], (*h)[i] }
+
+func (h *IntHeap) Push(x interface{}) {
+	if val, ok := x.(int); ok {
+		*h = append(*h, val)
+	}
+}
+
+func (h *IntHeap) Pop() interface{} {
+	old := *h
+	number := len(old)
+	x := old[number-1]
+	*h = old[0 : number-1]
+
+	return x
+}
+
+func main() {
+	var n, kIndex int
+	if _, err := fmt.Scan(&n); err != nil {
+		fmt.Printf("Error reading input (context: variable number): %v\n", err)
 
 		return
 	}
 
-	for i := 1; i <= elementCount; i++ {
-		var employeeCount int
-
-		if _, err := fmt.Scan(&employeeCount); err != nil {
-			fmt.Printf("Error reading input (context: employeeCount in department %d): %v\n", i, err)
-
+	arr := make([]int, n)
+	for i := range arr {
+		if _, err := fmt.Scan(&arr[i]); err != nil {
 			return
 		}
-
-		processDepartment(i, employeeCount)
 	}
-}
 
-func processDepartment(departmentIndex, employeeCount int) {
-	currentMin := minTemperature
-	currentMax := maxTemperature
-	isPossible := true
+	if _, err := fmt.Scan(&kIndex); err != nil {
+		return
+	}
 
-	for j := 1; j <= employeeCount; j++ {
-		var condition string
-		var desiredTemp int
+	heapData := &IntHeap{}
+	heap.Init(heapData)
 
-		if _, err := fmt.Scan(&condition, &desiredTemp); err != nil {
-			fmt.Printf("Error reading input (context: condition or desiredTemp for employee %d in department %d): %v\n", j, departmentIndex, err)
+	for _, v := range arr {
+		heap.Push(heapData, v)
 
-			return
+		if heapData.Len() > kIndex {
+			heap.Pop(heapData)
 		}
+	}
 
-		if !isPossible {
-			fmt.Println(invalidIndicator)
-			continue
-		}
-
-		switch condition {
-		case ">=":
-			if desiredTemp > currentMin {
-				currentMin = desiredTemp
-			}
-		case "<=":
-			if desiredTemp < currentMax {
-				currentMax = desiredTemp
-			}
-		default:
-			fmt.Printf("Error: invalid condition '%s' (employee %d, department %d)\n", condition, j, departmentIndex)
-			fmt.Println(invalidIndicator)
-			isPossible = false
-			continue
-		}
-
-		if currentMin <= currentMax {
-			fmt.Println(currentMin)
-		} else {
-			fmt.Printf("Error: impossible temperature range (min=%d, max=%d) in department %d\n",
-				currentMin, currentMax, departmentIndex)
-			fmt.Println(invalidIndicator)
-			isPossible = false
-		}
+	if heapData.Len() > 0 {
+		fmt.Println((*heapData)[0])
 	}
 }
