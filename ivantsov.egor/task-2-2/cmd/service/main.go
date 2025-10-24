@@ -29,6 +29,7 @@ func (h *IntHeap) Pop() interface{} {
 func main() {
 	var n, kIndex int
 	if _, err := fmt.Scan(&n); err != nil {
+		fmt.Printf("Error reading input (context: variable n): %v\n", err)
 		return
 	}
 
