@@ -73,8 +73,6 @@
 	func prepareOutputFile(outputPath string) (*os.File, error) {
 		const permissions = 0o755
 
-		var outputFile *os.File
-
 		dirPath := path.Dir(outputPath)
 
 		if _, err := os.Stat(dirPath); err != nil {
