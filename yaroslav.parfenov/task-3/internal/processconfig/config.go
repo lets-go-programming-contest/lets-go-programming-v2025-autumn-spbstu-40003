@@ -30,7 +30,6 @@ func GetConfig(cfgPath string) (Config, error) {
 	yamlDecoder := yaml.NewDecoder(cfgFile)
 
 	err = yamlDecoder.Decode(&cfg)
-
 	if err != nil {
 		return cfg, fmt.Errorf("error decoding config file: %w", err)
 	}
