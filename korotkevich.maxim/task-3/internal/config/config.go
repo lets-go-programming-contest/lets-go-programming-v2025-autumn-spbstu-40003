@@ -8,7 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var(
+var (
 	ErrFileNotSet = errors.New("error: both input-file and output-file must be set")
 )
 
