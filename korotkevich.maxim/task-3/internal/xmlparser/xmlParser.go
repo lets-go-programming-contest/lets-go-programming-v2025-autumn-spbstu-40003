@@ -68,7 +68,7 @@ func (t *ExchangeTrade) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) e
 }
 
 func XMLParse(path string) ([]ExchangeTrade, error) {
-	var exData ExchangeData 
+	var exData ExchangeData
 
 	file, err := os.Open(path)
 	if err != nil {
