@@ -37,7 +37,6 @@ func processDepartment(empCount int) {
 	isPossible := true
 
 	for range empCount {
-
 		var condition string
 
 		var desiredTemp int
