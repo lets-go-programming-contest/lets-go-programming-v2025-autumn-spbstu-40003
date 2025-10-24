@@ -13,9 +13,11 @@ type Config struct {
 }
 
 func GetConfig(cfgPath string) (Config, error) {
+	var cfg Config
+
 	cfgFile, err := os.Open(cfgPath)
 	if err != nil {
-		panic(fmt.Errorf("error opening config file: %w", err))
+		return cfg, fmt.Errorf("error opening config file: %w", err)
 	}
 
 	defer func() {
@@ -27,13 +29,13 @@ func GetConfig(cfgPath string) (Config, error) {
 
 	yamlDecoder := yaml.NewDecoder(cfgFile)
 
-	var cfg Config
-
 	err = yamlDecoder.Decode(&cfg)
 
 	if err != nil {
 		return cfg, fmt.Errorf("error decoding config file: %w", err)
-	} else if cfg.InputFile == "" || cfg.OutputFile == "" {
+	}
+
+	if cfg.InputFile == "" || cfg.OutputFile == "" {
 		return cfg, fmt.Errorf("invalid config file: missing input-file or output-dir: %w", err)
 	}
 

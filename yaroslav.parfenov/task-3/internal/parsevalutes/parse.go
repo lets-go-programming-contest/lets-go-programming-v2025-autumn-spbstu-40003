@@ -37,7 +37,7 @@ func ParseInput(filePath string) Valutes {
 	xmlDecoder.CharsetReader = charset.NewReaderLabel
 
 	var curValute Valutes
-	if err := xmlDecoder.Decode(&curValute); err != nil && errors.Is(err, io.EOF) {
+	if err := xmlDecoder.Decode(&curValute); err != nil && !errors.Is(err, io.EOF) {
 		panic(fmt.Errorf("invalid signature of input file: %w", err))
 	}
 
