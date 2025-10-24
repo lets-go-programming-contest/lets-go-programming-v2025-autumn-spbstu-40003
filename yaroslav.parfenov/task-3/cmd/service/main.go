@@ -3,9 +3,8 @@ package main
 import (
 	"flag"
 
-	"github.com/gituser549/task-3/internal/encodevalutes"
-	"github.com/gituser549/task-3/internal/parsevalutes"
 	"github.com/gituser549/task-3/internal/processconfig"
+	"github.com/gituser549/task-3/internal/processfiles"
 )
 
 func main() {
@@ -17,14 +16,12 @@ func main() {
 		panic(err)
 	}
 
-	valutes := parsevalutes.ParseInput(cfg.InputFile)
-
-	preparedValutes, err := encodevalutes.PrepareValutesForEncode(&valutes)
+	valutes, err := processfiles.ParseInput(cfg.InputFile)
 	if err != nil {
 		panic(err)
 	}
 
-	err = encodevalutes.OutputEncodedValutes(cfg.OutputFile, preparedValutes)
+	err = processfiles.OutputEncodedValutes(cfg.OutputFile, valutes.Valutes)
 	if err != nil {
 		panic(err)
 	}
