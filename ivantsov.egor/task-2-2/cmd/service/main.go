@@ -19,29 +19,34 @@ func (h *IntHeap) Push(x interface{}) {
 
 func (h *IntHeap) Pop() interface{} {
 	old := *h
-	number := len(old)
-	x := old[number-1]
-	*h = old[0 : number-1]
+	length := len(old)
+	x := old[length-1]
+	*h = old[0 : length-1]
 
 	return x
 }
 
 func main() {
-	var n, kIndex int
-	if _, err := fmt.Scan(&n); err != nil {
-		fmt.Printf("Error reading input (context: variable number): %v\n", err)
+	var elementCount, kIndex int
+
+	if _, err := fmt.Scan(&elementCount); err != nil {
+		fmt.Printf("Error reading input (context: elementCount): %v\n", err)
 
 		return
 	}
 
-	arr := make([]int, n)
+	arr := make([]int, elementCount)
 	for i := range arr {
 		if _, err := fmt.Scan(&arr[i]); err != nil {
+			fmt.Printf("Error reading input (context: array element %d): %v\n", i, err)
+
 			return
 		}
 	}
 
 	if _, err := fmt.Scan(&kIndex); err != nil {
+		fmt.Printf("Error reading input (context: kIndex): %v\n", err)
+
 		return
 	}
 
