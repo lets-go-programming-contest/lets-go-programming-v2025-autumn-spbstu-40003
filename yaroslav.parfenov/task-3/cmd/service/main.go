@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"sort"
 
 	"github.com/gituser549/task-3/internal/processconfig"
 	"github.com/gituser549/task-3/internal/processfiles"
@@ -20,6 +21,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	sort.Slice(valutes.Valutes, func(i, j int) bool { return valutes.Valutes[i].Value > valutes.Valutes[j].Value })
 
 	err = processfiles.OutputEncodedValutes(cfg.OutputFile, valutes.Valutes)
 	if err != nil {
