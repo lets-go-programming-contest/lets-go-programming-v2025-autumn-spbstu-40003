@@ -43,6 +43,7 @@ func (t *ExchangeTrade) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) e
 
 	numStr := strings.TrimSpace(tmp.NumCode)
 	num, err := strconv.Atoi(numStr)
+
 	if err != nil {
 		t.NumCode = 0
 	}
