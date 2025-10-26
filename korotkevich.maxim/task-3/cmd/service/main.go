@@ -27,5 +27,5 @@ func main() {
 		panic(fmt.Errorf("error: problem with writing output JSON: %w", err))
 	}
 
-	fmt.Printf("Data Saved in JSON file")
+	fmt.Print("Data Saved in JSON file")
 }

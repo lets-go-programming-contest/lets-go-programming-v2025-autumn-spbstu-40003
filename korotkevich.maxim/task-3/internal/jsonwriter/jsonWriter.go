@@ -31,6 +31,7 @@ func WriteJSON(outputPath string, data interface{}) error {
 
 	enc := json.NewEncoder(outputFile)
 	enc.SetIndent("", "  ")
+
 	err = enc.Encode(data)
 	if err != nil {
 		return fmt.Errorf("error: failed to encode JSON in file: %w", err)
