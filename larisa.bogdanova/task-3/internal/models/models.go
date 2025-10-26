@@ -10,18 +10,21 @@ import (
 type CurrencyValue float64
 
 func (v *CurrencyValue) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var s string
-	if err := d.DecodeElement(&s, &start); err != nil {
+	var valueStr string
+
+	if err := d.DecodeElement(&valueStr, &start); err != nil {
 		return fmt.Errorf("decode value: %w", err)
 	}
 
-	cleanValue := strings.Replace(s, ",", ".", 1)
-	value, err := strconv.ParseFloat(cleanValue, 64)
+	cleanValue := strings.Replace(valueStr, ",", ".", 1)
+
+	parsedValue, err := strconv.ParseFloat(cleanValue, 64)
 	if err != nil {
-		return fmt.Errorf("parse value %q: %w", s, err)
+		return fmt.Errorf("parse value %q: %w", valueStr, err)
 	}
 
-	*v = CurrencyValue(value)
+	*v = CurrencyValue(parsedValue)
+
 	return nil
 }
 
