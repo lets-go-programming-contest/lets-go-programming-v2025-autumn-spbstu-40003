@@ -25,11 +25,9 @@ func (c *Currency) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) er
 	}
 
 	var rawVal raw
-	err := decoder.DecodeElement(&rawVal, &start)
-	if err != nil {
-		wrapped := fmt.Errorf("decode element: %w", err)
 
-		return wrapped
+	if err := decoder.DecodeElement(&rawVal, &start); err != nil {
+		return fmt.Errorf("decode element: %w", err)
 	}
 
 	num, _ := parseIntFromString(rawVal.NumCode)
@@ -47,13 +45,10 @@ func ParseCBR(path string) ([]Currency, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			wrapped := fmt.Errorf("no such file: %w", err)
-
-			return nil, wrapped
+			return nil, fmt.Errorf("no such file: %w", err)
 		}
-		wrapped := fmt.Errorf("open xml: %w", err)
 
-		return nil, wrapped
+		return nil, fmt.Errorf("open xml: %w", err)
 	}
 
 	defer func() {
@@ -69,11 +64,8 @@ func ParseCBR(path string) ([]Currency, error) {
 		Values []Currency `xml:"Valute"`
 	}
 
-	err = decoder.Decode(&curs)
-	if err != nil {
-		wrapped := fmt.Errorf("decode xml: %w", err)
-
-		return nil, wrapped
+	if err := decoder.Decode(&curs); err != nil {
+		return nil, fmt.Errorf("decode xml: %w", err)
 	}
 
 	sort.Slice(curs.Values, func(i, j int) bool {
@@ -85,11 +77,10 @@ func ParseCBR(path string) ([]Currency, error) {
 
 func parseIntFromString(str string) (int, error) {
 	s := strings.TrimSpace(str)
+
 	number, err := strconv.Atoi(s)
 	if err != nil {
-		wrapped := fmt.Errorf("atoi %q: %w", s, err)
-
-		return 0, wrapped
+		return 0, fmt.Errorf("atoi %q: %w", s, err)
 	}
 
 	return number, nil
@@ -97,11 +88,10 @@ func parseIntFromString(str string) (int, error) {
 
 func parseFloatFromString(str string) (float64, error) {
 	s := strings.TrimSpace(strings.ReplaceAll(str, ",", "."))
+
 	value, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		wrapped := fmt.Errorf("parseFloat %q: %w", s, err)
-
-		return 0, wrapped
+		return 0, fmt.Errorf("parseFloat %q: %w", s, err)
 	}
 
 	return value, nil
