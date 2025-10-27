@@ -1,3 +1,4 @@
+
 package xmlparser
 
 import (
@@ -11,36 +12,31 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
-type ExchangeTrade struct {
-	NumCode  int     `json:"num_code"  xml:"NumCode"`
-	CharCode string  `json:"char_code" xml:"CharCode"`
-	Value    float64 `json:"value"     xml:"Value"`
+type ValueFloat float64
+
+func (v *ValueFloat) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var valStr string
+
+	if err := d.DecodeElement(&valStr, &start); err != nil {
+		return fmt.Errorf("failed to decode value: %w", err)
+	}
+
+	valStr = strings.ReplaceAll(valStr, ",", ".")
+	valStr = strings.TrimSpace(valStr)
+
+	f, err := strconv.ParseFloat(valStr, 64)
+	if err != nil {
+		return fmt.Errorf("failed to parse float: %w", err)
+	}
+
+	*v = ValueFloat(f)
+	return nil
 }
 
-func (e *ExchangeTrade) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error {
-	type exchangeTradeXML struct {
-		NumCode  string `xml:"NumCode"`
-		CharCode string `xml:"CharCode"`
-		Value    string `xml:"Value"`
-	}
-
-	var xmlData exchangeTradeXML
-	if err := decoder.DecodeElement(&xmlData, &start); err != nil {
-		return fmt.Errorf("decode XML element: %w", err)
-	}
-
-	if strings.TrimSpace(xmlData.NumCode) != "" {
-		e.NumCode, _ = strconv.Atoi(strings.TrimSpace(xmlData.NumCode))
-	}
-
-	if strings.TrimSpace(xmlData.Value) != "" {
-		valueStr := strings.ReplaceAll(xmlData.Value, ",", ".")
-		e.Value, _ = strconv.ParseFloat(valueStr, 64)
-	}
-
-	e.CharCode = strings.TrimSpace(xmlData.CharCode)
-
-	return nil
+type ExchangeTrade struct {
+	NumCode  int       `json:"num_code" xml:"NumCode"`
+	CharCode string    `json:"char_code" xml:"CharCode"`
+	Value    ValueFloat `json:"value" xml:"Value"`
 }
 
 type ExchangeData struct {
@@ -64,7 +60,7 @@ func ParseXML(path string) ([]ExchangeTrade, error) {
 
 	var data ExchangeData
 	if err := decoder.Decode(&data); err != nil {
-		return nil, fmt.Errorf("parse XML: %w", err)
+		return nil, fmt.Errorf("parse xml: %w", err)
 	}
 
 	sort.Slice(data.Trades, func(i, j int) bool {
