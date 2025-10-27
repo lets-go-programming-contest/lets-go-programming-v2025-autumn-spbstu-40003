@@ -14,7 +14,6 @@ import (
 type Currency struct {
 	NumCode  int     `json:"num_code"  xml:"NumCode"`
 	CharCode string  `json:"char_code" xml:"CharCode"`
-	Nominal  int     `json:"-"         xml:"Nominal"`
 	Value    float64 `json:"value"     xml:"Value"`
 }
 
@@ -22,40 +21,29 @@ func (c *Currency) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) er
 	type raw struct {
 		NumCode  string `xml:"NumCode"`
 		CharCode string `xml:"CharCode"`
-		Nominal  string `xml:"Nominal"`
 		Value    string `xml:"Value"`
 	}
-
-	var rawVal raw
-	if err := decoder.DecodeElement(&rawVal, &start); err != nil {
+	var r raw
+	if err := decoder.DecodeElement(&r, &start); err != nil {
 		return fmt.Errorf("decode element: %w", err)
 	}
 
-	numCode, _ := parseIntFromString(rawVal.NumCode)
-	nominal, _ := parseIntFromString(rawVal.Nominal)
-	value, _ := parseFloatFromString(rawVal.Value)
-	charCode := strings.TrimSpace(rawVal.CharCode)
+	num, _ := parseIntFromString(r.NumCode)
+	val, _ := parseFloatFromString(r.Value)
 
-	c.NumCode = numCode
-	c.Nominal = nominal
-	c.Value = value
-	c.CharCode = charCode
+	c.NumCode = num
+	c.CharCode = strings.TrimSpace(r.CharCode)
+	c.Value = val
 
 	return nil
 }
 
 func ParseCBR(path string) ([]Currency, error) {
-	return parseFile(path)
-}
-
-func parseFile(path string) ([]Currency, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-
 			return nil, fmt.Errorf("no such file: %w", err)
 		}
-
 		return nil, fmt.Errorf("open xml: %w", err)
 	}
 
@@ -71,43 +59,33 @@ func parseFile(path string) ([]Currency, error) {
 	var curs struct {
 		Values []Currency `xml:"Valute"`
 	}
-
 	if err := decoder.Decode(&curs); err != nil {
-
 		return nil, fmt.Errorf("decode xml: %w", err)
 	}
 
-	sortCurrencies(curs.Values)
+	sort.Slice(curs.Values, func(i, j int) bool {
+		return curs.Values[i].Value > curs.Values[j].Value
+	})
 
 	return curs.Values, nil
 }
 
-func parseIntFromString(str string) (int, error) {
-	s := strings.TrimSpace(str)
-
-	number, err := strconv.Atoi(s)
+func parseIntFromString(s string) (int, error) {
+	s = strings.TrimSpace(s)
+	n, err := strconv.Atoi(s)
 	if err != nil {
-
 		return 0, fmt.Errorf("atoi %q: %w", s, err)
 	}
 
-	return number, nil
+	return n, nil
 }
 
-func parseFloatFromString(str string) (float64, error) {
-	s := strings.TrimSpace(strings.ReplaceAll(str, ",", "."))
-
-	value, err := strconv.ParseFloat(s, 64)
+func parseFloatFromString(s string) (float64, error) {
+	s = strings.TrimSpace(strings.ReplaceAll(s, ",", "."))
+	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-
 		return 0, fmt.Errorf("parseFloat %q: %w", s, err)
 	}
 
-	return value, nil
-}
-
-func sortCurrencies(cc []Currency) {
-	sort.Slice(cc, func(i, j int) bool {
-		return cc[i].Value > cc[j].Value
-	})
+	return f, nil
 }
