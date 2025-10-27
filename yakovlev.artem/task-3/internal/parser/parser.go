@@ -27,31 +27,18 @@ func (c *Currency) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) er
 	}
 
 	var rawVal raw
-
 	if err := decoder.DecodeElement(&rawVal, &start); err != nil {
 		return fmt.Errorf("decode element: %w", err)
 	}
 
-	numCode, err := parseInt(rawVal.NumCode)
-	if err != nil {
-		c.NumCode = 0
-	} else {
-		c.NumCode = numCode
+	if num, err := parseIntFromString(rawVal.NumCode); err == nil {
+		c.NumCode = num
 	}
-
-	nominal, err := parseInt(rawVal.Nominal)
-	if err != nil {
-		c.Nominal = 0
-	} else {
-		c.Nominal = nominal
-	}
-
 	c.CharCode = strings.TrimSpace(rawVal.CharCode)
-
-	val, err := parseFloat(rawVal.Value)
-	if err != nil {
-		c.Value = 0
-	} else {
+	if nom, err := parseIntFromString(rawVal.Nominal); err == nil {
+		c.Nominal = nom
+	}
+	if val, err := parseFloatFromString(rawVal.Value); err == nil {
 		c.Value = val
 	}
 
@@ -66,13 +53,10 @@ func parseFile(path string) ([]Currency, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-
 			return nil, fmt.Errorf("no such file: %w", err)
 		}
-
 		return nil, fmt.Errorf("open xml: %w", err)
 	}
-
 	defer func() {
 		if cerr := file.Close(); cerr != nil {
 			panic(fmt.Errorf("close xml: %w", cerr))
@@ -85,39 +69,30 @@ func parseFile(path string) ([]Currency, error) {
 	var curs struct {
 		Values []Currency `xml:"Valute"`
 	}
-
 	if err := decoder.Decode(&curs); err != nil {
-
 		return nil, fmt.Errorf("decode xml: %w", err)
 	}
 
 	sortCurrencies(curs.Values)
-
 	return curs.Values, nil
 }
 
-func parseInt(s string) (int, error) {
-	s = strings.TrimSpace(s)
-
-	n, err := strconv.Atoi(s)
+func parseIntFromString(str string) (int, error) {
+	s := strings.TrimSpace(str)
+	number, err := strconv.Atoi(s)
 	if err != nil {
-
 		return 0, fmt.Errorf("atoi %q: %w", s, err)
 	}
-
-	return n, nil
+	return number, nil
 }
 
-func parseFloat(s string) (float64, error) {
-	s = strings.TrimSpace(strings.ReplaceAll(s, ",", "."))
-
-	f, err := strconv.ParseFloat(s, 64)
+func parseFloatFromString(str string) (float64, error) {
+	s := strings.TrimSpace(strings.ReplaceAll(str, ",", "."))
+	value, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-
 		return 0, fmt.Errorf("parseFloat %q: %w", s, err)
 	}
-
-	return f, nil
+	return value, nil
 }
 
 func sortCurrencies(cc []Currency) {
