@@ -34,8 +34,8 @@ func (v *ValueFloat) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error 
 }
 
 type ExchangeTrade struct {
-	NumCode  int       `json:"num_code"  xml:"NumCode"`
-	CharCode string    `json:"char_code" xml:"CharCode"`
+	NumCode  int        `json:"num_code"  xml:"NumCode"`
+	CharCode string     `json:"char_code" xml:"CharCode"`
 	Value    ValueFloat `json:"value"     xml:"Value"`
 }
 
