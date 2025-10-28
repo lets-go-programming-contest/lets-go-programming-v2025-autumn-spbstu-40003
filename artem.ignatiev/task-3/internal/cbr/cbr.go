@@ -40,20 +40,24 @@ func ParseXML(r io.Reader) ([]Currency, error) {
 
 	out := make([]Currency, 0, len(vc.Valutes))
 	for _, v := range vc.Valutes {
+		if strings.TrimSpace(v.NumCode) == "" || strings.TrimSpace(v.CharCode) == "" || strings.TrimSpace(v.Nominal) == "" || strings.TrimSpace(v.ValueRaw) == "" {
+			continue
+		}
+
 		num, err := strconv.Atoi(strings.TrimSpace(v.NumCode))
 		if err != nil {
-			return nil, fmt.Errorf("invalid NumCode %q: %w", v.NumCode, err)
+			continue
 		}
 		char := strings.TrimSpace(v.CharCode)
 
 		nominal, err := strconv.Atoi(strings.TrimSpace(v.Nominal))
 		if err != nil {
-			return nil, fmt.Errorf("invalid Nominal %q for %s: %w", v.Nominal, char, err)
+			continue
 		}
 		valStr := strings.ReplaceAll(strings.TrimSpace(v.ValueRaw), ",", ".")
 		valF, err := strconv.ParseFloat(valStr, 64)
 		if err != nil {
-			return nil, fmt.Errorf("invalid Value %q for %s: %w", v.ValueRaw, char, err)
+			continue
 		}
 		valuePerUnit := valF / float64(nominal)
 
@@ -62,6 +66,9 @@ func ParseXML(r io.Reader) ([]Currency, error) {
 			CharCode: char,
 			Value:    valuePerUnit,
 		})
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("no valid currency entries found after parsing")
 	}
 
 	sort.Slice(out, func(i, j int) bool {
