@@ -28,6 +28,7 @@ func (a *Amount) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	}
 
 	*a = Amount(val)
+
 	return nil
 }
 
