@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/kryjkaqq/task-3/internal/config"
-	jsonwriter "github.com/kryjkaqq/task-3/internal/jsonwriter"
-	xmlreader "github.com/kryjkaqq/task-3/internal/xmlparser"
+	"github.com/kryjkaqq/task-3/internal/jsonwriter"
+	"github.com/kryjkaqq/task-3/internal/xmlparser"
 )
 
 func main() {
@@ -18,12 +18,12 @@ func main() {
 		panic(err)
 	}
 
-	currencies, err := xmlreader.ReadCurrencies(cfg.InputPath)
+	currencies, err := xmlparser.ReadCurrencies(cfg.InputPath)
 	if err != nil {
 		panic(err)
 	}
 
 	if err := jsonwriter.Save(cfg.OutputPath, currencies); err != nil {
-		panic(f mt.Errorf("cannot save JSON: %w", err))
+		panic(fmt.Errorf("cannot save JSON: %w", err))
 	}
 }
