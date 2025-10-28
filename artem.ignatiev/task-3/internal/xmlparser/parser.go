@@ -18,11 +18,13 @@ func (a *Amount) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	if err := d.DecodeElement(&s, &start); err != nil {
 		return fmt.Errorf("decode error: %w", err)
 	}
+
 	s = strings.ReplaceAll(s, ",", ".")
 	val, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
 		return fmt.Errorf("convert to float: %w", err)
 	}
+
 	*a = Amount(val)
 	return nil
 }

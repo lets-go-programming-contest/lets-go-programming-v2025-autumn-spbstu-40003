@@ -32,6 +32,7 @@ func Load(path *string) (*Config, error) {
 	if cfg.InputPath == "" {
 		return nil, ErrNoInputFile
 	}
+
 	if cfg.OutputPath == "" {
 		return nil, ErrNoOutputFile
 	}
