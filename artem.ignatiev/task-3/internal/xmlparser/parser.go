@@ -14,15 +14,15 @@ import (
 type Amount float64
 
 func (a *Amount) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var valueStr string
-	if err := d.DecodeElement(&valueStr, &start); err != nil {
+	var s string
+	if err := d.DecodeElement(&s, &start); err != nil {
 		return fmt.Errorf("failed to decode value: %w", err)
 	}
 
-	valueStr = strings.ReplaceAll(valueStr, ",", ".")
-	valueStr = strings.TrimSpace(valueStr)
+	s = strings.ReplaceAll(s, ",", ".")
+	s = strings.TrimSpace(s)
 
-	val, err := strconv.ParseFloat(valueStr, 64)
+	val, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return fmt.Errorf("failed to parse float: %w", err)
 	}
@@ -37,27 +37,28 @@ type Currency struct {
 	Value    Amount `xml:"Value"    json:"value"`
 }
 
-type CurrencyFile struct {
+type CurrencyList struct {
 	Currencies []Currency `xml:"Valute"`
 }
 
-func ReadCurrencies(path string) ([]Currency, error) {
+func ParseXML(path string) ([]Currency, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("cannot open XML file: %w", err)
+		return nil, fmt.Errorf("open XML file: %w", err)
 	}
-	defer func(f *os.File) {
-		if cerr := f.Close(); cerr != nil {
-			fmt.Fprintf(os.Stderr, "failed to close file: %v\n", cerr)
+
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "failed to close file: %v\n", closeErr)
 		}
-	}(file)
+	}()
 
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
 
-	var data CurrencyFile
+	var data CurrencyList
 	if err := decoder.Decode(&data); err != nil {
-		return nil, fmt.Errorf("failed to parse XML: %w", err)
+		return nil, fmt.Errorf("parse XML: %w", err)
 	}
 
 	sort.Slice(data.Currencies, func(i, j int) bool {

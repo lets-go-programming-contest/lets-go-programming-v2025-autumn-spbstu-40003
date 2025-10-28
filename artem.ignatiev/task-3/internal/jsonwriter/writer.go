@@ -18,28 +18,26 @@ func Save(path string, data interface{}) error {
 	}
 
 	dir := filepath.Dir(path)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.MkdirAll(dir, dirPerm); err != nil {
-			return fmt.Errorf("cannot create directory: %w", err)
-		}
+	if err := os.MkdirAll(dir, dirPerm); err != nil {
+		return fmt.Errorf("create output directory: %w", err)
 	}
 
 	file, err := os.Create(path)
 	if err != nil {
-		return fmt.Errorf("cannot create file: %w", err)
+		return fmt.Errorf("create output file: %w", err)
 	}
 
-	defer func(f *os.File) {
-		if cerr := f.Close(); cerr != nil {
-			fmt.Fprintf(os.Stderr, "failed to close file: %v\n", cerr)
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "failed to close file: %v\n", closeErr)
 		}
-	}(file)
+	}()
 
-	enc := json.NewEncoder(file)
-	enc.SetIndent("", "  ")
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
 
-	if err := enc.Encode(data); err != nil {
-		return fmt.Errorf("cannot encode JSON: %w", err)
+	if err := encoder.Encode(data); err != nil {
+		return fmt.Errorf("encode JSON: %w", err)
 	}
 
 	return nil

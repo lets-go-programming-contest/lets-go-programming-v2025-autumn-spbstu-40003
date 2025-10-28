@@ -18,7 +18,7 @@ func main() {
 		panic(err)
 	}
 
-	currencies, err := xmlparser.ReadCurrencies(cfg.InputPath)
+	currencies, err := xmlparser.ParseXML(cfg.InputPath)
 	if err != nil {
 		panic(err)
 	}
