@@ -40,30 +40,40 @@ func ParseXML(r io.Reader) ([]Currency, error) {
 
 	out := make([]Currency, 0, len(vc.Valutes))
 	for _, v := range vc.Valutes {
-		if strings.TrimSpace(v.NumCode) == "" || strings.TrimSpace(v.CharCode) == "" || strings.TrimSpace(v.Nominal) == "" || strings.TrimSpace(v.ValueRaw) == "" {
+		numCodeStr := strings.TrimSpace(v.NumCode)
+		charCodeStr := strings.TrimSpace(v.CharCode)
+		nominalStr := strings.TrimSpace(v.Nominal)
+		valueRawStr := strings.TrimSpace(v.ValueRaw)
+
+		if numCodeStr == "" || charCodeStr == "" || nominalStr == "" || valueRawStr == "" {
 			continue
 		}
 
-		num, err := strconv.Atoi(strings.TrimSpace(v.NumCode))
+		num, err := strconv.Atoi(numCodeStr)
 		if err != nil {
 			continue
 		}
-		char := strings.TrimSpace(v.CharCode)
 
-		nominal, err := strconv.Atoi(strings.TrimSpace(v.Nominal))
+		nominal, err := strconv.Atoi(nominalStr)
 		if err != nil {
 			continue
 		}
-		valStr := strings.ReplaceAll(strings.TrimSpace(v.ValueRaw), ",", ".")
+		valStr := strings.ReplaceAll(valueRawStr, ",", ".")
 		valF, err := strconv.ParseFloat(valStr, 64)
 		if err != nil {
 			continue
 		}
-		valuePerUnit := valF / float64(nominal)
+
+		var valuePerUnit float64
+		if nominal == 0 {
+			valuePerUnit = valF
+		} else {
+			valuePerUnit = valF / float64(nominal)
+		}
 
 		out = append(out, Currency{
 			NumCode:  num,
-			CharCode: char,
+			CharCode: charCodeStr,
 			Value:    valuePerUnit,
 		})
 	}
