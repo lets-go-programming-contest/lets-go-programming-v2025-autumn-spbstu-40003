@@ -33,9 +33,9 @@ func (a *Amount) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 }
 
 type Currency struct {
-	CodeNum  int    `xml:"NumCode"   json:"num_code"`
-	CodeChar string `xml:"CharCode"  json:"char_code"`
-	Value    Amount `xml:"Value"     json:"value"`
+	CodeNum  int    `xml:"NumCode" json:"num_code"`
+	CodeChar string `xml:"CharCode" json:"char_code"`
+	Value    Amount `xml:"Value" json:"value"`
 }
 
 type CurrencyList struct {
