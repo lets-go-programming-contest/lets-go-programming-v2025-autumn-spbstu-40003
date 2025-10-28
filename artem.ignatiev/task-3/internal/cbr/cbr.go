@@ -3,7 +3,6 @@ package cbr
 import (
 	"encoding/xml"
 	"io"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -55,23 +54,12 @@ func ParseXML(r io.Reader) ([]Currency, error) {
 
 	out := make([]Currency, 0, len(vc.Valutes))
 	for _, v := range vc.Valutes {
-		var valuePerUnit float64
-		if v.Nominal == 0 {
-			valuePerUnit = float64(v.ValueRaw)
-		} else {
-			valuePerUnit = float64(v.ValueRaw) / float64(v.Nominal)
-		}
-
 		out = append(out, Currency{
 			NumCode:  v.NumCode,
 			CharCode: v.CharCode,
-			Value:    valuePerUnit,
+			Value:    float64(v.ValueRaw),
 		})
 	}
-
-	sort.Slice(out, func(i, j int) bool {
-		return out[i].Value > out[j].Value
-	})
 
 	return out, nil
 }
