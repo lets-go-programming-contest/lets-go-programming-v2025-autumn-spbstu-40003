@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/kryjkaqq/task-3/internal/cbr"
 	"github.com/kryjkaqq/task-3/internal/config"
@@ -17,40 +16,34 @@ func main() {
 
 	cfg, err := config.LoadConfig(*cfgPath)
 	if err != nil {
-		panic(fmt.Errorf("cannot load config %q: %w", *cfgPath, err))
+		fmt.Printf("cannot load config: %v\n", err)
+		os.Exit(1)
 	}
 
-	inf, err := os.Open(cfg.InputFile)
+	f, err := os.Open(cfg.InputFile)
 	if err != nil {
-		panic(fmt.Errorf("cannot open input file %q: %w", cfg.InputFile, err))
+		fmt.Printf("cannot open XML file: %v\n", err)
+		os.Exit(1)
 	}
-	defer inf.Close()
+	defer f.Close()
 
-	currs, err := cbr.ParseXML(inf)
+	currencies, err := cbr.ParseXML(f)
 	if err != nil {
-		panic(fmt.Errorf("cannot parse xml %q: %w", cfg.InputFile, err))
+		fmt.Printf("cannot parse XML: %v\n", err)
+		os.Exit(1)
 	}
 
-	outDir := filepath.Dir(cfg.OutputFile)
-	if outDir != "." && outDir != "" {
-		if err := os.MkdirAll(outDir, 0o755); err != nil {
-			panic(fmt.Errorf("cannot create output directory %q: %w", outDir, err))
-		}
-	}
-
-	outf, err := os.Create(cfg.OutputFile)
+	outFile, err := os.Create(cfg.OutputFile)
 	if err != nil {
-		panic(fmt.Errorf("cannot create output file %q: %w", cfg.OutputFile, err))
+		fmt.Printf("cannot create JSON file: %v\n", err)
+		os.Exit(1)
 	}
-	defer func() {
-		_ = outf.Close()
-	}()
+	defer outFile.Close()
 
-	enc := json.NewEncoder(outf)
-	enc.SetIndent("", "    ")
-	if err := enc.Encode(currs); err != nil {
-		panic(fmt.Errorf("cannot write json to %q: %w", cfg.OutputFile, err))
+	enc := json.NewEncoder(outFile)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(currencies); err != nil {
+		fmt.Printf("cannot encode JSON: %v\n", err)
+		os.Exit(1)
 	}
-
-	fmt.Printf("OK: %d currencies written to %s\n", len(currs), cfg.OutputFile)
 }

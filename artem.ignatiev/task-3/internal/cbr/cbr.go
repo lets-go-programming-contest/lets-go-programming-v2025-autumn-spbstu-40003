@@ -2,7 +2,6 @@ package cbr
 
 import (
 	"encoding/xml"
-	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -56,23 +55,21 @@ func ParseXML(r io.Reader) ([]Currency, error) {
 	out := make([]Currency, 0, len(vc.Valutes))
 	for _, v := range vc.Valutes {
 		num := 0
-		if strings.TrimSpace(v.NumCode) != "" {
-			var err error
-			num, err = strconv.Atoi(v.NumCode)
-			if err != nil {
-				return nil, fmt.Errorf("invalid NumCode %q: %w", v.NumCode, err)
+		if v.NumCode != "" {
+			if n, err := strconv.Atoi(v.NumCode); err == nil {
+				num = n
 			}
 		}
 
-		valuePerUnit := float64(v.ValueRaw)
+		value := float64(v.ValueRaw)
 		if v.Nominal > 0 {
-			valuePerUnit /= float64(v.Nominal)
+			value /= float64(v.Nominal)
 		}
 
 		out = append(out, Currency{
 			NumCode:  num,
 			CharCode: v.CharCode,
-			Value:    valuePerUnit,
+			Value:    value,
 		})
 	}
 
