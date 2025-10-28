@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/kryjkaqq/task-3/internal/config"
-	"github.com/kryjkaqq/task-3/internal/jsonwriter"
-	"github.com/kryjkaqq/task-3/internal/xmlparser"
+	jsonwriter "github.com/kryjkaqq/task-3/internal/jsonwritter"
+	xmlreader "github.com/kryjkaqq/task-3/internal/xmlparser"
 )
 
 func main() {
