@@ -2,6 +2,7 @@ package xmlhandler
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -12,6 +13,8 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
+var ErrInvalidFloat = errors.New("invalid float format")
+
 type CurrencyList struct {
 	Date     string     `xml:"Date,attr"`
 	Name     string     `xml:"name,attr"`
@@ -19,20 +22,23 @@ type CurrencyList struct {
 }
 
 type Currency struct {
-	NumCode  int      `xml:"NumCode" json:"num_code"`
+	NumCode  int      `xml:"NumCode"  json:"num_code"`
 	CharCode string   `xml:"CharCode" json:"char_code"`
-	Value    FloatNum `xml:"Value" json:"value"`
+	Value    FloatNum `xml:"Value"    json:"value"`
 }
 
 type FloatNum float64
 
 func (f *FloatNum) UnmarshalText(text []byte) error {
 	s := strings.ReplaceAll(string(text), ",", ".")
+
 	val, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return fmt.Errorf("invalid float format: %q", s)
+		return fmt.Errorf("%w: %q", ErrInvalidFloat, s)
 	}
+
 	*f = FloatNum(val)
+
 	return nil
 }
 
@@ -41,13 +47,19 @@ func LoadCurrencies(path string) ([]Currency, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open XML file: %w", err)
 	}
-	defer file.Close()
+
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			panic(cerr)
+		}
+	}()
 
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
 
 	var list CurrencyList
-	if err := decoder.Decode(&list); err != nil && err != io.EOF {
+
+	if err := decoder.Decode(&list); err != nil && !errors.Is(err, io.EOF) {
 		return nil, fmt.Errorf("decode XML: %w", err)
 	}
 

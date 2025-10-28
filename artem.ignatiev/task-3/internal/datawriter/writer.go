@@ -11,7 +11,12 @@ func SaveAsJSON(path string, data any) error {
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
-	defer file.Close()
+
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			panic(cerr)
+		}
+	}()
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")

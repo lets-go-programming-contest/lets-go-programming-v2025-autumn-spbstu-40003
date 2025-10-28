@@ -13,6 +13,7 @@ import (
 
 func main() {
 	var configPath string
+
 	flag.StringVar(&configPath, "config", "", "path to YAML configuration file")
 	flag.Parse()
 
@@ -22,22 +23,21 @@ func main() {
 
 	cfg, err := setup.LoadConfig(configPath)
 	if err != nil {
-		panic(fmt.Errorf("load config error: %w", err))
+		panic(fmt.Errorf("load config: %w", err))
 	}
 
 	valutes, err := xmlhandler.LoadCurrencies(cfg.InputFile)
 	if err != nil {
-		panic(fmt.Errorf("read XML error: %w", err))
+		panic(fmt.Errorf("read XML: %w", err))
 	}
 
 	xmlhandler.SortDescending(valutes)
 
 	if err := os.MkdirAll(filepath.Dir(cfg.OutputFile), os.ModePerm); err != nil {
-		panic(fmt.Errorf("cannot create output directory: %w", err))
+		panic(fmt.Errorf("create output directory: %w", err))
 	}
 
 	if err := datawriter.SaveAsJSON(cfg.OutputFile, valutes); err != nil {
-		panic(fmt.Errorf("cannot write JSON: %w", err))
+		panic(fmt.Errorf("write JSON: %w", err))
 	}
-
 }
