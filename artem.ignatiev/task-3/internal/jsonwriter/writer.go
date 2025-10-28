@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-var ErrNoData = errors.New("no data to write")
+var ErrNoData = errors.New("no data to save")
 
 func Save(path string, data interface{}) error {
 	if data == nil {
@@ -16,8 +16,10 @@ func Save(path string, data interface{}) error {
 	}
 
 	dir := filepath.Dir(path)
+	const dirPerm = 0755
+
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
+		if err := os.MkdirAll(dir, dirPerm); err != nil {
 			return fmt.Errorf("cannot create directory: %w", err)
 		}
 	}
@@ -26,7 +28,12 @@ func Save(path string, data interface{}) error {
 	if err != nil {
 		return fmt.Errorf("cannot create file: %w", err)
 	}
-	defer file.Close()
+
+	defer func(f *os.File) {
+		if cerr := f.Close(); cerr != nil {
+			fmt.Fprintf(os.Stderr, "failed to close file: %v\n", cerr)
+		}
+	}(file)
 
 	enc := json.NewEncoder(file)
 	enc.SetIndent("", "  ")

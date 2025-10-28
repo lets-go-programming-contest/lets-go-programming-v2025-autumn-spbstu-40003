@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kryjkaqq/task-3/internal/config"
-	jsonwriter "github.com/kryjkaqq/task-3/internal/jsonwritter"
+	jsonwriter "github.com/kryjkaqq/task-3/internal/jsonwriter"
 	xmlreader "github.com/kryjkaqq/task-3/internal/xmlparser"
 )
 

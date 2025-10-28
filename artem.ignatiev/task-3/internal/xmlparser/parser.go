@@ -1,4 +1,4 @@
-package xmlreader
+package xmlparser
 
 import (
 	"encoding/xml"
@@ -14,18 +14,21 @@ import (
 type Amount float64
 
 func (a *Amount) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var s string
-	if err := d.DecodeElement(&s, &start); err != nil {
+	var valueStr string
+	if err := d.DecodeElement(&valueStr, &start); err != nil {
 		return fmt.Errorf("decode error: %w", err)
 	}
 
-	s = strings.ReplaceAll(s, ",", ".")
-	val, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	valueStr = strings.ReplaceAll(valueStr, ",", ".")
+	valueStr = strings.TrimSpace(valueStr)
+
+	valueFloat, err := strconv.ParseFloat(valueStr, 64)
 	if err != nil {
 		return fmt.Errorf("convert to float: %w", err)
 	}
 
-	*a = Amount(val)
+	*a = Amount(valueFloat)
+
 	return nil
 }
 
