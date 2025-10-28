@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"golang.org/x/net/html/charset"
 )
 
 type Currency struct {
@@ -28,8 +30,10 @@ type valuteX struct {
 }
 
 func ParseXML(r io.Reader) ([]Currency, error) {
-	var vc valCurs
 	dec := xml.NewDecoder(r)
+	dec.CharsetReader = charset.NewReaderLabel
+
+	var vc valCurs
 	if err := dec.Decode(&vc); err != nil {
 		return nil, err
 	}
