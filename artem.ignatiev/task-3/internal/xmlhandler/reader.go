@@ -22,9 +22,9 @@ type CurrencyList struct {
 }
 
 type Currency struct {
-	NumCode  int      `xml:"NumCode"  json:"num_code"`
-	CharCode string   `xml:"CharCode" json:"char_code"`
-	Value    FloatNum `xml:"Value"    json:"value"`
+	NumCode  int      `json:"num_code"  xml:"NumCode"`
+	CharCode string   `json:"char_code" xml:"CharCode"`
+	Value    FloatNum `json:"value"     xml:"Value"`
 }
 
 type FloatNum float64
