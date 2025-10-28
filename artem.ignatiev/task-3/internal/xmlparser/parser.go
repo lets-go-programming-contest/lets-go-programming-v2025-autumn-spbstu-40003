@@ -14,15 +14,15 @@ import (
 type Amount float64
 
 func (a *Amount) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var s string
-	if err := d.DecodeElement(&s, &start); err != nil {
+	var raw string
+	if err := d.DecodeElement(&raw, &start); err != nil {
 		return fmt.Errorf("failed to decode value: %w", err)
 	}
 
-	s = strings.ReplaceAll(s, ",", ".")
-	s = strings.TrimSpace(s)
+	raw = strings.ReplaceAll(raw, ",", ".")
+	raw = strings.TrimSpace(raw)
 
-	val, err := strconv.ParseFloat(s, 64)
+	val, err := strconv.ParseFloat(raw, 64)
 	if err != nil {
 		return fmt.Errorf("failed to parse float: %w", err)
 	}

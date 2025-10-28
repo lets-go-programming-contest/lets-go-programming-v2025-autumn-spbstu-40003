@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 )
 
-var ErrNoData = errors.New("no data to save")
+const dirPerm = 0o755
 
-const dirPerm = 0755
+var ErrNoData = errors.New("no data to save")
 
 func Save(path string, data interface{}) error {
 	if data == nil {
