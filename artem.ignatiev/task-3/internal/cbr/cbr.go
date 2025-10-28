@@ -2,6 +2,7 @@ package cbr
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -26,7 +27,7 @@ func (f *XMLFloat) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 }
 
 type ValuteXML struct {
-	NumCode  int      `xml:"NumCode"`
+	NumCode  string   `xml:"NumCode"`
 	CharCode string   `xml:"CharCode"`
 	Nominal  int      `xml:"Nominal"`
 	ValueRaw XMLFloat `xml:"Value"`
@@ -54,12 +55,15 @@ func ParseXML(r io.Reader) ([]Currency, error) {
 
 	out := make([]Currency, 0, len(vc.Valutes))
 	for _, v := range vc.Valutes {
+		num, err := strconv.Atoi(v.NumCode)
+		if err != nil {
+			return nil, fmt.Errorf("invalid NumCode %q: %w", v.NumCode, err)
+		}
 		out = append(out, Currency{
-			NumCode:  v.NumCode,
+			NumCode:  num,
 			CharCode: v.CharCode,
 			Value:    float64(v.ValueRaw),
 		})
 	}
-
 	return out, nil
 }
