@@ -2,76 +2,63 @@ package cbr
 
 import (
 	"encoding/xml"
-	"io"
+	"fmt"
+	"os"
 	"strconv"
-	"strings"
 
 	"golang.org/x/net/html/charset"
 )
 
-type XMLFloat float64
+type ValCurs struct {
+	XMLName xml.Name `xml:"ValCurs"`
+	Valutes []Valute `xml:"Valute"`
+}
 
-func (f *XMLFloat) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var s string
-	if err := d.DecodeElement(&s, &start); err != nil {
-		return err
-	}
-	s = strings.ReplaceAll(s, ",", ".")
-	v, err := strconv.ParseFloat(s, 64)
+type Valute struct {
+	NumCode  string `xml:"NumCode"`
+	CharCode string `xml:"CharCode"`
+	Nominal  int    `xml:"Nominal"`
+	Name     string `xml:"Name"`
+	Value    string `xml:"Value"`
+}
+
+func ParseCBR(path string) ([]Valute, error) {
+	f, err := os.Open(path)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("cannot open file: %w", err)
 	}
-	*f = XMLFloat(v)
-	return nil
-}
+	defer f.Close()
 
-type ValuteXML struct {
-	NumCode  string   `xml:"NumCode"`
-	CharCode string   `xml:"CharCode"`
-	Nominal  int      `xml:"Nominal"`
-	ValueRaw XMLFloat `xml:"Value"`
-}
+	decoder := xml.NewDecoder(f)
+	decoder.CharsetReader = charset.NewReaderLabel
 
-type ValCursXML struct {
-	XMLName xml.Name    `xml:"ValCurs"`
-	Valutes []ValuteXML `xml:"Valute"`
-}
-
-type Currency struct {
-	NumCode  int     `json:"num_code"`
-	CharCode string  `json:"char_code"`
-	Value    float64 `json:"value"`
-}
-
-func ParseXML(r io.Reader) ([]Currency, error) {
-	dec := xml.NewDecoder(r)
-	dec.CharsetReader = charset.NewReaderLabel
-
-	var vc ValCursXML
-	if err := dec.Decode(&vc); err != nil {
-		return nil, err
+	var valCurs ValCurs
+	if err := decoder.Decode(&valCurs); err != nil {
+		return nil, fmt.Errorf("cannot parse xml: %w", err)
 	}
 
-	out := make([]Currency, 0, len(vc.Valutes))
-	for _, v := range vc.Valutes {
-		num := 0
-		if v.NumCode != "" {
-			if n, err := strconv.Atoi(v.NumCode); err == nil {
-				num = n
-			}
+	for i := range valCurs.Valutes {
+		v := valCurs.Valutes[i]
+		if v.NumCode == "" {
+			return nil, fmt.Errorf("invalid NumCode for element %d", i)
 		}
 
-		value := float64(v.ValueRaw)
-		if v.Nominal > 0 {
-			value /= float64(v.Nominal)
+		if _, err := strconv.ParseFloat(replaceComma(v.Value), 64); err != nil {
+			return nil, fmt.Errorf("invalid Value for %s: %w", v.NumCode, err)
 		}
-
-		out = append(out, Currency{
-			NumCode:  num,
-			CharCode: v.CharCode,
-			Value:    value,
-		})
 	}
 
-	return out, nil
+	return valCurs.Valutes, nil
+}
+
+func replaceComma(s string) string {
+	result := ""
+	for _, c := range s {
+		if c == ',' {
+			result += "."
+		} else {
+			result += string(c)
+		}
+	}
+	return result
 }
