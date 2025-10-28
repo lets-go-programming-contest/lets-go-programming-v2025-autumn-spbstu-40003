@@ -32,6 +32,7 @@ type ValuteXML struct {
 	Nominal  int      `xml:"Nominal"`
 	ValueRaw XMLFloat `xml:"Value"`
 }
+
 type ValCursXML struct {
 	XMLName xml.Name    `xml:"ValCurs"`
 	Valutes []ValuteXML `xml:"Valute"`
