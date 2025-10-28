@@ -10,14 +10,14 @@ import (
 
 var ErrNoData = errors.New("no data to save")
 
+const dirPerm = 0755
+
 func Save(path string, data interface{}) error {
 	if data == nil {
 		return ErrNoData
 	}
 
 	dir := filepath.Dir(path)
-	const dirPerm = 0755
-
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, dirPerm); err != nil {
 			return fmt.Errorf("cannot create directory: %w", err)

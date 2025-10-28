@@ -16,49 +16,53 @@ type Amount float64
 func (a *Amount) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	var valueStr string
 	if err := d.DecodeElement(&valueStr, &start); err != nil {
-		return fmt.Errorf("decode error: %w", err)
+		return fmt.Errorf("failed to decode value: %w", err)
 	}
 
 	valueStr = strings.ReplaceAll(valueStr, ",", ".")
 	valueStr = strings.TrimSpace(valueStr)
 
-	valueFloat, err := strconv.ParseFloat(valueStr, 64)
+	val, err := strconv.ParseFloat(valueStr, 64)
 	if err != nil {
-		return fmt.Errorf("convert to float: %w", err)
+		return fmt.Errorf("failed to parse float: %w", err)
 	}
 
-	*a = Amount(valueFloat)
-
+	*a = Amount(val)
 	return nil
 }
 
 type Currency struct {
-	CodeNum  int    `xml:"NumCode" json:"num_code"`
+	CodeNum  int    `xml:"NumCode"  json:"num_code"`
 	CodeChar string `xml:"CharCode" json:"char_code"`
-	Value    Amount `xml:"Value" json:"value"`
+	Value    Amount `xml:"Value"    json:"value"`
 }
 
 type CurrencyFile struct {
-	List []Currency `xml:"Valute"`
+	Currencies []Currency `xml:"Valute"`
 }
 
 func ReadCurrencies(path string) ([]Currency, error) {
-	content, err := os.ReadFile(path)
+	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("cannot read XML file: %w", err)
+		return nil, fmt.Errorf("cannot open XML file: %w", err)
 	}
+	defer func(f *os.File) {
+		if cerr := f.Close(); cerr != nil {
+			fmt.Fprintf(os.Stderr, "failed to close file: %v\n", cerr)
+		}
+	}(file)
 
-	decoder := xml.NewDecoder(strings.NewReader(string(content)))
+	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
 
 	var data CurrencyFile
 	if err := decoder.Decode(&data); err != nil {
-		return nil, fmt.Errorf("cannot decode XML: %w", err)
+		return nil, fmt.Errorf("failed to parse XML: %w", err)
 	}
 
-	sort.Slice(data.List, func(i, j int) bool {
-		return data.List[i].Value > data.List[j].Value
+	sort.Slice(data.Currencies, func(i, j int) bool {
+		return data.Currencies[i].Value > data.Currencies[j].Value
 	})
 
-	return data.List, nil
+	return data.Currencies, nil
 }

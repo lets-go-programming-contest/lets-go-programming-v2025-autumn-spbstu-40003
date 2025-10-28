@@ -24,6 +24,6 @@ func main() {
 	}
 
 	if err := jsonwriter.Save(cfg.OutputPath, currencies); err != nil {
-		panic(fmt.Errorf("cannot save JSON: %w", err))
+		panic(f mt.Errorf("cannot save JSON: %w", err))
 	}
 }
