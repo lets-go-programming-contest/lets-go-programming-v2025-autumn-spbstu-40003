@@ -55,15 +55,26 @@ func ParseXML(r io.Reader) ([]Currency, error) {
 
 	out := make([]Currency, 0, len(vc.Valutes))
 	for _, v := range vc.Valutes {
-		num, err := strconv.Atoi(v.NumCode)
-		if err != nil {
-			return nil, fmt.Errorf("invalid NumCode %q: %w", v.NumCode, err)
+		num := 0
+		if strings.TrimSpace(v.NumCode) != "" {
+			var err error
+			num, err = strconv.Atoi(v.NumCode)
+			if err != nil {
+				return nil, fmt.Errorf("invalid NumCode %q: %w", v.NumCode, err)
+			}
 		}
+
+		valuePerUnit := float64(v.ValueRaw)
+		if v.Nominal > 0 {
+			valuePerUnit /= float64(v.Nominal)
+		}
+
 		out = append(out, Currency{
 			NumCode:  num,
 			CharCode: v.CharCode,
-			Value:    float64(v.ValueRaw),
+			Value:    valuePerUnit,
 		})
 	}
+
 	return out, nil
 }
