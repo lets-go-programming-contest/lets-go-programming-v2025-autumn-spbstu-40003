@@ -31,8 +31,10 @@ func main() {
 		fmt.Printf("%v: %v\n", ErrWrongCount, err)
 		return
 	}
+
 	if dishCount < minItems || dishCount > maxRating {
 		fmt.Println(ErrWrongCount)
+
 		return
 	}
 
@@ -43,10 +45,13 @@ func main() {
 	}
 
 	_, err = fmt.Scan(&kSelect)
+
 	if err != nil {
 		fmt.Printf("%v: %v\n", ErrWrongChoice, err)
+
 		return
 	}
+
 	if kSelect < 1 || kSelect > dishCount {
 		fmt.Println(ErrWrongChoice)
 		return
@@ -77,6 +82,7 @@ func getRatings(count, minVal, maxVal int) (*ratingheap.RatingHeap, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%w: %v", ErrWrongRating, err)
 		}
+		
 		if score < minVal || score > maxVal {
 			return nil, ErrWrongRating
 		}

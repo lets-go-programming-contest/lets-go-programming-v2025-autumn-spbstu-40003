@@ -25,5 +25,6 @@ func (h *RatingHeap) Pop() interface{} {
 	n := len(current)
 	elem := current[n-1]
 	*h = current[:n-1]
+
 	return elem
 }
