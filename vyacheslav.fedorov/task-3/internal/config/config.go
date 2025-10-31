@@ -22,7 +22,6 @@ func ParseConfiguration(path string) (*Configuration, error) {
 
 	err = yaml.Unmarshal(data, &cfg)
 	if err != nil {
-
 		return nil, fmt.Errorf("error parsing config file %q: %w", path, err)
 	}
 
