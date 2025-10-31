@@ -75,7 +75,7 @@ func (c *Currency) handleStartElement(dec *xml.Decoder, elem xml.StartElement) e
 		val, err := strconv.ParseFloat(valueStr, 64)
 
 		if err != nil {
-			return fmt.Errorf("invalid Value: %w", err)
+			return err
 		}
 
 		c.Value = val
