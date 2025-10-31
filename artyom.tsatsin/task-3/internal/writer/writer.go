@@ -10,7 +10,7 @@ import (
 )
 
 func ExportJSON(path string, data []parser.Currency) error {
-	const filePerm = 0755
+	const filePerm = 0o755
 
 	dir := filepath.Dir(path)
 
