@@ -67,14 +67,11 @@ func (c *Currency) handleStartElement(dec *xml.Decoder, elem xml.StartElement) e
 
 	case "Value":
 		var valueStr string
-
 		if err := dec.DecodeElement(&valueStr, &elem); err != nil {
 			return fmt.Errorf("failed to decode Value: %w", err)
 		}
-
 		valueStr = strings.ReplaceAll(strings.TrimSpace(valueStr), ",", ".")
 		val, err := strconv.ParseFloat(valueStr, 64)
-		
 		if err != nil {
 			return fmt.Errorf("invalid Value: %w", err)
 		}
