@@ -29,17 +29,20 @@ func main() {
 	_, err := fmt.Scan(&dishCount)
 	if err != nil {
 		fmt.Printf("%v: %v\n", ErrWrongCount, err)
+		
 		return
 	}
 
 	if dishCount < minItems || dishCount > maxRating {
 		fmt.Println(ErrWrongCount)
+
 		return
 	}
 
 	menuHeap, err := getRatings(dishCount, minRating, maxRating)
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -75,6 +78,7 @@ func getRatings(count, minVal, maxVal int) (*ratingheap.RatingHeap, error) {
 	for range count {
 		var score int
 		_, err := fmt.Scan(&score)
+
 		if err != nil {
 			return nil, fmt.Errorf("%w", ErrWrongRating)
 		}
