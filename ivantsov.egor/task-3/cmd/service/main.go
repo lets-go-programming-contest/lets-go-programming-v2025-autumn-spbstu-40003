@@ -37,28 +37,31 @@ func must(err error) {
 	}
 }
 
-func (v *Valute) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+func (v *Valute) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
 	type shadow struct {
 		NumCode  string `xml:"NumCode"`
 		CharCode string `xml:"CharCode"`
 		Value    string `xml:"Value"`
 	}
 	var sh shadow
-	if err := d.DecodeElement(&sh, &start); err != nil {
-		return fmt.Errorf("value parse error: %w", err)
+	if err := dec.DecodeElement(&sh, &start); err != nil {
+		return fmt.Errorf("xml decode error: %w", err)
 	}
+
 	num, err := strconv.Atoi(strings.TrimSpace(sh.NumCode))
 	if err != nil {
 		return fmt.Errorf("num code parse error: %w", err)
 	}
+
 	valStr := strings.ReplaceAll(strings.TrimSpace(sh.Value), ",", ".")
-	val, err := strconv.ParseFloat(valStr, 64)
+	value, err := strconv.ParseFloat(valStr, 64)
 	if err != nil {
-		return fmt.Errorf("float parse error: %w", err)
+		return fmt.Errorf("value parse error: %w", err)
 	}
+
 	v.NumCode = num
-	v.CharCode = strings.TrimSpace(sh.CharCode)
-	v.Value = val
+	v.CharCode = sh.CharCode
+	v.Value = value
 	return nil
 }
 
@@ -66,6 +69,7 @@ func main() {
 	var configPath string
 	flag.StringVar(&configPath, "config", "", "path to YAML config file")
 	flag.Parse()
+
 	if configPath == "" {
 		panic("use -config <path>")
 	}
@@ -76,20 +80,18 @@ func main() {
 	var cfg Config
 	must(yaml.Unmarshal(data, &cfg))
 
-	if cfg.InputFile == "" || cfg.OutputFile == "" {
-		panic("input or output path missing")
-	}
-
 	xmlBytes, err := os.ReadFile(cfg.InputFile)
 	must(err)
 
-	var root valCurs
-	decoder := xml.NewDecoder(bytes.NewReader(xmlBytes))
+	reader := bytes.NewReader(xmlBytes)
+	decoder := xml.NewDecoder(reader)
 	decoder.CharsetReader = charset.NewReaderLabel
+
+	var root valCurs
 	must(decoder.Decode(&root))
 
 	sort.Slice(root.Items, func(i, j int) bool {
-		return root.Items[i].Value > root.Items[j].Value
+		return root.Items[i].CharCode < root.Items[j].CharCode
 	})
 
 	dir := filepath.Dir(cfg.OutputFile)
@@ -97,9 +99,11 @@ func main() {
 
 	out, err := os.Create(cfg.OutputFile)
 	must(err)
-	defer func() { _ = out.Close() }()
+	defer func() {
+		_ = out.Close()
+	}()
 
-	enc := json.NewEncoder(out)
-	enc.SetIndent("", "  ")
-	must(enc.Encode(root.Items))
+	encoder := json.NewEncoder(out)
+	encoder.SetIndent("", "  ")
+	must(encoder.Encode(root.Items))
 }
