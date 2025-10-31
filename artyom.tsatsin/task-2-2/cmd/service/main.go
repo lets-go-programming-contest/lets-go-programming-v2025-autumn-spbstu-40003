@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Artem-Hack/task-2-2/internal/heaprating"
+	"github.com/Artem-Hack/task-2-2/internal/ratingheap"
 )
 
 var (
