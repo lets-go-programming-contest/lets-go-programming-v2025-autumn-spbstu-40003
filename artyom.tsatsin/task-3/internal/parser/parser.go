@@ -3,6 +3,7 @@ package parser
 import (
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"sort"
@@ -13,9 +14,9 @@ import (
 )
 
 type Currency struct {
-	Code  int     `json:"num_code" xml:"NumCode"`
+	Code  int     `json:"num_code"  xml:"NumCode"`
 	Char  string  `json:"char_code" xml:"CharCode"`
-	Value float64 `json:"value" xml:"Value"`
+	Value float64 `json:"value"     xml:"Value"`
 }
 
 func (c *Currency) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
@@ -25,38 +26,16 @@ func (c *Currency) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error 
 			if errors.Is(err, io.EOF) {
 				break
 			}
-			panic("XML token error: " + err.Error())
+			return fmt.Errorf("XML token error: %w", err)
 		}
 
-		switch el := token.(type) {
+		switch elem := token.(type) {
 		case xml.StartElement:
-			switch el.Name.Local {
-			case "NumCode":
-				var s string
-				if err := dec.DecodeElement(&s, &el); err != nil {
-					panic("Failed to decode NumCode: " + err.Error())
-				}
-				c.Code, _ = strconv.Atoi(strings.TrimSpace(s))
-			case "CharCode":
-				var s string
-				if err := dec.DecodeElement(&s, &el); err != nil {
-					panic("Failed to decode CharCode: " + err.Error())
-				}
-				c.Char = strings.TrimSpace(s)
-			case "Value":
-				var s string
-				if err := dec.DecodeElement(&s, &el); err != nil {
-					panic("Failed to decode Value: " + err.Error())
-				}
-				s = strings.ReplaceAll(strings.TrimSpace(s), ",", ".")
-				val, err := strconv.ParseFloat(s, 64)
-				if err != nil {
-					panic("Invalid Value: " + err.Error())
-				}
-				c.Value = val
+			if err := c.handleStartElement(dec, elem); err != nil {
+				return err
 			}
 		case xml.EndElement:
-			if el.Name.Local == start.Name.Local {
+			if elem.Name.Local == start.Name.Local {
 				return nil
 			}
 		}
@@ -64,12 +43,48 @@ func (c *Currency) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error 
 	return nil
 }
 
+func (c *Currency) handleStartElement(dec *xml.Decoder, elem xml.StartElement) error {
+	switch elem.Name.Local {
+	case "NumCode":
+		var s string
+		if err := dec.DecodeElement(&s, &elem); err != nil {
+			return fmt.Errorf("failed to decode NumCode: %w", err)
+		}
+		c.Code, _ = strconv.Atoi(strings.TrimSpace(s))
+
+	case "CharCode":
+		var s string
+		if err := dec.DecodeElement(&s, &elem); err != nil {
+			return fmt.Errorf("failed to decode CharCode: %w", err)
+		}
+		c.Char = strings.TrimSpace(s)
+
+	case "Value":
+		var s string
+		if err := dec.DecodeElement(&s, &elem); err != nil {
+			return fmt.Errorf("failed to decode Value: %w", err)
+		}
+		s = strings.ReplaceAll(strings.TrimSpace(s), ",", ".")
+		val, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return fmt.Errorf("invalid Value: %w", err)
+		}
+		c.Value = val
+	}
+	return nil
+}
+
 func LoadXML(path string) ([]Currency, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		panic("Failed to open XML file: " + err.Error())
+		return nil, fmt.Errorf("failed to open XML file: %w", err)
 	}
-	defer file.Close()
+
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			fmt.Println("close error:", cerr)
+		}
+	}()
 
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
@@ -81,7 +96,7 @@ func LoadXML(path string) ([]Currency, error) {
 			if errors.Is(err, io.EOF) {
 				break
 			}
-			panic("XML reading error: " + err.Error())
+			return nil, fmt.Errorf("XML reading error: %w", err)
 		}
 
 		start, ok := token.(xml.StartElement)
@@ -91,7 +106,7 @@ func LoadXML(path string) ([]Currency, error) {
 
 		var curr Currency
 		if err := decoder.DecodeElement(&curr, &start); err != nil {
-			panic("Currency decode error: " + err.Error())
+			return nil, fmt.Errorf("currency decode error: %w", err)
 		}
 
 		list = append(list, curr)

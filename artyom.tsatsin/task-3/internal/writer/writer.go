@@ -2,6 +2,7 @@ package writer
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -10,21 +11,26 @@ import (
 
 func ExportJSON(path string, data []parser.Currency) error {
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		panic("Failed to create directory: " + err.Error())
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	file, err := os.Create(path)
 	if err != nil {
-		panic("Failed to create JSON: " + err.Error())
+		return fmt.Errorf("failed to create JSON file: %w", err)
 	}
-	defer file.Close()
+
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			fmt.Println("close error:", cerr)
+		}
+	}()
 
 	enc := json.NewEncoder(file)
 	enc.SetIndent("", "  ")
 
 	if err := enc.Encode(data); err != nil {
-		panic("JSON encoding error: " + err.Error())
+		return fmt.Errorf("JSON encoding error: %w", err)
 	}
 
 	return nil

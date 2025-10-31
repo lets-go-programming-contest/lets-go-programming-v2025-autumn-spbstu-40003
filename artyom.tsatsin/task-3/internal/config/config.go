@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -14,18 +15,23 @@ type Settings struct {
 func Read(path string) (*Settings, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		panic("Failed to open config file: " + err.Error())
+		return nil, fmt.Errorf("failed to open config file: %w", err)
 	}
-	defer file.Close()
+
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			fmt.Println("close error:", cerr)
+		}
+	}()
 
 	var cfg Settings
 	dec := yaml.NewDecoder(file)
 	if err := dec.Decode(&cfg); err != nil {
-		panic("Failed to decode YAML: " + err.Error())
+		return nil, fmt.Errorf("failed to decode YAML: %w", err)
 	}
 
 	if cfg.InputFile == "" || cfg.OutputFile == "" {
-		panic("Config error: missing input-file or output-file")
+		return nil, fmt.Errorf("config error: missing input-file or output-file")
 	}
 
 	return &cfg, nil
