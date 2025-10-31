@@ -29,7 +29,7 @@ func main() {
 	_, err := fmt.Scan(&dishCount)
 	if err != nil {
 		fmt.Printf("%v: %v\n", ErrWrongCount, err)
-		
+
 		return
 	}
 
@@ -49,11 +49,13 @@ func main() {
 	_, err = fmt.Scan(&kSelect)
 	if err != nil {
 		fmt.Printf("%v: %v\n", ErrWrongChoice, err)
+
 		return
 	}
 
 	if kSelect < 1 || kSelect > dishCount {
 		fmt.Println(ErrWrongChoice)
+
 		return
 	}
 
@@ -61,6 +63,7 @@ func main() {
 		result, ok := heap.Pop(menuHeap).(int)
 		if !ok {
 			fmt.Println(-1)
+
 			return
 		}
 
