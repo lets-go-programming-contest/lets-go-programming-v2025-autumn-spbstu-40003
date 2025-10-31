@@ -25,7 +25,9 @@ func Read(path string) (*Settings, error) {
 	}()
 
 	var cfg Settings
+
 	dec := yaml.NewDecoder(file)
+
 	if err := dec.Decode(&cfg); err != nil {
 		return nil, fmt.Errorf("failed to decode YAML: %w", err)
 	}
