@@ -1,4 +1,4 @@
-package RatingHea
+package ratingheap
 
 type RatingHeap []int
 
