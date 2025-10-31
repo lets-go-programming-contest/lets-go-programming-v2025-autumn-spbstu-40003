@@ -28,7 +28,7 @@ func main() {
 func execute() error {
 	var departNum int
 	if _, scanErr := fmt.Scan(&departNum); scanErr != nil {
-		return fmt.Errorf("%w: %v", ErrDepartment, scanErr)
+		return fmt.Errorf("%s: %w", ErrDepartment.Error(), scanErr)
 	}
 
 	for range createSlice(departNum) {
@@ -45,16 +45,15 @@ func execute() error {
 
 func handleDepartment() error {
 	var employeeNumber int
-	_, scanErr := fmt.Scan(&employeeNumber)
-	if scanErr != nil {
-		return fmt.Errorf("%w: %v", ErrEmployee, scanErr)
+	if _, scanErr := fmt.Scan(&employeeNumber); scanErr != nil {
+		return fmt.Errorf("%s: %w", ErrEmployee.Error(), scanErr)
 	}
 
 	lowerBound := minTemp
 	upperBound := maxTemp
 	isCorrect := true
 
-	for range employeeNumber {
+	for range createSlice(employeeNumber) {
 		var (
 			symbol string
 			temp   int
@@ -62,7 +61,7 @@ func handleDepartment() error {
 
 		_, scanErr := fmt.Scan(&symbol, &temp)
 		if scanErr != nil {
-			return fmt.Errorf("%w: %v", ErrTemperature, scanErr)
+			return fmt.Errorf("%s: %w", ErrTemperature.Error(), scanErr)
 		}
 
 		if !isCorrect {
