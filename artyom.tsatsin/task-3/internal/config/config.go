@@ -1,11 +1,14 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
 )
+
+var ErrMissingConfigFields = errors.New("config error: missing input-file or output-file")
 
 type Settings struct {
 	InputFile  string `yaml:"input-file"`
@@ -33,7 +36,7 @@ func Read(path string) (*Settings, error) {
 	}
 
 	if cfg.InputFile == "" || cfg.OutputFile == "" {
-		return nil, fmt.Errorf("config error: missing input-file or output-file")
+		return nil, ErrMissingConfigFields
 	}
 
 	return &cfg, nil
