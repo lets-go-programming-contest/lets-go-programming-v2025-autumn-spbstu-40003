@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	cfgPath := flag.String("cfg", "config.yaml", "path to config.yaml")
+	cfgPath := flag.String("config", "config.yaml", "path to config.yaml")
 	flag.Parse()
 
 	cfg, err := config.Read(*cfgPath)
