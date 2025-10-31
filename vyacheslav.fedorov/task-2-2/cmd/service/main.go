@@ -55,22 +55,19 @@ func main() {
 
 	_, scanErr1 := fmt.Scan(&iCount)
 	if scanErr1 != nil || iCount < minIt || iCount > hRat {
-		fmt.Println(ErrICount)
-
+		fmt.Println(ErrICount, scanErr1)
 		return
 	}
 
 	mData, err := collectScores(iCount, lRat, hRat)
 	if err != nil {
-		fmt.Println(err)
-
+		fmt.Println("Error during score collection:", err)
 		return
 	}
 
 	_, scanErr2 := fmt.Scan(&selection)
 	if scanErr2 != nil || selection < 1 || selection > iCount {
 		fmt.Println(ErrSel)
-
 		return
 	}
 
