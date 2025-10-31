@@ -66,8 +66,8 @@ func main() {
 	}
 }
 
-func getRatings(count, minVal, maxVal int) (*heaprating.RatingHeap, error) {
-	data := &heaprating.RatingHeap{}
+func getRatings(count, minVal, maxVal int) (*ratingheap.RatingHeap, error) {
+	data := &ratingheap.RatingHeap{}
 	heap.Init(data)
 
 	for i := 0; i < count; i++ {
