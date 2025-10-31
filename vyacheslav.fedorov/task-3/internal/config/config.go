@@ -15,7 +15,6 @@ type Configuration struct {
 func ParseConfiguration(path string) (*Configuration, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-
 		return nil, fmt.Errorf("error reading config file %q: %w", path, err)
 	}
 
@@ -25,9 +24,7 @@ func ParseConfiguration(path string) (*Configuration, error) {
 	if err != nil {
 
 		return nil, fmt.Errorf("error parsing config file %q: %w", path, err)
-
 	}
 
 	return &cfg, nil
-
 }
