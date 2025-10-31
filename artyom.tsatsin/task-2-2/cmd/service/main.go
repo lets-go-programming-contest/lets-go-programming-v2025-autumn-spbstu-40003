@@ -4,6 +4,8 @@ import (
 	"container/heap"
 	"errors"
 	"fmt"
+
+	"github.com/Artem-Hack/task-2-2/internal/heaprating"
 )
 
 var (
@@ -18,35 +20,6 @@ const (
 	minItems  = 1
 )
 
-type RatingHeap []int
-
-func (h *RatingHeap) Len() int {
-	return len(*h)
-}
-
-func (h *RatingHeap) Less(i, j int) bool {
-	return (*h)[i] > (*h)[j]
-}
-
-func (h *RatingHeap) Swap(i, j int) {
-	(*h)[i], (*h)[j] = (*h)[j], (*h)[i]
-}
-
-func (h *RatingHeap) Push(x interface{}) {
-	if val, ok := x.(int); ok {
-		*h = append(*h, val)
-	}
-}
-
-func (h *RatingHeap) Pop() interface{} {
-	current := *h
-	n := len(current)
-	elem := current[n-1]
-	*h = current[:n-1]
-
-	return elem
-}
-
 func main() {
 	var (
 		dishCount int
@@ -54,23 +27,28 @@ func main() {
 	)
 
 	_, err := fmt.Scan(&dishCount)
-	if err != nil || dishCount < minItems || dishCount > maxRating {
+	if err != nil {
+		fmt.Printf("%v: %v\n", ErrWrongCount, err)
+		return
+	}
+	if dishCount < minItems || dishCount > maxRating {
 		fmt.Println(ErrWrongCount)
-
 		return
 	}
 
 	menuHeap, err := getRatings(dishCount, minRating, maxRating)
 	if err != nil {
 		fmt.Println(err)
-
 		return
 	}
 
 	_, err = fmt.Scan(&kSelect)
-	if err != nil || kSelect < 1 || kSelect > dishCount {
+	if err != nil {
+		fmt.Printf("%v: %v\n", ErrWrongChoice, err)
+		return
+	}
+	if kSelect < 1 || kSelect > dishCount {
 		fmt.Println(ErrWrongChoice)
-
 		return
 	}
 
@@ -78,7 +56,6 @@ func main() {
 		result, ok := heap.Pop(menuHeap).(int)
 		if !ok {
 			fmt.Println(-1)
-
 			return
 		}
 
@@ -89,15 +66,18 @@ func main() {
 	}
 }
 
-func getRatings(count, minVal, maxVal int) (*RatingHeap, error) {
-	data := &RatingHeap{}
+func getRatings(count, minVal, maxVal int) (*heaprating.RatingHeap, error) {
+	data := &heaprating.RatingHeap{}
 	heap.Init(data)
 
-	for range make([]struct{}, count) {
+	for i := 0; i < count; i++ {
 		var score int
 		_, err := fmt.Scan(&score)
 
-		if err != nil || score < minVal || score > maxVal {
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrWrongRating, err)
+		}
+		if score < minVal || score > maxVal {
 			return nil, ErrWrongRating
 		}
 
