@@ -11,7 +11,6 @@ import (
 
 func ExportJSON(path string, data []parser.Currency) error {
 	const filePerm = 0755
-
 	dir := filepath.Dir(path)
 
 	if err := os.MkdirAll(dir, filePerm); err != nil {
