@@ -9,10 +9,9 @@ import (
 	"github.com/Artem-Hack/task-3/internal/parser"
 )
 
-// filePerm — права доступа для создаваемых директорий и файлов.
-const filePerm = 0755
-
 func ExportJSON(path string, data []parser.Currency) error {
+	const filePerm = 0755
+
 	dir := filepath.Dir(path)
 
 	if err := os.MkdirAll(dir, filePerm); err != nil {
