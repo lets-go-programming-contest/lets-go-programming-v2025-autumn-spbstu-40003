@@ -1,17 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"encoding/xml"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
+	"golang.org/x/net/html/charset"
 	"gopkg.in/yaml.v3"
 )
 
@@ -21,9 +22,19 @@ type Config struct {
 }
 
 type Valute struct {
-	NumCode  int     `xml:"NumCode" json:"num_code"`
-	CharCode string  `xml:"CharCode" json:"char_code"`
-	Value    float64 `xml:"Value" json:"value"`
+	NumCode  int     `json:"num_code"  xml:"NumCode"`
+	CharCode string  `json:"char_code" xml:"CharCode"`
+	Value    float64 `json:"value"     xml:"Value"`
+}
+
+type valCurs struct {
+	Items []Valute `xml:"Valute"`
+}
+
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (v *Valute) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
@@ -34,73 +45,21 @@ func (v *Valute) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	}
 	var sh shadow
 	if err := d.DecodeElement(&sh, &start); err != nil {
-
-		return err
+		return fmt.Errorf("value parse error: %w", err)
 	}
 	num, err := strconv.Atoi(strings.TrimSpace(sh.NumCode))
 	if err != nil {
-
-		return fmt.Errorf("NumCode parse error: %w", err)
+		return fmt.Errorf("num code parse error: %w", err)
 	}
 	valStr := strings.ReplaceAll(strings.TrimSpace(sh.Value), ",", ".")
 	val, err := strconv.ParseFloat(valStr, 64)
 	if err != nil {
-		return fmt.Errorf("Value parse error: %w", err)
+		return fmt.Errorf("float parse error: %w", err)
 	}
 	v.NumCode = num
 	v.CharCode = strings.TrimSpace(sh.CharCode)
 	v.Value = val
-
 	return nil
-}
-
-type valCurs struct {
-	XMLName xml.Name `xml:"ValCurs"`
-	Items   []Valute `xml:"Valute"`
-}
-
-func must(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-func openExisting(path string) *os.File {
-	f, err := os.Open(path)
-	if err != nil {
-		panic(err)
-	}
-
-	return f
-}
-
-func createAll(path string) *os.File {
-	dir := filepath.Dir(path)
-	if dir != "." && dir != "" {
-		must(os.MkdirAll(dir, 0o755))
-	}
-	f, err := os.Create(path)
-	if err != nil {
-		panic(err)
-	}
-
-	return f
-}
-
-func decodeYAMLConfig(path string) Config {
-	b, err := os.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-	var cfg Config
-	if err := yaml.Unmarshal(b, &cfg); err != nil {
-		panic(err)
-	}
-	if cfg.InputFile == "" || cfg.OutputFile == "" {
-		panic("invalid config")
-	}
-
-	return cfg
 }
 
 func main() {
@@ -110,19 +69,36 @@ func main() {
 	if configPath == "" {
 		panic("use -config <path>")
 	}
-	cfg := decodeYAMLConfig(configPath)
-	in := openExisting(cfg.InputFile)
-	defer in.Close()
-	xmlBytes, err := io.ReadAll(in)
-	must(err)
-	var root valCurs
-	must(xml.Unmarshal(xmlBytes, &root))
-	sort.Slice(root.Items, func(i, j int) bool {
 
+	data, err := os.ReadFile(configPath)
+	must(err)
+
+	var cfg Config
+	must(yaml.Unmarshal(data, &cfg))
+
+	if cfg.InputFile == "" || cfg.OutputFile == "" {
+		panic("input or output path missing")
+	}
+
+	xmlBytes, err := os.ReadFile(cfg.InputFile)
+	must(err)
+
+	var root valCurs
+	decoder := xml.NewDecoder(bytes.NewReader(xmlBytes))
+	decoder.CharsetReader = charset.NewReaderLabel
+	must(decoder.Decode(&root))
+
+	sort.Slice(root.Items, func(i, j int) bool {
 		return root.Items[i].Value > root.Items[j].Value
 	})
-	out := createAll(cfg.OutputFile)
-	defer out.Close()
+
+	dir := filepath.Dir(cfg.OutputFile)
+	must(os.MkdirAll(dir, 0o755))
+
+	out, err := os.Create(cfg.OutputFile)
+	must(err)
+	defer func() { _ = out.Close() }()
+
 	enc := json.NewEncoder(out)
 	enc.SetIndent("", "  ")
 	must(enc.Encode(root.Items))
