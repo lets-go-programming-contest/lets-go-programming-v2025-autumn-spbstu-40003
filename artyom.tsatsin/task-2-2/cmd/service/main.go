@@ -80,9 +80,8 @@ func getRatings(count, minVal, maxVal int) (*ratingheap.RatingHeap, error) {
 
 	for range count {
 		var score int
-		_, err := fmt.Scan(&score)
 
-		if err != nil {
+		if _, err := fmt.Scan(&score); err != nil {
 			return nil, fmt.Errorf("%w", ErrWrongRating)
 		}
 
