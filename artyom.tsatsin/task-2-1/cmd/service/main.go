@@ -28,7 +28,7 @@ func run() error {
 	var depCount int
 
 	if _, err := fmt.Scan(&depCount); err != nil {
-		return fmt.Errorf("%w (%v)", ErrDep, err)
+		return fmt.Errorf("%w", ErrDep)
 	}
 
 	for range depCount {
@@ -46,7 +46,7 @@ func processDepartment() error {
 	var empCount int
 
 	if _, err := fmt.Scan(&empCount); err != nil {
-		return fmt.Errorf("%w (%v)", ErrEmp, err)
+		return fmt.Errorf("%w", ErrEmp)
 	}
 
 	depLow := minT
@@ -60,7 +60,7 @@ func processDepartment() error {
 		)
 
 		if _, err := fmt.Scan(&sign, &temp); err != nil {
-			return fmt.Errorf("%w (%v)", ErrTemp, err)
+			return fmt.Errorf("%w", ErrTemp)
 		}
 
 		if !valid {
@@ -79,7 +79,7 @@ func processDepartment() error {
 				depHigh = temp
 			}
 		default:
-			return ErrSign
+			return fmt.Errorf("%w", ErrSign)
 		}
 
 		if depLow <= depHigh {
