@@ -30,7 +30,7 @@ func run() error {
 		return ErrDep
 	}
 
-	for range loopCount(depCount) {
+	for depIndex := 0; depIndex < depCount; depIndex++ {
 		if err := processDepartment(); err != nil {
 			fmt.Println(invalidT)
 
@@ -44,14 +44,14 @@ func run() error {
 func processDepartment() error {
 	var empCount int
 	if _, err := fmt.Scan(&empCount); err != nil {
-		return ErrEmp
+		return fmt.Errorf("%w: %v", ErrEmp, err)
 	}
 
 	depLow := minT
 	depHigh := maxT
 	valid := true
 
-	for range loopCount(empCount) {
+	for empIndex := 0; empIndex < empCount; empIndex++ {
 		var (
 			sign string
 			temp int
@@ -90,8 +90,4 @@ func processDepartment() error {
 	}
 
 	return nil
-}
-
-func loopCount(n int) []struct{} {
-	return make([]struct{}, n)
 }
