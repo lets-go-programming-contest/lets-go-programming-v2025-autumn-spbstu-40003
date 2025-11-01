@@ -26,11 +26,12 @@ func main() {
 
 func run() error {
 	var depCount int
+
 	if _, err := fmt.Scan(&depCount); err != nil {
-		return ErrDep
+		return fmt.Errorf("%w (%v)", ErrDep, err)
 	}
 
-	for depIndex := 0; depIndex < depCount; depIndex++ {
+	for range depCount {
 		if err := processDepartment(); err != nil {
 			fmt.Println(invalidT)
 
@@ -43,22 +44,23 @@ func run() error {
 
 func processDepartment() error {
 	var empCount int
+
 	if _, err := fmt.Scan(&empCount); err != nil {
-		return fmt.Errorf("%w: %v", ErrEmp, err)
+		return fmt.Errorf("%w (%v)", ErrEmp, err)
 	}
 
 	depLow := minT
 	depHigh := maxT
 	valid := true
 
-	for empIndex := 0; empIndex < empCount; empIndex++ {
+	for range empCount {
 		var (
 			sign string
 			temp int
 		)
 
 		if _, err := fmt.Scan(&sign, &temp); err != nil {
-			return ErrTemp
+			return fmt.Errorf("%w (%v)", ErrTemp, err)
 		}
 
 		if !valid {
