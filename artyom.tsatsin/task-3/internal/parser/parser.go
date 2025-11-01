@@ -26,7 +26,6 @@ func (c *Currency) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error 
 			if errors.Is(err, io.EOF) {
 				break
 			}
-
 			return fmt.Errorf("XML token error: %w", err)
 		}
 
@@ -41,7 +40,6 @@ func (c *Currency) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error 
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -49,20 +47,16 @@ func (c *Currency) handleStartElement(dec *xml.Decoder, elem xml.StartElement) e
 	switch elem.Name.Local {
 	case "NumCode":
 		var numCodeStr string
-
 		if err := dec.DecodeElement(&numCodeStr, &elem); err != nil {
 			return fmt.Errorf("failed to decode NumCode: %w", err)
 		}
-
 		c.Code, _ = strconv.Atoi(strings.TrimSpace(numCodeStr))
 
 	case "CharCode":
 		var charCodeStr string
-
 		if err := dec.DecodeElement(&charCodeStr, &elem); err != nil {
 			return fmt.Errorf("failed to decode CharCode: %w", err)
 		}
-
 		c.Char = strings.TrimSpace(charCodeStr)
 
 	case "Value":
@@ -72,15 +66,12 @@ func (c *Currency) handleStartElement(dec *xml.Decoder, elem xml.StartElement) e
 		}
 
 		valueStr = strings.ReplaceAll(strings.TrimSpace(valueStr), ",", ".")
-		val, err := strconv.ParseFloat(valueStr, 64)
-		
-		if err != nil {
+		if val, err := strconv.ParseFloat(valueStr, 64); err != nil {
 			return fmt.Errorf("invalid Value: %w", err)
+		} else {
+			c.Value = val
 		}
-
-		c.Value = val
 	}
-
 	return nil
 }
 
@@ -89,7 +80,6 @@ func LoadXML(path string) ([]Currency, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open XML file: %w", err)
 	}
-
 	defer func() {
 		if cerr := file.Close(); cerr != nil {
 			fmt.Println("close error:", cerr)
@@ -100,14 +90,12 @@ func LoadXML(path string) ([]Currency, error) {
 	decoder.CharsetReader = charset.NewReaderLabel
 
 	var list []Currency
-
 	for {
 		token, err := decoder.Token()
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				break
 			}
-
 			return nil, fmt.Errorf("XML reading error: %w", err)
 		}
 
