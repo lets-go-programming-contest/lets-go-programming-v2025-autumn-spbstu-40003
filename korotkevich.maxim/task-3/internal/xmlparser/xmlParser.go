@@ -18,38 +18,26 @@ var (
 	ErrInvalidValue = errors.New("error: invalid value")
 )
 
+type CustomFloat float64
+
 type ExchangeTrade struct {
-	NumCode  int     `json:"num_code"  xml:"NumCode"`
-	CharCode string  `json:"char_code" xml:"CharCode"`
-	Value    float64 `json:"value"     xml:"Value"`
+	NumCode  int         `json:"num_code"  xml:"NumCode"`
+	CharCode string      `json:"char_code" xml:"CharCode"`
+	Value    CustomFloat `json:"value"     xml:"Value"`
 }
 
 type ExchangeData struct {
 	Valutes []ExchangeTrade `xml:"Valute"`
 }
 
-func (t *ExchangeTrade) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
-	var tmp struct {
-		NumCode  string `xml:"NumCode"`
-		CharCode string `xml:"CharCode"`
-		Value    string `xml:"Value"`
-	}
+func (f *CustomFloat) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
+	var val string
 
-	if err := dec.DecodeElement(&tmp, &start); err != nil {
+	if err := dec.DecodeElement(&val, &start); err != nil {
 		return fmt.Errorf("error with decoding element: %w", err)
 	}
 
-	t.CharCode = strings.TrimSpace(tmp.CharCode)
-	numStr := strings.TrimSpace(tmp.NumCode)
-
-	num, err := strconv.Atoi(numStr)
-	if err != nil {
-		t.NumCode = 0
-	}
-
-	t.NumCode = num
-
-	val := strings.TrimSpace(tmp.Value)
+	val = strings.TrimSpace(val)
 	val = strings.ReplaceAll(val, ",", ".")
 
 	if val == "" {
@@ -61,7 +49,7 @@ func (t *ExchangeTrade) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) e
 		return ErrInvalidValue
 	}
 
-	t.Value = valFLoat
+	*f = CustomFloat(valFLoat)
 
 	return nil
 }

@@ -11,10 +11,8 @@ func WriteJSON(outputPath string, data interface{}) error {
 	const permissions = 0o755
 
 	directory := filepath.Dir(outputPath)
-	if directory != "" && directory != "." {
-		if err := os.MkdirAll(directory, permissions); err != nil {
-			return fmt.Errorf("error: failed to create output directory %w", err)
-		}
+	if err := os.MkdirAll(directory, permissions); err != nil {
+		return fmt.Errorf("error: failed to create output directory %w", err)
 	}
 
 	outputFile, err := os.Create(outputPath)
