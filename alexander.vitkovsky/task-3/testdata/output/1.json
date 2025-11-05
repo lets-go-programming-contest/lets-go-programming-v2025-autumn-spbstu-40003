@@ -1,0 +1,87 @@
+[
+  {
+    "NumCode": 826,
+    "CharCode": "GBP",
+    "Value": 43.8254
+  },
+  {
+    "NumCode": 960,
+    "CharCode": "XDR",
+    "Value": 38.4205
+  },
+  {
+    "NumCode": 840,
+    "CharCode": "USD",
+    "Value": 30.9436
+  },
+  {
+    "NumCode": 978,
+    "CharCode": "EUR",
+    "Value": 26.8343
+  },
+  {
+    "NumCode": 124,
+    "CharCode": "CAD",
+    "Value": 19.324
+  },
+  {
+    "NumCode": 756,
+    "CharCode": "CHF",
+    "Value": 18.1861
+  },
+  {
+    "NumCode": 702,
+    "CharCode": "SGD",
+    "Value": 16.8878
+  },
+  {
+    "NumCode": 36,
+    "CharCode": "AUD",
+    "Value": 16.0102
+  },
+  {
+    "NumCode": 980,
+    "CharCode": "UAH",
+    "Value": 5.8109
+  },
+  {
+    "NumCode": 208,
+    "CharCode": "DKK",
+    "Value": 3.6101
+  },
+  {
+    "NumCode": 578,
+    "CharCode": "NOK",
+    "Value": 3.47853
+  },
+  {
+    "NumCode": 752,
+    "CharCode": "SEK",
+    "Value": 2.95924
+  },
+  {
+    "NumCode": 352,
+    "CharCode": "ISK",
+    "Value": 0.307958
+  },
+  {
+    "NumCode": 392,
+    "CharCode": "JPY",
+    "Value": 0.231527
+  },
+  {
+    "NumCode": 398,
+    "CharCode": "KZT",
+    "Value": 0.203393
+  },
+  {
+    "NumCode": 974,
+    "CharCode": "BYR",
+    "Value": 0.018429
+  },
+  {
+    "NumCode": 792,
+    "CharCode": "TRL",
+    "Value": 0.0000222616
+  }
+]
