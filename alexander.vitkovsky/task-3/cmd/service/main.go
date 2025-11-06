@@ -8,11 +8,9 @@ import (
 
 func main() {
 	inputPath, outputPath := config.ParseConfig()
-
 	valCurs := parser.ParseXML(inputPath)
 	results := converter.ToResult(valCurs)
 
 	converter.SortByValueDesc(results)
 	converter.SaveToJSON(outputPath, results)
-
 }

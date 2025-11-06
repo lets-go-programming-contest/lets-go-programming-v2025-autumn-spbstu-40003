@@ -15,29 +15,26 @@ type Config struct {
 	Output string `yaml:"output-file"`
 }
 
-func InitConfig() string {
+func ParseConfig() (string, string) {
 	var configPath string
 	flag.StringVar(&configPath, "config", "", "path to config .yaml file")
 	flag.Parse()
 
-	return configPath
-}
-
-func ParseConfig() (string, string) {
-	file, err := os.Open(InitConfig())
+	file, err := os.Open(configPath)
 	if err != nil {
-		panic(err)
+		panic("failed to open input file" + err.Error())
 	}
 	defer file.Close()
 
-	config := Config{}
 	data, err := io.ReadAll(file)
 	if err != nil {
-		panic(err)
+		panic("failed to read config file" + err.Error())
 	}
+
+	var config Config
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
-		panic(err)
+		panic("failed to parse config file" + err.Error())
 	}
 
 	return config.Input, config.Output

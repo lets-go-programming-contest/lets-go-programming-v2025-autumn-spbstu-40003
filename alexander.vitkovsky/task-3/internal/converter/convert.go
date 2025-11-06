@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -28,8 +29,10 @@ func ToResult(valCurs parser.ValCurs) []ValuteResult {
 		valuteResults []ValuteResult
 	)
 
-	for _, valute := range valCurs.Valutes {
-		valuteResult := ValuteResult{}
+	// По условию входные данные всегда валидны, ошибки конвертации не отливливаю
+
+ 	for _, valute := range valCurs.Valutes {
+		var valuteResult ValuteResult
 
 		valuteResult.NumCode, err = strconv.Atoi(valute.NumCode)
 		if err != nil {
@@ -50,15 +53,21 @@ func ToResult(valCurs parser.ValCurs) []ValuteResult {
 }
 
 func SortByValueDesc(items []ValuteResult) {
+	// компаратор для валют
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].Value > items[j].Value
 	})
 }
 
 func SaveToJSON(path string, data []ValuteResult) {
+	// Нужно создать директории, если их нет. Иначе ругаются тесты
+	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+        panic("failed to create directores for output" + err.Error())
+    }
+
 	file, err := os.Create(path)
 	if err != nil {
-		panic(err)
+		panic("failed to ceate output file" + err.Error())
 	}
 	defer file.Close()
 
@@ -66,6 +75,6 @@ func SaveToJSON(path string, data []ValuteResult) {
 	encoder.SetIndent("", "  ")
 	err = encoder.Encode(data)
 	if err != nil {
-		panic(err)
+		panic("failed to convert in JSON" + err.Error())
 	}
 }

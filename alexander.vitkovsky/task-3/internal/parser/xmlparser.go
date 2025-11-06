@@ -28,17 +28,21 @@ type ValCurs struct {
 func ParseXML(path string) ValCurs {
 	file, err := os.Open(path)
 	if err != nil {
-		panic(err)
+		panic("failed to open input XML file" + err.Error())
 	}
 	defer file.Close()
 
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
 
-	valCurs := ValCurs{}
+	var valCurs ValCurs
 	err = decoder.Decode(&valCurs)
 	if err != nil {
-		panic(err)
+		panic("failed to decode XML file" + err.Error())
+	}
+
+	if len(valCurs.Valutes) == 0 {
+		panic("empty XML or invalid structure")
 	}
 
 	return valCurs
