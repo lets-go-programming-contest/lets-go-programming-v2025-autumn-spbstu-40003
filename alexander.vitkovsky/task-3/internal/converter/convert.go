@@ -31,7 +31,7 @@ func ToResult(valCurs parser.ValCurs) []ValuteResult {
 
 	// По условию входные данные всегда валидны, ошибки конвертации не отливливаю
 
- 	for _, valute := range valCurs.Valutes {
+	for _, valute := range valCurs.Valutes {
 		var valuteResult ValuteResult
 
 		valuteResult.NumCode, err = strconv.Atoi(valute.NumCode)
@@ -52,18 +52,18 @@ func ToResult(valCurs parser.ValCurs) []ValuteResult {
 	return valuteResults
 }
 
-func SortByValueDesc(items []ValuteResult) {
+func SortByValueAsc(items []ValuteResult) {
 	// компаратор для валют
 	sort.Slice(items, func(i, j int) bool {
-		return items[i].Value > items[j].Value
+		return items[i].Value < items[j].Value
 	})
 }
 
 func SaveToJSON(path string, data []ValuteResult) {
 	// Нужно создать директории, если их нет. Иначе ругаются тесты
 	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
-        panic("failed to create directores for output" + err.Error())
-    }
+		panic("failed to create directores for output" + err.Error())
+	}
 
 	file, err := os.Create(path)
 	if err != nil {
