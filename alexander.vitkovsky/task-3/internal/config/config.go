@@ -15,7 +15,7 @@ type Config struct {
 
 func ParseConfig() (string, string) {
 	var configPath string
-	
+
 	flag.StringVar(&configPath, "config", "", "path to config .yaml file")
 	flag.Parse()
 

@@ -34,7 +34,7 @@ func ParseXML(path string) ValCurs {
 
 	var valCurs ValCurs
 	err = decoder.Decode(&valCurs)
-	
+
 	if err := file.Close(); err != nil {
 		panic("failed to close XML file" + err.Error())
 	}
