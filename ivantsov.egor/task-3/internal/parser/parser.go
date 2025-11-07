@@ -19,7 +19,6 @@ type Currency struct {
 	Value    float64 `json:"value"     xml:"Value"`
 }
 
-//nolint:gocognit // function intentionally complex due to XML decoding structure
 func (c *Currency) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error {
 	for {
 		token, err := decoder.Token()
