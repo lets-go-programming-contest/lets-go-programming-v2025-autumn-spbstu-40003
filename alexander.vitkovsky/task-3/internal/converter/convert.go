@@ -35,9 +35,7 @@ func ToResult(valCurs parser.ValCurs) []ValuteResult {
 
 		valueStr := strings.ReplaceAll(valute.Value, ",", ".")
 		value, _ := strconv.ParseFloat(valueStr, 64)
-
-		nominal, _ := strconv.Atoi(valute.Nominal)
-		valuteResult.Value = value / float64(nominal)
+		valuteResult.Value = value
 
 		valuteResults = append(valuteResults, valuteResult)
 	}
@@ -45,10 +43,10 @@ func ToResult(valCurs parser.ValCurs) []ValuteResult {
 	return valuteResults
 }
 
-func SortByValueAsc(items []ValuteResult) {
+func SortByValueDesc(items []ValuteResult) {
 	// компаратор для валют
 	sort.Slice(items, func(i, j int) bool {
-		return items[i].Value < items[j].Value
+		return items[i].Value > items[j].Value
 	})
 }
 

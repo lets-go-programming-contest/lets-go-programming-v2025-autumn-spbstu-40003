@@ -11,6 +11,6 @@ func main() {
 	valCurs := parser.ParseXML(inputPath)
 	results := converter.ToResult(valCurs)
 
-	converter.SortByValueAsc(results)
+	converter.SortByValueDesc(results)
 	converter.SaveToJSON(outputPath, results)
 }
