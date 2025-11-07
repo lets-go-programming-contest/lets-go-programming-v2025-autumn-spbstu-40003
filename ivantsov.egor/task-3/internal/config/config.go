@@ -18,19 +18,21 @@ type Config struct {
 func LoadConfig(path string) (*Config, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open config file: %w", err)
+		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
+
 	defer func() {
 		if cerr := file.Close(); cerr != nil {
-			panic(fmt.Errorf("failed to close config file: %w", cerr))
+			panic(fmt.Errorf("failed to close file: %w", cerr))
 		}
 	}()
 
-	var cfg Config
 	decoder := yaml.NewDecoder(file)
 
+	var cfg Config
+
 	if err := decoder.Decode(&cfg); err != nil {
-		return nil, fmt.Errorf("failed to decode YAML: %w", err)
+		return &cfg, fmt.Errorf("failed to decode file: %w", err)
 	}
 
 	if cfg.InputFile == "" || cfg.OutputFile == "" {

@@ -9,8 +9,10 @@ import (
 	"github.com/Egor1726/task-3/internal/parser"
 )
 
+const dirPermissions = 0o755
+
 func WriteJSONToFile(path string, data []parser.Currency) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), dirPermissions); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
@@ -18,6 +20,7 @@ func WriteJSONToFile(path string, data []parser.Currency) error {
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
+
 	defer func() {
 		if cerr := file.Close(); cerr != nil {
 			panic(fmt.Errorf("failed to close file: %w", cerr))
