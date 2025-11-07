@@ -4,7 +4,6 @@ package converter
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
