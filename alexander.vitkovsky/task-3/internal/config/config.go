@@ -35,7 +35,6 @@ func ParseConfig() (string, string) {
 
 	var config Config
 	err = yaml.Unmarshal(data, &config)
-
 	if err != nil {
 		panic("failed to parse config file" + err.Error())
 	}
