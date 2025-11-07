@@ -54,6 +54,7 @@ func SaveToJSON(path string, data []ValuteResult) {
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
+
 	if err := encoder.Encode(data); err != nil {
 		panic("failed to convert in JSON" + err.Error())
 	}
