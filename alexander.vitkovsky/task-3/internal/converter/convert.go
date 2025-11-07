@@ -24,27 +24,21 @@ type ValuteResult struct {
 
 func ToResult(valCurs parser.ValCurs) []ValuteResult {
 	// "дораспарсивание"
-	var (
-		err           error = nil
-		valuteResults []ValuteResult
-	)
+	var valuteResults []ValuteResult
 
 	// По условию входные данные всегда валидны, ошибки конвертации не отливливаю
 
 	for _, valute := range valCurs.Valutes {
 		var valuteResult ValuteResult
 
-		valuteResult.NumCode, err = strconv.Atoi(valute.NumCode)
-		if err != nil {
-			fmt.Println(err)
-		}
-
+		valuteResult.NumCode, _ = strconv.Atoi(valute.NumCode)
 		valuteResult.CharCode = valute.CharCode
 
-		valuteResult.Value, err = strconv.ParseFloat(strings.ReplaceAll(valute.VunitRate, ",", "."), 64)
-		if err != nil {
-			fmt.Println(err)
-		}
+		valueStr := strings.ReplaceAll(valute.Value, ",", ".")
+		value, _ := strconv.ParseFloat(valueStr, 64)
+
+		nominal, _ := strconv.Atoi(valute.Nominal)
+		valuteResult.Value = value / float64(nominal)
 
 		valuteResults = append(valuteResults, valuteResult)
 	}
