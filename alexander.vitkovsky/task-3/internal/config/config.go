@@ -1,7 +1,5 @@
 package config
 
-// Файл с парсингом конфигурации из .yaml
-
 import (
 	"flag"
 	"io"
@@ -17,6 +15,7 @@ type Config struct {
 
 func ParseConfig() (string, string) {
 	var configPath string
+	
 	flag.StringVar(&configPath, "config", "", "path to config .yaml file")
 	flag.Parse()
 
@@ -24,11 +23,14 @@ func ParseConfig() (string, string) {
 	if err != nil {
 		panic("failed to open input file" + err.Error())
 	}
-	defer file.Close()
 
 	data, err := io.ReadAll(file)
 	if err != nil {
 		panic("failed to read config file" + err.Error())
+	}
+
+	if err := file.Close(); err != nil {
+		panic("failed to close config file" + err.Error())
 	}
 
 	var config Config

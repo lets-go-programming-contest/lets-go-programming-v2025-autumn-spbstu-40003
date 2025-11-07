@@ -1,7 +1,5 @@
 package parser
 
-// Файл с парсингом данных из .xml
-
 import (
 	"encoding/xml"
 	"os"
@@ -30,13 +28,17 @@ func ParseXML(path string) ValCurs {
 	if err != nil {
 		panic("failed to open input XML file" + err.Error())
 	}
-	defer file.Close()
 
 	decoder := xml.NewDecoder(file)
 	decoder.CharsetReader = charset.NewReaderLabel
 
 	var valCurs ValCurs
 	err = decoder.Decode(&valCurs)
+	
+	if err := file.Close(); err != nil {
+		panic("failed to close XML file" + err.Error())
+	}
+
 	if err != nil {
 		panic("failed to decode XML file" + err.Error())
 	}
