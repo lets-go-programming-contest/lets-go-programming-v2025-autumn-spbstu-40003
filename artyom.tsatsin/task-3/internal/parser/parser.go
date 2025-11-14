@@ -13,74 +13,29 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
+type ValueFloat float64
+
+func (v *ValueFloat) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
+	var raw string
+
+	if err := dec.DecodeElement(&raw, &start); err != nil {
+		return fmt.Errorf("failed to decode Value: %w", err)
+	}
+
+	raw = strings.TrimSpace(strings.ReplaceAll(raw, ",", "."))
+	val, err := strconv.ParseFloat(raw, 64)
+	if err != nil {
+		return fmt.Errorf("invalid Value: %w", err)
+	}
+
+	*v = ValueFloat(val)
+	return nil
+}
+
 type Currency struct {
-	Code  int     `json:"num_code"  xml:"NumCode"`
-	Char  string  `json:"char_code" xml:"CharCode"`
-	Value float64 `json:"value"     xml:"Value"`
-}
-
-func (c *Currency) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
-	for {
-		token, err := dec.Token()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-
-			return fmt.Errorf("XML token error: %w", err)
-		}
-
-		switch elem := token.(type) {
-		case xml.StartElement:
-			if err := c.handleStartElement(dec, elem); err != nil {
-				return err
-			}
-		case xml.EndElement:
-			if elem.Name.Local == start.Name.Local {
-				return nil
-			}
-		}
-	}
-
-	return nil
-}
-
-func (c *Currency) handleStartElement(dec *xml.Decoder, elem xml.StartElement) error {
-	switch elem.Name.Local {
-	case "NumCode":
-		var numCodeStr string
-
-		if err := dec.DecodeElement(&numCodeStr, &elem); err != nil {
-			return fmt.Errorf("failed to decode NumCode: %w", err)
-		}
-
-		c.Code, _ = strconv.Atoi(strings.TrimSpace(numCodeStr))
-
-	case "CharCode":
-		var charCodeStr string
-
-		if err := dec.DecodeElement(&charCodeStr, &elem); err != nil {
-			return fmt.Errorf("failed to decode CharCode: %w", err)
-		}
-
-		c.Char = strings.TrimSpace(charCodeStr)
-
-	case "Value":
-		var valueStr string
-
-		if err := dec.DecodeElement(&valueStr, &elem); err != nil {
-			return fmt.Errorf("failed to decode Value: %w", err)
-		}
-
-		valueStr = strings.ReplaceAll(strings.TrimSpace(valueStr), ",", ".")
-		if val, err := strconv.ParseFloat(valueStr, 64); err != nil {
-			return fmt.Errorf("invalid Value: %w", err)
-		} else {
-			c.Value = val
-		}
-	}
-
-	return nil
+	Code  int        `json:"num_code"  xml:"NumCode"`
+	Char  string     `json:"char_code" xml:"CharCode"`
+	Value ValueFloat `json:"value"     xml:"Value"`
 }
 
 func LoadXML(path string) ([]Currency, error) {
