@@ -23,12 +23,13 @@ func (v *ValueFloat) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) erro
 	}
 
 	raw = strings.TrimSpace(strings.ReplaceAll(raw, ",", "."))
-	val, err := strconv.ParseFloat(raw, 64)
-	if err != nil {
+
+	if val, err := strconv.ParseFloat(raw, 64); err != nil {
 		return fmt.Errorf("invalid Value: %w", err)
+	} else {
+		*v = ValueFloat(val)
 	}
 
-	*v = ValueFloat(val)
 	return nil
 }
 
@@ -66,6 +67,7 @@ func LoadXML(path string) ([]Currency, error) {
 		}
 
 		start, ok := token.(xml.StartElement)
+
 		if !ok || start.Name.Local != "Valute" {
 			continue
 		}
