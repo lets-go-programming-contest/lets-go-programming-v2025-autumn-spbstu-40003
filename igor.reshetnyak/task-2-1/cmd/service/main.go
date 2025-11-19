@@ -6,10 +6,10 @@ import (
 )
 
 var (
-	ErrDepart   = errors.New("deparments error")
+	ErrDepart   = errors.New("departments error")
 	ErrEmployee = errors.New("employee error")
 	ErrTemp     = errors.New("incorrect temperature")
-	ErrSymbol   = errors.New("incorrerc symbol")
+	ErrSymbol   = errors.New("incorrect symbol")
 )
 
 const (
@@ -36,11 +36,11 @@ func main() {
 			return
 		}
 
-		deparmentOptimalTemp(employee)
+		departmentOptimalTemp(employee)
 	}
 }
 
-func deparmentOptimalTemp(employee int) {
+func departmentOptimalTemp(employee int) {
 	minTemp := minTempConst
 	maxTemp := maxTempConst
 	inRangeTemp := inRangeConst
@@ -68,23 +68,33 @@ func deparmentOptimalTemp(employee int) {
 			continue
 		}
 
-		switch symbol {
-		case ">=":
-			minTemp = newTemp
-		case "<=":
-			maxTemp = newTemp
-		default:
-			fmt.Println(-1)
+		updateAndCheck(symbol, newTemp, &minTemp, &maxTemp, &inRangeTemp)
+	}
+}
 
-			return
+func updateAndCheck(symbol string, newTemp int, minTemp *int, maxTemp *int, inRangeTemp *bool) {
+	switch symbol {
+	case ">=":
+		if newTemp >= *minTemp {
+			*minTemp = newTemp
 		}
-
-		if minTemp >= minTempConst && maxTemp <= maxTempConst && minTemp <= maxTemp {
-			fmt.Println(minTemp)
-		} else {
-			fmt.Println(-1)
-
-			inRangeTemp = false
+	case "<=":
+		if newTemp <= *maxTemp {
+			*maxTemp = newTemp
 		}
+	default:
+		fmt.Println(-1)
+
+		*inRangeTemp = false
+
+		return
+	}
+
+	if *minTemp <= *maxTemp {
+		fmt.Println(*minTemp)
+	} else {
+		fmt.Println(-1)
+
+		*inRangeTemp = false
 	}
 }
