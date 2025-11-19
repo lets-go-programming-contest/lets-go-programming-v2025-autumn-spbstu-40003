@@ -30,11 +30,11 @@ func main() {
 			return
 		}
 
-		deparmentOptimalTemp(employee)
+		departmentOptimalTemp(employee)
 	}
 }
 
-func deparmentOptimalTemp(employee int) {
+func departmentOptimalTemp(employee int) {
 	minTemp := 15
 	maxTemp := 30
 	inRangeTemp := true
