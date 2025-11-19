@@ -6,53 +6,59 @@ import (
 )
 
 var (
-	ErrDepart   = errors.New("departments error")
+	ErrDepart   = errors.New("deparments error")
 	ErrEmployee = errors.New("employee error")
 	ErrTemp     = errors.New("incorrect temperature")
-	ErrSymbol   = errors.New("incorrect symbol")
+	ErrSymbol   = errors.New("incorrerc symbol")
 )
 
 func main() {
 	var departments int
 
 	if _, err := fmt.Scan(&departments); err != nil || departments < 1 || departments > 1000 {
-		fmt.Println(-1)
+		fmt.Println(ErrDepart, err)
+
 		return
 	}
 
-	for i := 0; i < departments; i++ {
+	for range departments {
 		var employee int
 
 		if _, err := fmt.Scan(&employee); err != nil || employee < 1 || employee > 1000 {
-			fmt.Println(-1)
+			fmt.Println(ErrEmployee, err)
+
 			return
 		}
 
-		departmentOptimalTemp(employee)
+		deparmentOptimalTemp(employee)
 	}
 }
 
-func departmentOptimalTemp(employee int) {
+func deparmentOptimalTemp(employee int) {
 	minTemp := 15
 	maxTemp := 30
 	inRangeTemp := true
 
-	for i := 0; i < employee; i++ {
+	for range employee {
 		var symbol string
+
 		var newTemp int
 
-		if _, err := fmt.Scan(&symbol); err != nil {
-			fmt.Println(-1)
+		if _, err := fmt.Scan(&symbol); err != nil || (symbol != "<=" && symbol != ">=") {
+			fmt.Println(ErrSymbol, err)
+
 			return
 		}
 
 		if _, err := fmt.Scan(&newTemp); err != nil {
-			fmt.Println(-1)
+			fmt.Println(ErrTemp, err)
+
 			return
 		}
 
 		if !inRangeTemp {
 			fmt.Println(-1)
+
 			continue
 		}
 
@@ -67,6 +73,7 @@ func departmentOptimalTemp(employee int) {
 			}
 		default:
 			fmt.Println(-1)
+
 			return
 		}
 
@@ -74,6 +81,7 @@ func departmentOptimalTemp(employee int) {
 			fmt.Println(minTemp)
 		} else {
 			fmt.Println(-1)
+
 			inRangeTemp = false
 		}
 	}
