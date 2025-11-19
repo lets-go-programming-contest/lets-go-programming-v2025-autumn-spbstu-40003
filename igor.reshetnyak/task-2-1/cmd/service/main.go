@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	ErrDepart   = errors.New("deparments error")
+	ErrDepart   = errors.New("departments error")
 	ErrEmployee = errors.New("employee error")
 	ErrTemp     = errors.New("incorrect temperature")
 	ErrSymbol   = errors.New("incorrerc symbol")
