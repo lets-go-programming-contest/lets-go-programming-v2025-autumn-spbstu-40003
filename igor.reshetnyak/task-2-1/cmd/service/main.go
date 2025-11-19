@@ -8,8 +8,6 @@ import (
 var (
 	ErrDepart   = errors.New("departments error")
 	ErrEmployee = errors.New("employee error")
-	ErrTemp     = errors.New("incorrect temperature")
-	ErrSymbol   = errors.New("incorrerc symbol")
 )
 
 func main() {
@@ -35,54 +33,80 @@ func main() {
 }
 
 func departmentOptimalTemp(employee int) {
-	minTemp := 15
-	maxTemp := 30
-	inRangeTemp := true
+	tempState := &TempState{
+		Min:     15,
+		Max:     30,
+		InRange: true,
+	}
 
 	for range employee {
-		var symbol string
-
-		var newTemp int
-
-		if _, err := fmt.Scan(&symbol); err != nil || (symbol != "<=" && symbol != ">=") {
-			fmt.Println(ErrSymbol, err)
-
+		if !tempState.ProcessEmployee() {
 			return
 		}
+	}
+}
 
-		if _, err := fmt.Scan(&newTemp); err != nil {
-			fmt.Println(ErrTemp, err)
+type TempState struct {
+	Min     int
+	Max     int
+	InRange bool
+}
 
-			return
+func (tempState *TempState) ProcessEmployee() bool {
+	if !tempState.InRange {
+		fmt.Println(-1)
+		return true
+	}
+
+	symbol, newTemp := tempState.readInput()
+	if symbol == "" {
+		return false
+	}
+
+	tempState.updateTemperatures(symbol, newTemp)
+	tempState.checkRange()
+
+	return true
+}
+
+func (tempState *TempState) readInput() (string, int) {
+	var symbol string
+	var newTemp int
+
+	if _, err := fmt.Scan(&symbol); err != nil || (symbol != "<=" && symbol != ">=") {
+		fmt.Println(-1)
+		return "", 0
+	}
+
+	if _, err := fmt.Scan(&newTemp); err != nil {
+		fmt.Println(-1)
+		return "", 0
+	}
+
+	return symbol, newTemp
+}
+
+func (tempState *TempState) updateTemperatures(symbol string, newTemp int) {
+	switch symbol {
+	case ">=":
+		if newTemp > tempState.Min {
+			tempState.Min = newTemp
 		}
-
-		if !inRangeTemp {
-			fmt.Println(-1)
-
-			continue
+	case "<=":
+		if newTemp < tempState.Max {
+			tempState.Max = newTemp
 		}
+	default:
+		fmt.Println(-1)
+		tempState.InRange = false
+	}
+}
 
-		switch symbol {
-		case ">=":
-			if newTemp > minTemp {
-				minTemp = newTemp
-			}
-		case "<=":
-			if newTemp < maxTemp {
-				maxTemp = newTemp
-			}
-		default:
-			fmt.Println(-1)
-
-			return
-		}
-
-		if minTemp <= maxTemp {
-			fmt.Println(minTemp)
-		} else {
-			fmt.Println(-1)
-
-			inRangeTemp = false
-		}
+func (tempState *TempState) checkRange() {
+	if tempState.Min <= tempState.Max {
+		fmt.Println(tempState.Min)
+	} else {
+		fmt.Println(-1)
+		tempState.InRange = false
 	}
 }
