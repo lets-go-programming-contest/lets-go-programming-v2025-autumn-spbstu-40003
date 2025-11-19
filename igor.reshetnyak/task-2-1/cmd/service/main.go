@@ -10,6 +10,12 @@ var (
 	ErrEmployee = errors.New("employee error")
 )
 
+const (
+	minTempConst = 15
+	maxTempConst = 30
+	inRangeConst = true
+)
+
 func main() {
 	var departments int
 
@@ -34,9 +40,9 @@ func main() {
 
 func departmentOptimalTemp(employee int) {
 	tempState := &TempState{
-		Min:     15,
-		Max:     30,
-		InRange: true,
+		Min:     minTempConst,
+		Max:     maxTempConst,
+		InRange: inRangeConst,
 	}
 
 	for range employee {
@@ -55,6 +61,7 @@ type TempState struct {
 func (tempState *TempState) ProcessEmployee() bool {
 	if !tempState.InRange {
 		fmt.Println(-1)
+
 		return true
 	}
 
@@ -71,15 +78,18 @@ func (tempState *TempState) ProcessEmployee() bool {
 
 func (tempState *TempState) readInput() (string, int) {
 	var symbol string
+
 	var newTemp int
 
 	if _, err := fmt.Scan(&symbol); err != nil || (symbol != "<=" && symbol != ">=") {
 		fmt.Println(-1)
+
 		return "", 0
 	}
 
 	if _, err := fmt.Scan(&newTemp); err != nil {
 		fmt.Println(-1)
+
 		return "", 0
 	}
 
@@ -98,6 +108,7 @@ func (tempState *TempState) updateTemperatures(symbol string, newTemp int) {
 		}
 	default:
 		fmt.Println(-1)
+
 		tempState.InRange = false
 	}
 }
