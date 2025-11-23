@@ -10,6 +10,7 @@ var (
 	ErrDishes       = errors.New("wrong num of dishes")
 	ErrRaitingValue = errors.New("wrong dish raiting value")
 	ErrRaitingNum   = errors.New("wrong raiting num")
+	ErrAnyToInt     = errors.New("failed to convert interface{} to int")
 )
 
 const (
@@ -33,7 +34,14 @@ func (h *Heap) Swap(i, j int) {
 }
 
 func (h *Heap) Push(num interface{}) {
-	*h = append(*h, num.(int))
+	intNum, ok := num.(int)
+	if !ok {
+		fmt.Println(ErrAnyToInt)
+
+		return
+	}
+
+	*h = append(*h, intNum)
 }
 
 func (h *Heap) Pop() interface{} {
@@ -57,7 +65,7 @@ func main() {
 
 	dishRatings := make([]int, dishes)
 
-	for index := 0; index < dishes; index++ {
+	for index := range dishes {
 		if _, err := fmt.Scan(&dishRatings[index]); err != nil ||
 			dishRatings[index] < minValue || dishRatings[index] > maxValue {
 			fmt.Println(ErrRaitingValue, err)
