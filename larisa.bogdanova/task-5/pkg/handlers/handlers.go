@@ -3,27 +3,32 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
+	"reflect"
 	"strings"
-	"sync"
 )
 
-func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan string) error {
+var errCannotBeDecorated = errors.New("can't be decorated")
+
+func PrefixDecoratorFunc(ctx context.Context, inputCh chan string, outputCh chan string) error {
+	defer close(outputCh)
+
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case data, ok := <-input:
+		case data, ok := <-inputCh:
 			if !ok {
 				return nil
 			}
 			if strings.Contains(data, "no decorator") {
-				return errors.New("can't be decorated")
+				return fmt.Errorf("%w", errCannotBeDecorated)
 			}
 			if !strings.HasPrefix(data, "decorated:") {
 				data = "decorated: " + data
 			}
 			select {
-			case output <- data:
+			case outputCh <- data:
 			case <-ctx.Done():
 				return ctx.Err()
 			}
@@ -31,7 +36,13 @@ func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan str
 	}
 }
 
-func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string) error {
+func SeparatorFunc(ctx context.Context, inputCh chan string, outputs []chan string) error {
+	defer func() {
+		for _, ch := range outputs {
+			close(ch)
+		}
+	}()
+
 	if len(outputs) == 0 {
 		return nil
 	}
@@ -41,7 +52,7 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case data, ok := <-input:
+		case data, ok := <-inputCh:
 			if !ok {
 				return nil
 			}
@@ -56,48 +67,42 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 	}
 }
 
-func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan string) error {
-	if len(inputs) == 0 {
-		return nil
+func MultiplexerFunc(ctx context.Context, inputs []chan string, outputCh chan string) error {
+	defer close(outputCh)
+
+	cases := make([]reflect.SelectCase, len(inputs)+1)
+
+	cases[0] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ctx.Done())}
+
+	for i, ch := range inputs {
+		cases[i+1] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ch)}
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(len(inputs))
+	aliveInputs := len(inputs)
+	for aliveInputs > 0 {
+		chosen, value, ok := reflect.Select(cases)
 
-	for _, in := range inputs {
-		go func(ch chan string) {
-			defer wg.Done()
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case data, ok := <-ch:
-					if !ok {
-						return
-					}
-					if strings.Contains(data, "no multiplexer") {
-						continue
-					}
-					select {
-					case output <- data:
-					case <-ctx.Done():
-						return
-					}
-				}
-			}
-		}(in)
+		if chosen == 0 {
+			return ctx.Err()
+		}
+
+		if !ok {
+			cases[chosen].Chan = reflect.ValueOf(nil)
+			aliveInputs--
+			continue
+		}
+
+		data := value.String()
+		if strings.Contains(data, "no multiplexer") {
+			continue
+		}
+
+		select {
+		case outputCh <- data:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
 
-	done := make(chan struct{})
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
-
-	select {
-	case <-done:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
+	return nil
 }
