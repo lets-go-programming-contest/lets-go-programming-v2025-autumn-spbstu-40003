@@ -46,6 +46,7 @@ func (pipe *Pipeline) getOrInitChannel(name string) chan string {
 
 	channel := make(chan string, pipe.size)
 	pipe.channels[name] = channel
+
 	return channel
 }
 
@@ -71,6 +72,7 @@ func (pipe *Pipeline) RegisterMultiplexer(
 	for i, name := range inputs {
 		inStrings[i] = pipe.getOrInitChannel(name)
 	}
+
 	out := pipe.getOrInitChannel(output)
 
 	pipe.handlers = append(pipe.handlers, func(ctx context.Context) error {
