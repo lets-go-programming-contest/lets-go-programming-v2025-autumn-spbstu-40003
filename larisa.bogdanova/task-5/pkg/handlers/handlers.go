@@ -3,109 +3,104 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
-	"reflect"
 	"strings"
+	"sync"
 )
 
-var errCannotBeDecorated = errors.New("can't be decorated")
+var (
+	ErrNoDecorator  = errors.New("can't be decorated")
+	ErrEmptyOutputs = errors.New("empty outputs")
+)
 
-func PrefixDecoratorFunc(ctx context.Context, inputCh chan string, outputCh chan string) error {
-	defer close(outputCh)
+const (
+	noDecorator     = "no decorator"
+	noMultiplexer   = "no multiplexer"
+	decoratedPrefix = "decorated: "
+)
 
+func PrefixDecoratorFunc(ctx context.Context, input, output chan string) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
-		case data, ok := <-inputCh:
-			if !ok {
+			return nil
+		case str, status := <-input:
+			if !status {
 				return nil
 			}
 
-			if strings.Contains(data, "no decorator") {
-				return fmt.Errorf("%w", errCannotBeDecorated)
+			if strings.Contains(str, noDecorator) {
+				return ErrNoDecorator
 			}
-			if !strings.HasPrefix(data, "decorated:") {
-				data = "decorated: " + data
+
+			if !strings.HasPrefix(str, decoratedPrefix) {
+				str = decoratedPrefix + str
 			}
 
 			select {
-			case outputCh <- data:
+			case output <- str:
 			case <-ctx.Done():
-				return ctx.Err()
+				return nil
 			}
 		}
 	}
 }
 
-func SeparatorFunc(ctx context.Context, inputCh chan string, outputs []chan string) error {
-	defer func() {
-		for _, ch := range outputs {
-			close(ch)
-		}
-	}()
+func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan string) error {
+	var waitGroup sync.WaitGroup
 
+	waitGroup.Add(len(inputs))
+	for _, channelInput := range inputs {
+		go func(channel chan string) {
+			defer waitGroup.Done()
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case str, status := <-channel:
+					if !status {
+						return
+					}
+
+					if strings.Contains(str, noMultiplexer) {
+						continue
+					}
+
+					select {
+					case output <- str:
+					case <-ctx.Done():
+						return
+					}
+				}
+			}
+		}(channelInput)
+	}
+
+	waitGroup.Wait()
+	return nil
+}
+
+func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string) error {
 	if len(outputs) == 0 {
-		return nil
+		return ErrEmptyOutputs
 	}
 
 	index := 0
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
-		case data, ok := <-inputCh:
+			return nil
+		case str, ok := <-input:
 			if !ok {
 				return nil
 			}
 
-			target := outputs[index%len(outputs)]
-
 			select {
-			case target <- data:
-				index++
+			case outputs[index] <- str:
 			case <-ctx.Done():
-				return ctx.Err()
+				return nil
 			}
+			index = (index + 1) % len(outputs)
 		}
 	}
-}
-
-func MultiplexerFunc(ctx context.Context, inputs []chan string, outputCh chan string) error {
-	defer close(outputCh)
-
-	cases := make([]reflect.SelectCase, len(inputs)+1)
-	cases[0] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ctx.Done())}
-
-	for i, ch := range inputs {
-		cases[i+1] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ch)}
-	}
-
-	aliveInputs := len(inputs)
-	for aliveInputs > 0 {
-		chosen, value, ok := reflect.Select(cases)
-
-		if chosen == 0 {
-			return ctx.Err()
-		}
-
-		if !ok {
-			cases[chosen].Chan = reflect.ValueOf(nil)
-			aliveInputs--
-			continue
-		}
-
-		data := value.String()
-		if strings.Contains(data, "no multiplexer") {
-			continue
-		}
-
-		select {
-		case outputCh <- data:
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
-
-	return nil
 }
