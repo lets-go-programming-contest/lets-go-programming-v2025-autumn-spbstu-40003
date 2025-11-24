@@ -3,6 +3,7 @@ package conveyer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -13,9 +14,22 @@ var ErrChanNotFound = errors.New("chan not found")
 const undefined = "undefined"
 
 type ConveyerInterface interface {
-	RegisterDecorator(fn func(ctx context.Context, input chan string, output chan string) error, input string, output string)
-	RegisterMultiplexer(fn func(ctx context.Context, inputs []chan string, output chan string) error, inputs []string, output string)
-	RegisterSeparator(fn func(ctx context.Context, input chan string, outputs []chan string) error, input string, outputs []string)
+	RegisterDecorator(
+		fn func(ctx context.Context, input chan string, output chan string) error,
+		input string,
+		output string,
+	)
+	RegisterMultiplexer(
+		fn func(ctx context.Context, inputs []chan string, output chan string) error,
+		inputs []string,
+		output string,
+	)
+	RegisterSeparator(
+		fn func(ctx context.Context, input chan string, outputs []chan string) error,
+		input string,
+		outputs []string,
+	)
+
 	Run(ctx context.Context) error
 	Send(input string, data string) error
 	Recv(output string) (string, error)
@@ -33,6 +47,7 @@ func New(size int) *Pipeline {
 		size:     size,
 		channels: make(map[string]chan string),
 		handlers: []func(ctx context.Context) error{},
+		mu:       sync.RWMutex{},
 	}
 }
 
@@ -102,6 +117,7 @@ func (pipe *Pipeline) Run(ctx context.Context) error {
 
 	for _, h := range pipe.handlers {
 		handler := h
+
 		group.Go(func() error {
 			return handler(groupCtx)
 		})
@@ -115,7 +131,11 @@ func (pipe *Pipeline) Run(ctx context.Context) error {
 	}
 	pipe.mu.Unlock()
 
-	return err
+	if err != nil {
+		return fmt.Errorf("conveyer run failed: %w", err)
+	}
+
+	return nil
 }
 
 func (pipe *Pipeline) Send(input string, data string) error {
@@ -128,6 +148,7 @@ func (pipe *Pipeline) Send(input string, data string) error {
 	}
 
 	channel <- data
+
 	return nil
 }
 
