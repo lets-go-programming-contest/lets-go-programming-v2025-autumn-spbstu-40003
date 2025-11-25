@@ -16,7 +16,7 @@ var (
 const (
 	noDecorator     = "no decorator"
 	noMultiplexer   = "no multiplexer"
-	decoratedPrefix = "decorated:"
+	decoratedPrefix = "decorated: "
 )
 
 func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan string) error {
