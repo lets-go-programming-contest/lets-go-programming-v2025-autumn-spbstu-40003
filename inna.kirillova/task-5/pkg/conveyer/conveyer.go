@@ -40,7 +40,7 @@ type separatorEntry struct {
 	outputs []string
 }
 
-type conveyer interface {
+type Conveyer interface {
 	RegisterDecorator(fn func(ctx context.Context, input chan string, output chan string) error, input string, output string)
 	RegisterMultiplexer(fn func(ctx context.Context, inputs []chan string, output chan string) error, inputs []string, output string)
 	RegisterSeparator(fn func(ctx context.Context, input chan string, outputs []chan string) error, input string, outputs []string)
@@ -49,7 +49,7 @@ type conveyer interface {
 	Recv(output string) (string, error)
 }
 
-func New(size int) conveyer {
+func New(size int) Conveyer {
 	return &conveyerImpl{
 		size:         size,
 		channels:     make(map[string]chan string),
