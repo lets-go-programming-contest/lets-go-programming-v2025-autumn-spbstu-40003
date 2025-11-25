@@ -106,7 +106,11 @@ func (c *conveyerImpl) closeAllChannels() {
 	}
 }
 
-func (c *conveyerImpl) RegisterDecorator(fn func(ctx context.Context, input chan string, output chan string) error, input string, output string) {
+func (c *conveyerImpl) RegisterDecorator(
+	fn func(ctx context.Context, input chan string, output chan string) error,
+	input string,
+	output string,
+) {
 	c.getOrCreateChan(input)
 	c.getOrCreateChan(output)
 	c.decorators = append(c.decorators, decoratorEntry{
@@ -116,7 +120,11 @@ func (c *conveyerImpl) RegisterDecorator(fn func(ctx context.Context, input chan
 	})
 }
 
-func (c *conveyerImpl) RegisterMultiplexer(fn func(ctx context.Context, inputs []chan string, output chan string) error, inputs []string, output string) {
+func (c *conveyerImpl) RegisterMultiplexer(
+	fn func(ctx context.Context, inputs []chan string, output chan string) error,
+	inputs []string,
+	output string,
+) {
 	for _, name := range inputs {
 		c.getOrCreateChan(name)
 	}
@@ -128,7 +136,11 @@ func (c *conveyerImpl) RegisterMultiplexer(fn func(ctx context.Context, inputs [
 	})
 }
 
-func (c *conveyerImpl) RegisterSeparator(fn func(ctx context.Context, input chan string, outputs []chan string) error, input string, outputs []string) {
+func (c *conveyerImpl) RegisterSeparator(
+	fn func(ctx context.Context, input chan string, outputs []chan string) error,
+	input string,
+	outputs []string,
+) {
 	c.getOrCreateChan(input)
 	for _, name := range outputs {
 		c.getOrCreateChan(name)
@@ -143,6 +155,7 @@ func (c *conveyerImpl) RegisterSeparator(fn func(ctx context.Context, input chan
 func (c *conveyerImpl) Run(ctx context.Context) error {
 	defer c.closeAllChannels()
 	group, groupCtx := errgroup.WithContext(ctx)
+
 	for _, decorator := range c.decorators {
 		inputChan := c.getOrCreateChan(decorator.input)
 		outputChan := c.getOrCreateChan(decorator.output)
@@ -150,6 +163,7 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 			return decorator.fn(groupCtx, inputChan, outputChan)
 		})
 	}
+
 	for _, multiplexer := range c.multiplexers {
 		outputChan := c.getOrCreateChan(multiplexer.output)
 		inputChannels := make([]chan string, len(multiplexer.inputs))
@@ -160,6 +174,7 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 			return multiplexer.fn(groupCtx, inputChannels, outputChan)
 		})
 	}
+
 	for _, separator := range c.separators {
 		inputChan := c.getOrCreateChan(separator.input)
 		outputChannels := make([]chan string, len(separator.outputs))
@@ -170,6 +185,6 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 			return separator.fn(groupCtx, inputChan, outputChannels)
 		})
 	}
+
 	return group.Wait()
 }
-
