@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -28,12 +29,15 @@ func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan str
 			if !ok {
 				return nil
 			}
+
 			if strings.Contains(data, noDecorator) {
 				return ErrCantBeDecorated
 			}
+
 			if !strings.HasPrefix(data, decoratedPrefix) {
 				data = decoratedPrefix + data
 			}
+
 			select {
 			case output <- data:
 			case <-ctx.Done():
@@ -49,6 +53,7 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 	}
 
 	index := 0
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -57,11 +62,13 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 			if !ok {
 				return nil
 			}
+
 			select {
 			case outputs[index] <- data:
 			case <-ctx.Done():
 				return nil
 			}
+
 			index = (index + 1) % len(outputs)
 		}
 	}
@@ -72,25 +79,26 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 		return nil
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
+	group, groupCtx := errgroup.WithContext(ctx)
 
-	for _, in := range inputs {
-		in := in
-		g.Go(func() error {
+	for _, inputChan := range inputs {
+		group.Go(func() error {
 			for {
 				select {
-				case <-ctx.Done():
+				case <-groupCtx.Done():
 					return nil
-				case data, ok := <-in:
+				case data, ok := <-inputChan:
 					if !ok {
 						return nil
 					}
+
 					if strings.Contains(data, noMultiplexer) {
 						continue
 					}
+
 					select {
 					case output <- data:
-					case <-ctx.Done():
+					case <-groupCtx.Done():
 						return nil
 					}
 				}
@@ -98,5 +106,5 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 		})
 	}
 
-	return g.Wait()
+	return fmt.Errorf("multiplexer failed: %w", group.Wait())
 }
