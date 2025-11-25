@@ -40,7 +40,7 @@ type separatorEntry struct {
 	outputs []string
 }
 
-type Conveyer interface {
+type conveyer interface {
 	RegisterDecorator(fn func(ctx context.Context, input chan string, output chan string) error, input string, output string)
 	RegisterMultiplexer(fn func(ctx context.Context, inputs []chan string, output chan string) error, inputs []string, output string)
 	RegisterSeparator(fn func(ctx context.Context, input chan string, outputs []chan string) error, input string, outputs []string)
@@ -49,7 +49,7 @@ type Conveyer interface {
 	Recv(output string) (string, error)
 }
 
-func New(size int) Conveyer {
+func New(size int) conveyer {
 	return &conveyerImpl{
 		size:         size,
 		channels:     make(map[string]chan string),
@@ -107,6 +107,8 @@ func (c *conveyerImpl) closeAllChannels() {
 }
 
 func (c *conveyerImpl) RegisterDecorator(fn func(ctx context.Context, input chan string, output chan string) error, input string, output string) {
+	c.getOrCreateChan(input)
+	c.getOrCreateChan(output)
 	c.decorators = append(c.decorators, decoratorEntry{
 		fn:     fn,
 		input:  input,
@@ -115,6 +117,10 @@ func (c *conveyerImpl) RegisterDecorator(fn func(ctx context.Context, input chan
 }
 
 func (c *conveyerImpl) RegisterMultiplexer(fn func(ctx context.Context, inputs []chan string, output chan string) error, inputs []string, output string) {
+	for _, name := range inputs {
+		c.getOrCreateChan(name)
+	}
+	c.getOrCreateChan(output)
 	c.multiplexers = append(c.multiplexers, multiplexerEntry{
 		fn:     fn,
 		inputs: inputs,
@@ -123,6 +129,10 @@ func (c *conveyerImpl) RegisterMultiplexer(fn func(ctx context.Context, inputs [
 }
 
 func (c *conveyerImpl) RegisterSeparator(fn func(ctx context.Context, input chan string, outputs []chan string) error, input string, outputs []string) {
+	c.getOrCreateChan(input)
+	for _, name := range outputs {
+		c.getOrCreateChan(name)
+	}
 	c.separators = append(c.separators, separatorEntry{
 		fn:      fn,
 		input:   input,
