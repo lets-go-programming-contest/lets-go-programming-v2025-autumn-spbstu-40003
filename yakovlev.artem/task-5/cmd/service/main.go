@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
@@ -10,21 +9,28 @@ import (
 	"github.com/nxgmvw/task-5/pkg/handlers"
 )
 
-func main() {
-	c := conveyer.New(10)
+const (
+	chanSize      = 10
+	sleepDuration = 100 * time.Millisecond
+	receiveCount  = 3
+)
 
-	c.RegisterDecorator(handlers.PrefixDecoratorFunc, "input", "decorated")
-	c.RegisterSeparator(handlers.SeparatorFunc, "decorated", []string{"branch1", "branch2"})
-	c.RegisterMultiplexer(handlers.MultiplexerFunc, []string{"branch1", "branch2"}, "final")
+func main() {
+	conv := conveyer.New(chanSize)
+
+	conv.RegisterDecorator(handlers.PrefixDecoratorFunc, "input", "decorated")
+	conv.RegisterSeparator(handlers.SeparatorFunc, "decorated", []string{"branch1", "branch2"})
+	conv.RegisterMultiplexer(handlers.MultiplexerFunc, []string{"branch1", "branch2"}, "final")
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
-		fmt.Println("Pipeline started")
-		if err := c.Run(ctx); err != nil {
+		log.Println("Pipeline started")
+
+		if err := conv.Run(ctx); err != nil {
 			log.Printf("Pipeline finished with error: %v\n", err)
 		} else {
-			fmt.Println("Pipeline finished successfully")
+			log.Println("Pipeline finished successfully")
 		}
 	}()
 
@@ -36,24 +42,29 @@ func main() {
 	}
 
 	for _, v := range inputs {
-		if err := c.Send("input", v); err != nil {
+		if err := conv.Send("input", v); err != nil {
 			log.Fatalf("Send error: %v", err)
 		}
 	}
 
-	for i := 0; i < 3; i++ {
-		res, err := c.Recv("final")
+	for range receiveCount {
+		res, err := conv.Recv("final")
 		if err != nil {
 			log.Printf("Recv error: %v", err)
+
 			break
 		}
-		fmt.Printf("Received: %s\n", res)
+
+		log.Printf("Received: %s\n", res)
 	}
 
-	c.Send("input", "no decorator trigger error")
+	if err := conv.Send("input", "no decorator trigger error"); err != nil {
+		log.Printf("Send trigger error: %v", err)
+	}
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuration)
 
 	cancel()
-	time.Sleep(100 * time.Millisecond)
+
+	time.Sleep(sleepDuration)
 }

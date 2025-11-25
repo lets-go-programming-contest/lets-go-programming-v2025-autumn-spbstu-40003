@@ -3,15 +3,30 @@ package conveyer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
 )
 
+var ErrChanNotFound = errors.New("chan not found")
+
 type Conveyer interface {
-	RegisterDecorator(fn func(ctx context.Context, input chan string, output chan string) error, input string, output string)
-	RegisterMultiplexer(fn func(ctx context.Context, inputs []chan string, output chan string) error, inputs []string, output string)
-	RegisterSeparator(fn func(ctx context.Context, input chan string, outputs []chan string) error, input string, outputs []string)
+	RegisterDecorator(
+		fn func(ctx context.Context, input chan string, output chan string) error,
+		input string,
+		output string,
+	)
+	RegisterMultiplexer(
+		fn func(ctx context.Context, inputs []chan string, output chan string) error,
+		inputs []string,
+		output string,
+	)
+	RegisterSeparator(
+		fn func(ctx context.Context, input chan string, outputs []chan string) error,
+		input string,
+		outputs []string,
+	)
 	Run(ctx context.Context) error
 	Send(input string, data string) error
 	Recv(output string) (string, error)
@@ -31,120 +46,148 @@ type ConveyerImpl struct {
 func New(size int) Conveyer {
 	return &ConveyerImpl{
 		channels: &channelMap{
-			m: make(map[string]chan string),
+			RWMutex: sync.RWMutex{},
+			m:       make(map[string]chan string),
 		},
 		channelSize: size,
 		tasks:       make([]func(context.Context) error, 0),
 	}
 }
 
-func (c *ConveyerImpl) getOrCreateChannel(name string) chan string {
-	c.channels.Lock()
-	defer c.channels.Unlock()
+func (conv *ConveyerImpl) getOrCreateChannel(name string) chan string {
+	conv.channels.Lock()
+	defer conv.channels.Unlock()
 
-	if ch, exists := c.channels.m[name]; exists {
-		return ch
+	if channel, exists := conv.channels.m[name]; exists {
+		return channel
 	}
 
-	ch := make(chan string, c.channelSize)
-	c.channels.m[name] = ch
-	return ch
+	channel := make(chan string, conv.channelSize)
+	conv.channels.m[name] = channel
+
+	return channel
 }
 
-func (c *ConveyerImpl) RegisterDecorator(fn func(ctx context.Context, input chan string, output chan string) error, inputName string, outputName string) {
-	inCh := c.getOrCreateChannel(inputName)
-	outCh := c.getOrCreateChannel(outputName)
+func (conv *ConveyerImpl) RegisterDecorator(
+	fn func(ctx context.Context, input chan string, output chan string) error,
+	inputName string,
+	outputName string,
+) {
+	inCh := conv.getOrCreateChannel(inputName)
+	outCh := conv.getOrCreateChannel(outputName)
 
 	task := func(ctx context.Context) error {
 		return fn(ctx, inCh, outCh)
 	}
-	c.tasks = append(c.tasks, task)
+
+	conv.tasks = append(conv.tasks, task)
 }
 
-func (c *ConveyerImpl) RegisterMultiplexer(fn func(ctx context.Context, inputs []chan string, output chan string) error, inputNames []string, outputName string) {
-	var inChs []chan string
+func (conv *ConveyerImpl) RegisterMultiplexer(
+	fn func(ctx context.Context, inputs []chan string, output chan string) error,
+	inputNames []string,
+	outputName string,
+) {
+	inputChannels := make([]chan string, 0, len(inputNames))
+
 	for _, name := range inputNames {
-		inChs = append(inChs, c.getOrCreateChannel(name))
+		inputChannels = append(inputChannels, conv.getOrCreateChannel(name))
 	}
-	outCh := c.getOrCreateChannel(outputName)
+
+	outCh := conv.getOrCreateChannel(outputName)
 
 	task := func(ctx context.Context) error {
-		return fn(ctx, inChs, outCh)
+		return fn(ctx, inputChannels, outCh)
 	}
-	c.tasks = append(c.tasks, task)
+
+	conv.tasks = append(conv.tasks, task)
 }
 
-func (c *ConveyerImpl) RegisterSeparator(fn func(ctx context.Context, input chan string, outputs []chan string) error, inputName string, outputNames []string) {
-	inCh := c.getOrCreateChannel(inputName)
-	var outChs []chan string
+func (conv *ConveyerImpl) RegisterSeparator(
+	fn func(ctx context.Context, input chan string, outputs []chan string) error,
+	inputName string,
+	outputNames []string,
+) {
+	inCh := conv.getOrCreateChannel(inputName)
+
+	outputChannels := make([]chan string, 0, len(outputNames))
+
 	for _, name := range outputNames {
-		outChs = append(outChs, c.getOrCreateChannel(name))
+		outputChannels = append(outputChannels, conv.getOrCreateChannel(name))
 	}
 
 	task := func(ctx context.Context) error {
-		return fn(ctx, inCh, outChs)
+		return fn(ctx, inCh, outputChannels)
 	}
-	c.tasks = append(c.tasks, task)
+
+	conv.tasks = append(conv.tasks, task)
 }
 
-func (c *ConveyerImpl) Run(ctx context.Context) error {
-	eg, ctx := errgroup.WithContext(ctx)
+func (conv *ConveyerImpl) Run(ctx context.Context) error {
+	errGroup, groupCtx := errgroup.WithContext(ctx)
 
-	for _, task := range c.tasks {
+	for _, task := range conv.tasks {
 		taskFunc := task
-		eg.Go(func() error {
-			return taskFunc(ctx)
+
+		errGroup.Go(func() error {
+			return taskFunc(groupCtx)
 		})
 	}
 
-	err := eg.Wait()
+	err := errGroup.Wait()
 
-	c.closeAllChannels()
+	conv.closeAllChannels()
 
-	return err
+	if err != nil {
+		return fmt.Errorf("pipeline execution failed: %w", err)
+	}
+
+	return nil
 }
 
-func (c *ConveyerImpl) closeAllChannels() {
-	c.channels.Lock()
-	defer c.channels.Unlock()
-	for _, ch := range c.channels.m {
+func (conv *ConveyerImpl) closeAllChannels() {
+	conv.channels.Lock()
+	defer conv.channels.Unlock()
+
+	for _, channel := range conv.channels.m {
 		func() {
 			defer func() {
 				_ = recover()
 			}()
-			close(ch)
+
+			close(channel)
 		}()
 	}
 }
 
-func (c *ConveyerImpl) Send(inputName string, data string) error {
-	c.channels.RLock()
-	ch, exists := c.channels.m[inputName]
-	c.channels.RUnlock()
+func (conv *ConveyerImpl) Send(inputName string, data string) error {
+	conv.channels.RLock()
+	channel, exists := conv.channels.m[inputName]
+	conv.channels.RUnlock()
 
 	if !exists {
-		return errors.New("chan not found")
+		return ErrChanNotFound
 	}
 
 	defer func() {
-		if r := recover(); r != nil {
-		}
+		_ = recover()
 	}()
 
-	ch <- data
+	channel <- data
+
 	return nil
 }
 
-func (c *ConveyerImpl) Recv(outputName string) (string, error) {
-	c.channels.RLock()
-	ch, exists := c.channels.m[outputName]
-	c.channels.RUnlock()
+func (conv *ConveyerImpl) Recv(outputName string) (string, error) {
+	conv.channels.RLock()
+	channel, exists := conv.channels.m[outputName]
+	conv.channels.RUnlock()
 
 	if !exists {
-		return "", errors.New("chan not found")
+		return "", ErrChanNotFound
 	}
 
-	val, ok := <-ch
+	val, ok := <-channel
 	if !ok {
 		return "undefined", nil
 	}
