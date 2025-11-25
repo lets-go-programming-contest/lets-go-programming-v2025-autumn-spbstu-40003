@@ -3,6 +3,7 @@ package conveyer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -37,27 +38,6 @@ type separatorEntry struct {
 	function func(ctx context.Context, input chan string, outputs []chan string) error
 	input    string
 	outputs  []string
-}
-
-type conveyer interface {
-	RegisterDecorator(
-		function func(ctx context.Context, input chan string, output chan string) error,
-		input string,
-		output string,
-	)
-	RegisterMultiplexer(
-		function func(ctx context.Context, inputs []chan string, output chan string) error,
-		inputs []string,
-		output string,
-	)
-	RegisterSeparator(
-		function func(ctx context.Context, input chan string, outputs []chan string) error,
-		input string,
-		outputs []string,
-	)
-	Run(ctx context.Context) error
-	Send(input string, data string) error
-	Recv(output string) (string, error)
 }
 
 func New(size int) *conveyerImpl {
@@ -219,5 +199,9 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 		})
 	}
 
-	return group.Wait()
+	err := group.Wait()
+	if err != nil {
+		return fmt.Errorf("conveyer run failed: %w", err)
+	}
+	return nil
 }

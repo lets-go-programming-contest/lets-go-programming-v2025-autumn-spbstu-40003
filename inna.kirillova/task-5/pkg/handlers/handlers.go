@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -105,5 +106,9 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 		})
 	}
 
-	return group.Wait()
+	err := group.Wait()
+	if err != nil {
+		return fmt.Errorf("multiplexer failed: %w", err)
+	}
+	return nil
 }
