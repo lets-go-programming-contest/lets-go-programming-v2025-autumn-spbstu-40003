@@ -3,7 +3,6 @@ package conveyer
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -61,7 +60,7 @@ type conveyer interface {
 	Recv(output string) (string, error)
 }
 
-func New(size int) conveyer {
+func New(size int) *conveyerImpl {
 	return &conveyerImpl{
 		size:         size,
 		channels:     make(map[string]chan string),
@@ -76,7 +75,7 @@ func (c *conveyerImpl) getOrCreateChan(name string) chan string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if ch, ok := c.channels[name]; ok {
+	if ch, exists := c.channels[name]; exists {
 		return ch
 	}
 
@@ -90,14 +89,14 @@ func (c *conveyerImpl) getChan(name string) (chan string, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	ch, ok := c.channels[name]
+	ch, exists := c.channels[name]
 
-	return ch, ok
+	return ch, exists
 }
 
 func (c *conveyerImpl) Send(input string, data string) error {
-	ch, ok := c.getChan(input)
-	if !ok {
+	ch, exists := c.getChan(input)
+	if !exists {
 		return ErrChanNotFound
 	}
 
@@ -107,8 +106,8 @@ func (c *conveyerImpl) Send(input string, data string) error {
 }
 
 func (c *conveyerImpl) Recv(output string) (string, error) {
-	ch, ok := c.getChan(output)
-	if !ok {
+	ch, exists := c.getChan(output)
+	if !exists {
 		return "", ErrChanNotFound
 	}
 
@@ -220,5 +219,5 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 		})
 	}
 
-	return fmt.Errorf("conveyer run failed: %w", group.Wait())
+	return group.Wait()
 }
