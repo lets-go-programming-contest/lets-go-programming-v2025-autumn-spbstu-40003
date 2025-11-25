@@ -13,17 +13,17 @@ var ErrChanNotFound = errors.New("chan not found")
 
 type Conveyer interface {
 	RegisterDecorator(
-		fn func(ctx context.Context, input chan string, output chan string) error,
+		decorator func(ctx context.Context, input chan string, output chan string) error,
 		input string,
 		output string,
 	)
 	RegisterMultiplexer(
-		fn func(ctx context.Context, inputs []chan string, output chan string) error,
+		multiplexer func(ctx context.Context, inputs []chan string, output chan string) error,
 		inputs []string,
 		output string,
 	)
 	RegisterSeparator(
-		fn func(ctx context.Context, input chan string, outputs []chan string) error,
+		separator func(ctx context.Context, input chan string, outputs []chan string) error,
 		input string,
 		outputs []string,
 	)
@@ -43,7 +43,7 @@ type ConveyerImpl struct {
 	channelSize int
 }
 
-func New(size int) Conveyer {
+func New(size int) *ConveyerImpl {
 	return &ConveyerImpl{
 		channels: &channelMap{
 			RWMutex: sync.RWMutex{},
@@ -69,7 +69,7 @@ func (conv *ConveyerImpl) getOrCreateChannel(name string) chan string {
 }
 
 func (conv *ConveyerImpl) RegisterDecorator(
-	fn func(ctx context.Context, input chan string, output chan string) error,
+	decorator func(ctx context.Context, input chan string, output chan string) error,
 	inputName string,
 	outputName string,
 ) {
@@ -77,14 +77,14 @@ func (conv *ConveyerImpl) RegisterDecorator(
 	outCh := conv.getOrCreateChannel(outputName)
 
 	task := func(ctx context.Context) error {
-		return fn(ctx, inCh, outCh)
+		return decorator(ctx, inCh, outCh)
 	}
 
 	conv.tasks = append(conv.tasks, task)
 }
 
 func (conv *ConveyerImpl) RegisterMultiplexer(
-	fn func(ctx context.Context, inputs []chan string, output chan string) error,
+	multiplexer func(ctx context.Context, inputs []chan string, output chan string) error,
 	inputNames []string,
 	outputName string,
 ) {
@@ -97,14 +97,14 @@ func (conv *ConveyerImpl) RegisterMultiplexer(
 	outCh := conv.getOrCreateChannel(outputName)
 
 	task := func(ctx context.Context) error {
-		return fn(ctx, inputChannels, outCh)
+		return multiplexer(ctx, inputChannels, outCh)
 	}
 
 	conv.tasks = append(conv.tasks, task)
 }
 
 func (conv *ConveyerImpl) RegisterSeparator(
-	fn func(ctx context.Context, input chan string, outputs []chan string) error,
+	separator func(ctx context.Context, input chan string, outputs []chan string) error,
 	inputName string,
 	outputNames []string,
 ) {
@@ -117,7 +117,7 @@ func (conv *ConveyerImpl) RegisterSeparator(
 	}
 
 	task := func(ctx context.Context) error {
-		return fn(ctx, inCh, outputChannels)
+		return separator(ctx, inCh, outputChannels)
 	}
 
 	conv.tasks = append(conv.tasks, task)

@@ -40,14 +40,14 @@ func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan str
 func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan string) error {
 	var waitGroup sync.WaitGroup
 
-	readCh := func(c chan string) {
+	readCh := func(channel chan string) {
 		defer waitGroup.Done()
 
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case item, ok := <-c:
+			case item, ok := <-channel:
 				if !ok {
 					return
 				}
