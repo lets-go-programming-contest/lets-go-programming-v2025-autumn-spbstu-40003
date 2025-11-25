@@ -110,5 +110,6 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 	if err != nil {
 		return fmt.Errorf("multiplexer failed: %w", err)
 	}
+
 	return nil
 }

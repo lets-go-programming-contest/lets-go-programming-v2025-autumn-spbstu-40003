@@ -203,5 +203,6 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("conveyer run failed: %w", err)
 	}
+
 	return nil
 }
