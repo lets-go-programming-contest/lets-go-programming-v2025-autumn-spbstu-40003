@@ -8,10 +8,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var (
-	errChanNotFound = errors.New("chan not found")
-	errNoData       = errors.New("no data")
-)
+var errChanNotFound = errors.New("chan not found")
 
 const undefined = "undefined"
 
@@ -70,7 +67,7 @@ func (c *Conveyer) Recv(output string) (string, error) {
 
 	data, isAvailable := <-ch
 	if !isAvailable {
-		return undefined, errNoData
+		return undefined, errChanNotFound
 	}
 
 	return data, nil
