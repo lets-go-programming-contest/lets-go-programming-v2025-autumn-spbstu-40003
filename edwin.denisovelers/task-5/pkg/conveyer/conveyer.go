@@ -65,9 +65,9 @@ func (c *Conveyer) Recv(output string) (string, error) {
 		return "", errChanNotFound
 	}
 
-	data, isAvailable := <-ch
-	if !isAvailable {
-		return undefined, errChanNotFound
+	data, ok := <-ch
+	if !ok {
+		return undefined, nil
 	}
 
 	return data, nil
