@@ -120,10 +120,8 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 	group, groupCtx := errgroup.WithContext(ctx)
 
 	for _, decorator := range conv.decorators {
-		fn, inputChan, outputChan := decorator.function, decorator.input, decorator.output
-
 		group.Go(func() error {
-			return fn(groupCtx, inputChan, outputChan)
+			return decorator.function(groupCtx, decorator.input, decorator.output)
 		})
 	}
 
