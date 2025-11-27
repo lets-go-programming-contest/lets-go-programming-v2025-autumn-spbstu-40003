@@ -30,8 +30,6 @@ func New(size int) *Conveyer {
 }
 
 func (c *Conveyer) Run(ctx context.Context) error {
-	defer c.closeChannels()
-
 	group, groupCtx := errgroup.WithContext(ctx)
 
 	for _, handler := range c.handlers {

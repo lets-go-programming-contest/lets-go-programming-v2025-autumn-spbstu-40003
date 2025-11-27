@@ -18,12 +18,6 @@ func (c *Conveyer) createChannels(channelNames ...string) {
 	}
 }
 
-func (c *Conveyer) closeChannels() {
-	for _, ch := range c.channels {
-		close(ch)
-	}
-}
-
 func (c *Conveyer) addHandler(fn func(context.Context) error) {
 	c.handlers = append(c.handlers, fn)
 }
