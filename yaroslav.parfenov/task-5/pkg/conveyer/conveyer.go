@@ -2,16 +2,21 @@ package conveyer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/gituser549/task-5/pkg/chansyncmap"
 	"golang.org/x/sync/errgroup"
 )
 
+var ErrChanNotFound = errors.New("channel not found")
+
+const undefined = "undefined"
+
 type Conveyer struct {
 	size int
 
-	channelsById *chansyncmap.ChanSyncMap
+	channelsByID *chansyncmap.ChanSyncMap
 	decorators   []Decorator
 	multiplexers []Multiplexer
 	separators   []Separator
@@ -38,77 +43,79 @@ type Separator struct {
 func New(size int) *Conveyer {
 	return &Conveyer{
 		size:         size,
-		channelsById: chansyncmap.New(size),
+		channelsByID: chansyncmap.New(size),
 		decorators:   make([]Decorator, 0),
 		multiplexers: make([]Multiplexer, 0),
 		separators:   make([]Separator, 0),
 	}
 }
 
-func (conv *Conveyer) RegisterDecorator(fn func(ctx context.Context, input chan string, output chan string) error,
+func (conv *Conveyer) RegisterDecorator(function func(ctx context.Context, input chan string, output chan string) error,
 	input string,
 	output string,
 ) {
-	inputChan := conv.channelsById.GetOrCreateChan(input)
+	inputChan := conv.channelsByID.GetOrCreateChan(input)
 
-	outputChan := conv.channelsById.GetOrCreateChan(output)
+	outputChan := conv.channelsByID.GetOrCreateChan(output)
 
-	conv.decorators = append(conv.decorators, Decorator{fn, inputChan, outputChan})
+	conv.decorators = append(conv.decorators, Decorator{function, inputChan, outputChan})
 }
 
-func (conv *Conveyer) RegisterMultiplexer(fn func(ctx context.Context, inputs []chan string, output chan string) error,
+func (conv *Conveyer) RegisterMultiplexer(
+	function func(ctx context.Context, inputs []chan string, output chan string) error,
 	input []string,
 	output string,
 ) {
-	var inputChans []chan string
+	inputChans := make([]chan string, 0, len(input))
 	for _, input := range input {
-		inputChans = append(inputChans, conv.channelsById.GetOrCreateChan(input))
+		inputChans = append(inputChans, conv.channelsByID.GetOrCreateChan(input))
 	}
 
-	outputChan := conv.channelsById.GetOrCreateChan(output)
+	outputChan := conv.channelsByID.GetOrCreateChan(output)
 
-	conv.multiplexers = append(conv.multiplexers, Multiplexer{fn, inputChans, outputChan})
+	conv.multiplexers = append(conv.multiplexers, Multiplexer{function, inputChans, outputChan})
 }
 
-func (conv *Conveyer) RegisterSeparator(fn func(ctx context.Context, input chan string, outputs []chan string) error,
+func (conv *Conveyer) RegisterSeparator(
+	function func(ctx context.Context, input chan string, outputs []chan string) error,
 	input string,
 	outputs []string,
 ) {
-	inputChan := conv.channelsById.GetOrCreateChan(input)
+	inputChan := conv.channelsByID.GetOrCreateChan(input)
 
-	var outputChans []chan string
+	outputChans := make([]chan string, 0, len(outputs))
 	for _, output := range outputs {
-		outputChans = append(outputChans, conv.channelsById.GetOrCreateChan(output))
+		outputChans = append(outputChans, conv.channelsByID.GetOrCreateChan(output))
 	}
 
-	conv.separators = append(conv.separators, Separator{fn, inputChan, outputChans})
+	conv.separators = append(conv.separators, Separator{function, inputChan, outputChans})
 }
 
 func (conv *Conveyer) Send(input string, data string) error {
-	if inputChan, ok := conv.channelsById.GetChan(input); ok {
+	if inputChan, ok := conv.channelsByID.GetChan(input); ok {
 		inputChan <- data
 
 		return nil
 	}
 
-	return fmt.Errorf("chan not found")
+	return ErrChanNotFound
 }
 
 func (conv *Conveyer) Recv(output string) (string, error) {
-	if outputChan, ok := conv.channelsById.GetChan(output); ok {
+	if outputChan, ok := conv.channelsByID.GetChan(output); ok {
 		data, ok := <-outputChan
 		if !ok {
-			return "undefined", nil
+			return undefined, nil
 		}
 
 		return data, nil
 	}
 
-	return "", fmt.Errorf("chan not found")
+	return "", ErrChanNotFound
 }
 
 func (conv *Conveyer) Run(ctx context.Context) error {
-	defer conv.channelsById.CloseAllChans()
+	defer conv.channelsByID.CloseAllChans()
 
 	group, groupCtx := errgroup.WithContext(ctx)
 
@@ -134,7 +141,7 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 
 	err := group.Wait()
 	if err != nil {
-		return fmt.Errorf("conveyer was shut down with error: %v", err)
+		return fmt.Errorf("conveyer was shut down with error: %w", err)
 	}
 
 	return nil

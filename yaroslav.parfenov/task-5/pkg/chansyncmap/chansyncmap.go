@@ -4,22 +4,26 @@ import "sync"
 
 type ChanSyncMap struct {
 	size         int
-	channelsById sync.Map
+	channelsByID sync.Map
 }
 
 func New(size int) *ChanSyncMap {
 	return &ChanSyncMap{
-		size: size,
+		size:         size,
+		channelsByID: sync.Map{},
 	}
 }
 
 func (csm *ChanSyncMap) GetOrCreateChan(chanName string) chan string {
 	var channel chan string
-	if preChannel, ok := csm.channelsById.Load(chanName); !ok {
+	if preChannel, ok := csm.channelsByID.Load(chanName); !ok {
 		channel = make(chan string, csm.size)
-		csm.channelsById.Store(chanName, channel)
+		csm.channelsByID.Store(chanName, channel)
 	} else {
-		channel = preChannel.(chan string)
+		channel, ok = preChannel.(chan string)
+		if !ok {
+			return nil
+		}
 	}
 
 	return channel
@@ -27,18 +31,29 @@ func (csm *ChanSyncMap) GetOrCreateChan(chanName string) chan string {
 
 func (csm *ChanSyncMap) GetChan(chanName string) (chan string, bool) {
 	var channel chan string
-	if preChannel, ok := csm.channelsById.Load(chanName); !ok {
+
+	if preChannel, ok := csm.channelsByID.Load(chanName); !ok {
 		return nil, false
 	} else {
-		channel = preChannel.(chan string)
+		channel, ok = preChannel.(chan string)
+
+		if !ok {
+			return nil, false
+		}
 	}
 
 	return channel, true
 }
 
 func (csm *ChanSyncMap) CloseAllChans() {
-	csm.channelsById.Range(func(key, value interface{}) bool {
-		close(value.(chan string))
+	csm.channelsByID.Range(func(key, value interface{}) bool {
+		channel, ok := value.(chan string)
+		if !ok {
+			return false
+		}
+
+		close(channel)
+
 		return true
 	})
 }
