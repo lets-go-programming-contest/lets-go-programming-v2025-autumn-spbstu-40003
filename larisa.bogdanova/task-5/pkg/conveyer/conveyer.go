@@ -108,10 +108,14 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 
 	c.closeAllChannels()
 
-	if err != nil && errors.Is(err, context.Canceled) {
-		return nil
+	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return nil
+		}
+		return err
 	}
-	return err
+
+	return nil
 }
 
 func (c *conveyerImpl) closeAllChannels() {
