@@ -75,54 +75,63 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 	}
 }
 
+func processChannelData(ctx context.Context, data string, output chan string) bool {
+	if strings.Contains(data, "no multiplexer") {
+		return true
+	}
+
+	select {
+	case <-ctx.Done():
+		return false
+	case output <- data:
+		return true
+	}
+}
+
+func processInputChannel(ctx context.Context, inputChan chan string, output chan string, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case data, ok := <-inputChan:
+			if !ok {
+				return
+			}
+
+			if !processChannelData(ctx, data, output) {
+				return
+			}
+		}
+	}
+}
+
 func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan string) error {
 	if len(inputs) == 0 {
 		return fmt.Errorf("%w", ErrNoInputChannelsForMultiplexer)
 	}
 
 	var waitGroup sync.WaitGroup
-	errCh := make(chan error, len(inputs))
+	errorChannel := make(chan error, len(inputs))
 
 	for _, inputChannel := range inputs {
 		waitGroup.Add(1)
 
-		processChannel := func(inputChan chan string) {
-			defer waitGroup.Done()
-
-			for {
-				select {
-				case <-ctx.Done():
-					return
-
-				case data, ok := <-inputChan:
-					if !ok {
-						return
-					}
-
-					if !strings.Contains(data, "no multiplexer") {
-						select {
-						case <-ctx.Done():
-							return
-						case output <- data:
-						}
-					}
-				}
-			}
-		}
-
-		go processChannel(inputChannel)
+		go processInputChannel(ctx, inputChannel, output, &waitGroup)
 	}
 
 	go func() {
 		waitGroup.Wait()
-		close(errCh)
+		close(errorChannel)
 	}()
 
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("%w", ctx.Err())
 
-	case err := <-errCh:
+	case err := <-errorChannel:
 		if err != nil {
 			return fmt.Errorf("multiplexer error: %w", err)
 		}
