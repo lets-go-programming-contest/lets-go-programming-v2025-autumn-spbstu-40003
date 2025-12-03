@@ -18,9 +18,21 @@ var (
 const defaultSendTimeout = 5 * time.Second
 
 type Conveyer interface {
-	RegisterDecorator(fn func(ctx context.Context, input chan string, output chan string) error, input string, output string)
-	RegisterMultiplexer(fn func(ctx context.Context, inputs []chan string, output chan string) error, inputs []string, output string)
-	RegisterSeparator(fn func(ctx context.Context, input chan string, outputs []chan string) error, input string, outputs []string)
+	RegisterDecorator(
+		decoratorFunction func(ctx context.Context, input chan string, output chan string) error,
+		input string,
+		output string,
+	)
+	RegisterMultiplexer(
+		multiplexerFunction func(ctx context.Context, inputs []chan string, output chan string) error,
+		inputs []string,
+		output string,
+	)
+	RegisterSeparator(
+		separatorFunction func(ctx context.Context, input chan string, outputs []chan string) error,
+		input string,
+		outputs []string,
+	)
 	Run(ctx context.Context) error
 	Send(input string, data string) error
 	Recv(output string) (string, error)
@@ -43,22 +55,24 @@ func New(size int) *conveyerImpl {
 		channelSize: size,
 		channels:    make(channelMap),
 		handlers:    make([]handler, 0),
+		mu:          sync.RWMutex{},
+		closeOnce:   sync.Once{},
 	}
 }
 
-func (c *conveyerImpl) getOrCreateChannel(id string) chan string {
-	if channel, ok := c.channels[id]; ok {
+func (c *conveyerImpl) getOrCreateChannel(channelID string) chan string {
+	if channel, ok := c.channels[channelID]; ok {
 		return channel
 	}
 
 	channel := make(chan string, c.channelSize)
-	c.channels[id] = channel
+	c.channels[channelID] = channel
 
 	return channel
 }
 
 func (c *conveyerImpl) RegisterDecorator(
-	fn func(ctx context.Context, input chan string, output chan string) error,
+	decoratorFunction func(ctx context.Context, input chan string, output chan string) error,
 	inputID string,
 	outputID string,
 ) {
@@ -69,12 +83,12 @@ func (c *conveyerImpl) RegisterDecorator(
 	outputCh := c.getOrCreateChannel(outputID)
 
 	c.handlers = append(c.handlers, func(ctx context.Context) error {
-		return fn(ctx, inputCh, outputCh)
+		return decoratorFunction(ctx, inputCh, outputCh)
 	})
 }
 
 func (c *conveyerImpl) RegisterMultiplexer(
-	fn func(ctx context.Context, inputs []chan string, output chan string) error,
+	multiplexerFunction func(ctx context.Context, inputs []chan string, output chan string) error,
 	inputIDs []string,
 	outputID string,
 ) {
@@ -90,12 +104,12 @@ func (c *conveyerImpl) RegisterMultiplexer(
 	outputCh := c.getOrCreateChannel(outputID)
 
 	c.handlers = append(c.handlers, func(ctx context.Context) error {
-		return fn(ctx, inputChs, outputCh)
+		return multiplexerFunction(ctx, inputChs, outputCh)
 	})
 }
 
 func (c *conveyerImpl) RegisterSeparator(
-	fn func(ctx context.Context, input chan string, outputs []chan string) error,
+	separatorFunction func(ctx context.Context, input chan string, outputs []chan string) error,
 	inputID string,
 	outputIDs []string,
 ) {
@@ -110,7 +124,7 @@ func (c *conveyerImpl) RegisterSeparator(
 	}
 
 	c.handlers = append(c.handlers, func(ctx context.Context) error {
-		return fn(ctx, inputCh, outputChs)
+		return separatorFunction(ctx, inputCh, outputChs)
 	})
 }
 
@@ -138,7 +152,7 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 			return nil
 		}
 
-		return err
+		return fmt.Errorf("conveyer run failed: %w", err)
 	}
 
 	return nil
