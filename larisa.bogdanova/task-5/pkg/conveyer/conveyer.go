@@ -92,7 +92,6 @@ func (c *conveyerImpl) RegisterSeparator(fn func(ctx context.Context, input chan
 
 func (c *conveyerImpl) Run(ctx context.Context) error {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
 
 	group, runCtx := errgroup.WithContext(ctx)
 
@@ -102,6 +101,8 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 			return handler(runCtx)
 		})
 	}
+
+	c.mu.RUnlock()
 
 	err := group.Wait()
 
