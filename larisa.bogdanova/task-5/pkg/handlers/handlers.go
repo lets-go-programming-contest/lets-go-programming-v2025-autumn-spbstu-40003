@@ -114,6 +114,7 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 	}
 
 	var waitGroup sync.WaitGroup
+
 	errorChannel := make(chan error, len(inputs))
 
 	for _, inputChannel := range inputs {
