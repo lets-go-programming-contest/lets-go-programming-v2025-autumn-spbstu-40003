@@ -3,11 +3,19 @@ package conveyer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
 )
+
+var (
+	ErrChanNotFound = errors.New("chan not found")
+	ErrSendTimeout  = errors.New("send timeout")
+)
+
+const defaultSendTimeout = 5 * time.Second
 
 type Conveyer interface {
 	RegisterDecorator(fn func(ctx context.Context, input chan string, output chan string) error, input string, output string)
@@ -27,11 +35,10 @@ type conveyerImpl struct {
 	channels    channelMap
 	handlers    []handler
 	mu          sync.RWMutex
-
-	closeOnce sync.Once
+	closeOnce   sync.Once
 }
 
-func New(size int) Conveyer {
+func New(size int) *conveyerImpl {
 	return &conveyerImpl{
 		channelSize: size,
 		channels:    make(channelMap),
@@ -40,15 +47,21 @@ func New(size int) Conveyer {
 }
 
 func (c *conveyerImpl) getOrCreateChannel(id string) chan string {
-	if ch, ok := c.channels[id]; ok {
-		return ch
+	if channel, ok := c.channels[id]; ok {
+		return channel
 	}
-	ch := make(chan string, c.channelSize)
-	c.channels[id] = ch
-	return ch
+
+	channel := make(chan string, c.channelSize)
+	c.channels[id] = channel
+
+	return channel
 }
 
-func (c *conveyerImpl) RegisterDecorator(fn func(ctx context.Context, input chan string, output chan string) error, inputID string, outputID string) {
+func (c *conveyerImpl) RegisterDecorator(
+	fn func(ctx context.Context, input chan string, output chan string) error,
+	inputID string,
+	outputID string,
+) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -60,14 +73,20 @@ func (c *conveyerImpl) RegisterDecorator(fn func(ctx context.Context, input chan
 	})
 }
 
-func (c *conveyerImpl) RegisterMultiplexer(fn func(ctx context.Context, inputs []chan string, output chan string) error, inputIDs []string, outputID string) {
+func (c *conveyerImpl) RegisterMultiplexer(
+	fn func(ctx context.Context, inputs []chan string, output chan string) error,
+	inputIDs []string,
+	outputID string,
+) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	inputChs := make([]chan string, len(inputIDs))
+
 	for i, id := range inputIDs {
 		inputChs[i] = c.getOrCreateChannel(id)
 	}
+
 	outputCh := c.getOrCreateChannel(outputID)
 
 	c.handlers = append(c.handlers, func(ctx context.Context) error {
@@ -75,12 +94,17 @@ func (c *conveyerImpl) RegisterMultiplexer(fn func(ctx context.Context, inputs [
 	})
 }
 
-func (c *conveyerImpl) RegisterSeparator(fn func(ctx context.Context, input chan string, outputs []chan string) error, inputID string, outputIDs []string) {
+func (c *conveyerImpl) RegisterSeparator(
+	fn func(ctx context.Context, input chan string, outputs []chan string) error,
+	inputID string,
+	outputIDs []string,
+) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	inputCh := c.getOrCreateChannel(inputID)
 	outputChs := make([]chan string, len(outputIDs))
+
 	for i, id := range outputIDs {
 		outputChs[i] = c.getOrCreateChannel(id)
 	}
@@ -97,6 +121,7 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 
 	for _, h := range c.handlers {
 		handler := h
+
 		group.Go(func() error {
 			return handler(runCtx)
 		})
@@ -112,6 +137,7 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return nil
 		}
+
 		return err
 	}
 
@@ -122,9 +148,10 @@ func (c *conveyerImpl) closeAllChannels() {
 	c.closeOnce.Do(func() {
 		c.mu.Lock()
 		defer c.mu.Unlock()
-		for _, ch := range c.channels {
-			if ch != nil {
-				close(ch)
+
+		for _, channel := range c.channels {
+			if channel != nil {
+				close(channel)
 			}
 		}
 	})
@@ -134,16 +161,16 @@ func (c *conveyerImpl) Send(input string, data string) error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	ch, ok := c.channels[input]
+	channel, ok := c.channels[input]
 	if !ok {
-		return errors.New("chan not found")
+		return fmt.Errorf("%w", ErrChanNotFound)
 	}
 
 	select {
-	case ch <- data:
+	case channel <- data:
 		return nil
-	case <-time.After(5 * time.Second):
-		return errors.New("send timeout")
+	case <-time.After(defaultSendTimeout):
+		return fmt.Errorf("%w", ErrSendTimeout)
 	}
 }
 
@@ -151,14 +178,15 @@ func (c *conveyerImpl) Recv(output string) (string, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	ch, ok := c.channels[output]
+	channel, ok := c.channels[output]
 	if !ok {
-		return "", errors.New("chan not found")
+		return "", fmt.Errorf("%w", ErrChanNotFound)
 	}
 
-	data, open := <-ch
+	data, open := <-channel
 	if !open {
 		return "undefined", nil
 	}
+
 	return data, nil
 }
