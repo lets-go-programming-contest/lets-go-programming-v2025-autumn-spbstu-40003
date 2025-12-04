@@ -2,104 +2,43 @@ package handlers
 
 import (
 	"context"
-	"fmt"
-	"strings"
+	"errors"
 	"sync"
 )
 
-func PrefixDecoratorFunc(
-	ctx context.Context,
-	input chan string,
-	output chan string,
-) error {
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case data, ok := <-input:
-			if !ok {
-				return nil
-			}
+var ErrCantBeDecorated = errors.New("can't be decorated")
 
-			if strings.Contains(data, "no decorator") {
-				return fmt.Errorf("can't be decorated")
-			}
+type FanInHandler func(ctx context.Context, inputs []chan string, output chan string) error
 
-			if !strings.HasPrefix(data, "decorated: ") {
-				data = "decorated: " + data
-			}
+func FanIn(ctx context.Context, inputs []chan string, output chan string) error {
+	var waitGroup sync.WaitGroup
 
-			select {
-			case <-ctx.Done():
-				return nil
-			case output <- data:
-			}
-		}
-	}
-}
+	waitGroup.Add(len(inputs))
 
-func SeparatorFunc(
-	ctx context.Context,
-	input chan string,
-	outputs []chan string,
-) error {
-	index := 0
+	for _, inputChannel := range inputs {
+		currentChannel := inputChannel
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case data, ok := <-input:
-			if !ok {
-				return nil
-			}
+		go func(inChan chan string) {
+			defer waitGroup.Done()
 
-			out := outputs[index]
-			index = (index + 1) % len(outputs)
-
-			select {
-			case <-ctx.Done():
-				return nil
-			case out <- data:
-			}
-		}
-	}
-}
-
-func MultiplexerFunc(
-	ctx context.Context,
-	inputs []chan string,
-	output chan string,
-) error {
-	var wg sync.WaitGroup
-
-	for _, ch := range inputs {
-		wg.Add(1)
-		go func(in chan string) {
-			defer wg.Done()
 			for {
 				select {
-				case <-ctx.Done():
-					return
-				case data, ok := <-in:
+				case value, ok := <-inChan:
 					if !ok {
 						return
 					}
 
-					if strings.Contains(data, "no multiplexer") {
-						continue
-					}
-
-					select {
-					case <-ctx.Done():
-						return
-					case output <- data:
-					}
+					output <- value
+				case <-ctx.Done():
+					return
 				}
 			}
-		}(ch)
+		}(currentChannel)
 	}
 
-	wg.Wait()
+	waitGroup.Wait()
+
+	close(output)
+
 	return nil
 }
