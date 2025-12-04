@@ -187,7 +187,7 @@ func (conv *MyConveyer) Recv(output string) (string, error) {
 
 	data, ok := <-ch
 	if !ok {
-		return "", nil
+		return "undefined", nil
 	}
 
 	return data, nil
