@@ -49,16 +49,16 @@ type separator struct {
 	outputs  []string
 }
 
-func (conv *MyConveyer) getChannel(channelId string) chan string {
+func (conv *MyConveyer) getChannel(channelID string) chan string {
 	conv.mutex.Lock()
 	defer conv.mutex.Unlock()
 
-	if channel, exists := conv.channels[channelId]; exists {
+	if channel, exists := conv.channels[channelID]; exists {
 		return channel
 	}
 
 	channel := make(chan string, conv.size)
-	conv.channels[channelId] = channel
+	conv.channels[channelID] = channel
 
 	return channel
 }
@@ -90,6 +90,7 @@ func (conv *MyConveyer) RegisterMultiplexer(
 	for _, input := range inputs {
 		conv.getChannel(input)
 	}
+
 	conv.getChannel(output)
 
 	conv.multiplexers = append(conv.multiplexers, multiplexer{function, inputs, output})
