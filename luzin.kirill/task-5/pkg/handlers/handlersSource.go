@@ -4,4 +4,4 @@ func PrefixDecoratorFunc() {}
 
 func SeparatorFunc() {}
 
-func MultiplexerFFunc() {}
+func MultiplexerFunc() {}
