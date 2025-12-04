@@ -9,7 +9,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var ErrorCantBeDecorated = errors.New("can't be decorated")
+var ErrCantBeDecorated = errors.New("can't be decorated")
 
 func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan string) error {
 	for {
@@ -22,7 +22,7 @@ func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan str
 			}
 
 			if strings.Contains(data, "no decorator") {
-				return ErrorCantBeDecorated
+				return ErrCantBeDecorated
 			}
 
 			if !strings.HasPrefix(data, "decorated: ") {

@@ -9,7 +9,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var ErrorChanNotFound = errors.New("chan not found")
+var ErrChanNotFound = errors.New("chan not found")
 
 type MyConveyer struct {
 	size         int
@@ -49,22 +49,22 @@ type separator struct {
 	outputs  []string
 }
 
-func (conv *MyConveyer) getChannel(id string) chan string {
+func (conv *MyConveyer) getChannel(channelId string) chan string {
 	conv.mutex.Lock()
 	defer conv.mutex.Unlock()
 
-	if channel, exists := conv.channels[id]; exists {
+	if channel, exists := conv.channels[channelId]; exists {
 		return channel
 	}
 
 	channel := make(chan string, conv.size)
-	conv.channels[id] = channel
+	conv.channels[channelId] = channel
 
 	return channel
 }
 
 func (conv *MyConveyer) RegisterDecorator(
-	fn func(
+	function func(
 		ctx context.Context,
 		input chan string,
 		output chan string,
@@ -75,11 +75,11 @@ func (conv *MyConveyer) RegisterDecorator(
 	conv.getChannel(input)
 	conv.getChannel(output)
 
-	conv.decorators = append(conv.decorators, decorator{fn, input, output})
+	conv.decorators = append(conv.decorators, decorator{function, input, output})
 }
 
 func (conv *MyConveyer) RegisterMultiplexer(
-	fn func(
+	function func(
 		ctx context.Context,
 		inputs []chan string,
 		output chan string,
@@ -92,11 +92,11 @@ func (conv *MyConveyer) RegisterMultiplexer(
 	}
 	conv.getChannel(output)
 
-	conv.multiplexers = append(conv.multiplexers, multiplexer{fn, inputs, output})
+	conv.multiplexers = append(conv.multiplexers, multiplexer{function, inputs, output})
 }
 
 func (conv *MyConveyer) RegisterSeparator(
-	fn func(
+	function func(
 		ctx context.Context,
 		input chan string,
 		outputs []chan string) error,
@@ -106,9 +106,10 @@ func (conv *MyConveyer) RegisterSeparator(
 	for _, output := range outputs {
 		conv.getChannel(output)
 	}
+
 	conv.getChannel(input)
 
-	conv.separators = append(conv.separators, separator{fn, input, outputs})
+	conv.separators = append(conv.separators, separator{function, input, outputs})
 }
 
 func (conv *MyConveyer) close() {
@@ -171,7 +172,7 @@ func (conv *MyConveyer) Run(ctx context.Context) error {
 func (conv *MyConveyer) Send(input string, data string) error {
 	ch, exists := conv.channels[input]
 	if !exists {
-		return ErrorChanNotFound
+		return ErrChanNotFound
 	}
 
 	ch <- data
@@ -182,7 +183,7 @@ func (conv *MyConveyer) Send(input string, data string) error {
 func (conv *MyConveyer) Recv(output string) (string, error) {
 	ch, exists := conv.channels[output]
 	if !exists {
-		return "", ErrorChanNotFound
+		return "", ErrChanNotFound
 	}
 
 	data, ok := <-ch
