@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 )
@@ -38,10 +39,12 @@ func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan str
 			select {
 			case output <- data:
 			case <-ctx.Done():
-				return errors.Join(ErrContextDoneInDecorator, ctx.Err())
+
+				return fmt.Errorf("%w: %w", ErrContextDoneInDecorator, ctx.Err())
 			}
+
 		case <-ctx.Done():
-			return errors.Join(ErrContextDoneInDecorator, ctx.Err())
+			return fmt.Errorf("%w: %w", ErrContextDoneInDecorator, ctx.Err())
 		}
 	}
 }
@@ -59,26 +62,28 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 			select {
 			case outputs[index] <- data:
 			case <-ctx.Done():
-				return errors.Join(ErrContextDoneInSeparator, ctx.Err())
+
+				return fmt.Errorf("%w: %w", ErrContextDoneInSeparator, ctx.Err())
 			}
 
 			index = (index + 1) % len(outputs)
 
 		case <-ctx.Done():
-			return errors.Join(ErrContextDoneInSeparator, ctx.Err())
+			return fmt.Errorf("%w: %w", ErrContextDoneInSeparator, ctx.Err())
 		}
 	}
 }
 
 func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan string) error {
-	var wg sync.WaitGroup
+	var waitGroup sync.WaitGroup
+
 	done := make(chan struct{})
 
-	for _, in := range inputs {
-		wg.Add(1)
+	for _, inputChan := range inputs {
+		waitGroup.Add(1)
 
 		go func(ch chan string) {
-			defer wg.Done()
+			defer waitGroup.Done()
 
 			for {
 				select {
@@ -101,16 +106,19 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 
 				case <-ctx.Done():
 					return
+
 				case <-done:
 					return
 				}
 			}
-		}(in)
+		}(inputChan)
 	}
 
 	<-ctx.Done()
+
 	close(done)
-	wg.Wait()
+
+	waitGroup.Wait()
 
 	return nil
 }

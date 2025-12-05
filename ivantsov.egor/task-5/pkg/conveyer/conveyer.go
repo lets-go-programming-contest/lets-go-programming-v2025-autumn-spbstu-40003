@@ -3,6 +3,7 @@ package conveyer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -10,7 +11,7 @@ import (
 	"ivantsov.egor/task-5/pkg/handlers"
 )
 
-type DecoratorFunc func(context.Context, chan string, chan string) error
+type DecoratorFunc = func(context.Context, chan string, chan string) error
 
 type pipeline struct {
 	bufferSize int
@@ -25,12 +26,12 @@ type pipeline struct {
 func New(bufferSize int) *pipeline {
 	return &pipeline{
 		bufferSize: bufferSize,
-		mu:         sync.Mutex{},
-		decorators: make([]DecoratorFunc, 0),
+		inCh:       make(chan string),
+		outCh:      make(chan string),
 	}
 }
 
-func (p *pipeline) RegisterDecorator(fn DecoratorFunc) error {
+func (p *pipeline) RegisterDecorator(fn DecoratorFunc, _, _ string) error {
 	if fn == nil {
 		return errors.New("nil decorator")
 	}
@@ -42,90 +43,59 @@ func (p *pipeline) RegisterDecorator(fn DecoratorFunc) error {
 	return nil
 }
 
-func (p *pipeline) init() {
-	if p.inCh != nil {
-		return
-	}
-
-	p.inCh = make(chan string, p.bufferSize)
-
-	prev := p.inCh
-
-	for _, d := range p.decorators {
-		next := make(chan string, p.bufferSize)
-
-		go func(input, output chan string, dec DecoratorFunc) {
-			_ = dec(context.Background(), input, output)
-			close(output)
-		}(prev, next, d)
-
-		prev = next
-	}
-
-	p.outCh = prev
-}
-
-func (p *pipeline) Send(ctx context.Context, v string) error {
-	p.mu.Lock()
-	p.init()
-	in := p.inCh
-	p.mu.Unlock()
-
+func (p *pipeline) Send(value string) error {
 	select {
-	case in <- v:
+	case p.inCh <- value:
 		return nil
-	case <-ctx.Done():
-		return ctx.Err()
+	default:
+		return errors.New("pipeline closed")
 	}
 }
 
-func (p *pipeline) Recv(ctx context.Context) (string, error) {
-	p.mu.Lock()
-	p.init()
-	out := p.outCh
-	p.mu.Unlock()
-
-	select {
-	case v, ok := <-out:
-		if !ok {
-			return "", errors.New("pipeline closed")
-		}
-		return v, nil
-	case <-ctx.Done():
-		return "", ctx.Err()
+func (p *pipeline) Recv(_ string) (string, error) {
+	value, ok := <-p.outCh
+	if !ok {
+		return "", errors.New("pipeline closed")
 	}
+
+	return value, nil
 }
 
-func (p *pipeline) Run(ctx context.Context) error {
-	p.mu.Lock()
-	p.init()
-	in, out := p.inCh, p.outCh
-	p.mu.Unlock()
+func (p *pipeline) Run() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	group, ctx := errgroup.WithContext(ctx)
 
-	group.Go(func() error {
-		defer close(in)
-		<-ctx.Done()
-		return nil
-	})
+	in := p.inCh
 
-	group.Go(func() error {
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case _, ok := <-out:
-				if !ok {
-					return nil
-				}
+	for _, decorator := range p.decorators {
+		out := make(chan string, p.bufferSize)
+
+		currentDecorator := decorator
+
+		group.Go(func() error {
+			if err := currentDecorator(ctx, in, out); err != nil {
+				return fmt.Errorf("decorator error: %w", err)
 			}
-		}
+
+			close(out)
+
+			return nil
+		})
+
+		in = out
+	}
+
+	group.Go(func() error {
+		return handlers.MultiplexerFunc(ctx, []chan string{in}, p.outCh)
 	})
 
-	return group.Wait()
-}
+	if err := group.Wait(); err != nil {
+		return fmt.Errorf("pipeline error: %w", err)
+	}
 
-func RegisterDefaultHandlers(p *pipeline) error {
-	return p.RegisterDecorator(handlers.PrefixDecoratorFunc)
+	close(p.outCh)
+
+	return nil
 }
