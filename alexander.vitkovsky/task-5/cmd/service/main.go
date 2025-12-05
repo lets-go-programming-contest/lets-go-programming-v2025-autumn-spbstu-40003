@@ -27,39 +27,39 @@ func main() {
 		[]string{"decor1", "decor2"},
 		"output")
 
+	results := make(chan struct{})
+	consumerStarted := make(chan struct{})
+
 	go func() {
-		if err := conv.Run(ctx); err != nil {
-			fmt.Println("run error:", err)
+		close(consumerStarted)
+		defer close(results)
+
+		for {
+			msg, err := conv.Recv("output")
+			if err != nil {
+				return
+			}
+			if msg == conveyer.UndefinedValue {
+				return
+			}
+			fmt.Println("FINAL:", msg)
 		}
 	}()
 
-	go func() {
-		if err := conv.Send("input", "AAA"); err != nil {
-			fmt.Println(err)
-		}
-		if err := conv.Send("input", "BBB"); err != nil {
-			fmt.Println(err)
-		}
-		if err := conv.Send("input", "CCC"); err != nil {
-			fmt.Println(err)
-		}
-		if err := conv.Send("input", "DDD"); err != nil {
-			fmt.Println(err)
-		}
+	<-consumerStarted
 
-		if err := conv.Close("input"); err != nil {
-			fmt.Println(err)
-		}
+	go func() {
+		_ = conv.Send("input", "AAA")
+		_ = conv.Send("input", "BBB")
+		_ = conv.Send("input", "CCC")
+		_ = conv.Send("input", "DDD")
+		_ = conv.Close("input")
 	}()
 
-	for {
-		msg, err := conv.Recv("output")
-		if err != nil {
-			return
-		}
-		if msg == "undefined" {
-			return
-		}
-		fmt.Println("FINAL:", msg)
+	if err := conv.Run(ctx); err != nil {
+		fmt.Println("run error:", err)
 	}
+
+	<-results
+
 }

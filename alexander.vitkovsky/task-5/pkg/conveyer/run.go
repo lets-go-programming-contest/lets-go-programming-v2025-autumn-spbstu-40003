@@ -56,10 +56,8 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 	}()
 
 	if err, ok := <-conv.errCh; ok {
-		conv.closeAllChannels()
 		return err
 	}
 
-	conv.closeAllChannels()
 	return nil
 }

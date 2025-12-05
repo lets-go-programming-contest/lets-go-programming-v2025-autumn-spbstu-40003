@@ -9,7 +9,6 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 	type msgWrap struct {
 		msg string
 		ok  bool
-		id  int
 	}
 
 	n := len(inputs)
@@ -20,26 +19,26 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 
 	out := make(chan msgWrap)
 
-	for i, ch := range inputs {
-		go func(id int, ch chan string) {
+	for _, ch := range inputs {
+		go func(ch chan string) {
 			for {
 				select {
 				case <-ctx.Done():
-					out <- msgWrap{ok: false, id: id}
+					out <- msgWrap{ok: false}
 					return
 
 				case m, ok := <-ch:
 					if !ok {
-						out <- msgWrap{ok: false, id: id}
+						out <- msgWrap{ok: false}
 						return
 					}
 					if strings.Contains(m, "no multiplexer") {
 						continue
 					}
-					out <- msgWrap{msg: m, ok: true, id: id}
+					out <- msgWrap{msg: m, ok: true}
 				}
 			}
-		}(i, ch)
+		}(ch)
 	}
 
 	closedCount := 0
