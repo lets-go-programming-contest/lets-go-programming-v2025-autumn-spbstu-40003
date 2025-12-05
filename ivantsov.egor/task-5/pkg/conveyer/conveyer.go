@@ -103,17 +103,18 @@ func (p *pipeline) AddSplitter(input string, outputs []string, splitter Splitter
 }
 
 func (p *pipeline) Run(ctx context.Context) error {
-	var wg sync.WaitGroup
+	var wagi sync.WaitGroup
 
 	errChan := make(chan error, len(p.workers))
 
 	for _, worker := range p.workers {
-		wg.Add(1)
+		wagi.Add(1)
 
 		current := worker
 
 		go func() {
-			defer wg.Done()
+			defer wagi.Done()
+
 			if err := current(ctx); err != nil {
 				errChan <- err
 			}
@@ -121,7 +122,7 @@ func (p *pipeline) Run(ctx context.Context) error {
 	}
 
 	go func() {
-		wg.Wait()
+		wagi.Wait()
 		close(errChan)
 	}()
 
