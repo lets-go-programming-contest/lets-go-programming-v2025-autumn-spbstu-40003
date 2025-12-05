@@ -11,9 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	errInterfaces = errors.New("interfaces error")
-)
+var errInterfaces = errors.New("interfaces error")
 
 func TestNew(t *testing.T) {
 	t.Parallel()
@@ -64,7 +62,6 @@ func TestWiFiService_GetAddresses(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
