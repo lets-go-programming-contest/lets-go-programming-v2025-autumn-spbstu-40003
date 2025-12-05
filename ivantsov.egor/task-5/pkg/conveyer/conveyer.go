@@ -4,136 +4,128 @@ import (
 	"context"
 	"errors"
 	"sync"
+
+	"golang.org/x/sync/errgroup"
+
+	"ivantsov.egor/task-5/pkg/handlers"
 )
 
-var ErrChanNotFound = errors.New("chan not found")
-
-type (
-	JobFunc      func(context.Context, chan string, chan string) error
-	JobsFunc     func(context.Context, []chan string, chan string) error
-	SplitterFunc func(context.Context, chan string, []chan string) error
-)
-
-type Conveyer interface {
-	AddJob(input string, output string, job JobFunc) error
-	AddJobs(inputs []string, output string, job JobsFunc) error
-	AddSplitter(input string, outputs []string, splitter SplitterFunc) error
-	Run(ctx context.Context) error
-}
+type DecoratorFunc func(context.Context, chan string, chan string) error
 
 type pipeline struct {
 	bufferSize int
 	mu         sync.Mutex
-	chans      map[string]chan string
-	workers    []func(context.Context) error
+
+	decorators []DecoratorFunc
+
+	inCh  chan string
+	outCh chan string
 }
 
 func New(bufferSize int) *pipeline {
 	return &pipeline{
 		bufferSize: bufferSize,
 		mu:         sync.Mutex{},
-		chans:      make(map[string]chan string),
-		workers:    make([]func(context.Context) error, 0),
+		decorators: make([]DecoratorFunc, 0),
 	}
 }
 
-func (p *pipeline) getOrCreate(name string) chan string {
+func (p *pipeline) RegisterDecorator(fn DecoratorFunc) error {
+	if fn == nil {
+		return errors.New("nil decorator")
+	}
+
 	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	ch, ok := p.chans[name]
-	if ok {
-		return ch
-	}
-
-	newCh := make(chan string, p.bufferSize)
-	p.chans[name] = newCh
-
-	return newCh
-}
-
-func (p *pipeline) AddJob(input string, output string, job JobFunc) error {
-	inputChan := p.getOrCreate(input)
-	outputChan := p.getOrCreate(output)
-
-	p.workers = append(
-		p.workers,
-		func(ctx context.Context) error {
-			return job(ctx, inputChan, outputChan)
-		},
-	)
+	p.decorators = append(p.decorators, fn)
+	p.mu.Unlock()
 
 	return nil
 }
 
-func (p *pipeline) AddJobs(inputs []string, output string, job JobsFunc) error {
-	outputChan := p.getOrCreate(output)
-
-	inputChans := make([]chan string, 0, len(inputs))
-	for _, name := range inputs {
-		inputChans = append(inputChans, p.getOrCreate(name))
+func (p *pipeline) init() {
+	if p.inCh != nil {
+		return
 	}
 
-	p.workers = append(
-		p.workers,
-		func(ctx context.Context) error {
-			return job(ctx, inputChans, outputChan)
-		},
-	)
+	p.inCh = make(chan string, p.bufferSize)
 
-	return nil
+	prev := p.inCh
+
+	for _, d := range p.decorators {
+		next := make(chan string, p.bufferSize)
+
+		go func(input, output chan string, dec DecoratorFunc) {
+			_ = dec(context.Background(), input, output)
+			close(output)
+		}(prev, next, d)
+
+		prev = next
+	}
+
+	p.outCh = prev
 }
 
-func (p *pipeline) AddSplitter(input string, outputs []string, splitter SplitterFunc) error {
-	inputChan := p.getOrCreate(input)
+func (p *pipeline) Send(ctx context.Context, v string) error {
+	p.mu.Lock()
+	p.init()
+	in := p.inCh
+	p.mu.Unlock()
 
-	outputChans := make([]chan string, 0, len(outputs))
-	for _, name := range outputs {
-		outputChans = append(outputChans, p.getOrCreate(name))
+	select {
+	case in <- v:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
 	}
+}
 
-	p.workers = append(
-		p.workers,
-		func(ctx context.Context) error {
-			return splitter(ctx, inputChan, outputChans)
-		},
-	)
+func (p *pipeline) Recv(ctx context.Context) (string, error) {
+	p.mu.Lock()
+	p.init()
+	out := p.outCh
+	p.mu.Unlock()
 
-	return nil
+	select {
+	case v, ok := <-out:
+		if !ok {
+			return "", errors.New("pipeline closed")
+		}
+		return v, nil
+	case <-ctx.Done():
+		return "", ctx.Err()
+	}
 }
 
 func (p *pipeline) Run(ctx context.Context) error {
-	var wagi sync.WaitGroup
+	p.mu.Lock()
+	p.init()
+	in, out := p.inCh, p.outCh
+	p.mu.Unlock()
 
-	errChan := make(chan error, len(p.workers))
+	group, ctx := errgroup.WithContext(ctx)
 
-	for _, worker := range p.workers {
-		wagi.Add(1)
+	group.Go(func() error {
+		defer close(in)
+		<-ctx.Done()
+		return nil
+	})
 
-		current := worker
-
-		go func() {
-			defer wagi.Done()
-
-			if err := current(ctx); err != nil {
-				errChan <- err
+	group.Go(func() error {
+		for {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case _, ok := <-out:
+				if !ok {
+					return nil
+				}
 			}
-		}()
-	}
-
-	go func() {
-		wagi.Wait()
-		close(errChan)
-	}()
-
-	select {
-	case err := <-errChan:
-		if err != nil {
-			return err
 		}
-	case <-ctx.Done():
-		return errors.New(ctx.Err().Error())
-	}
+	})
 
-	return nil
+	return group.Wait()
+}
+
+func RegisterDefaultHandlers(p *pipeline) error {
+	return p.RegisterDecorator(handlers.PrefixDecoratorFunc)
 }

@@ -40,7 +40,6 @@ func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan str
 			case <-ctx.Done():
 				return errors.Join(ErrContextDoneInDecorator, ctx.Err())
 			}
-
 		case <-ctx.Done():
 			return errors.Join(ErrContextDoneInDecorator, ctx.Err())
 		}
@@ -72,18 +71,18 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 }
 
 func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan string) error {
-	waitGroup := &sync.WaitGroup{}
+	var wg sync.WaitGroup
 	done := make(chan struct{})
 
-	for _, inputChannel := range inputs {
-		waitGroup.Add(1)
+	for _, in := range inputs {
+		wg.Add(1)
 
-		go func(inputChan chan string) {
-			defer waitGroup.Done()
+		go func(ch chan string) {
+			defer wg.Done()
 
 			for {
 				select {
-				case data, ok := <-inputChan:
+				case data, ok := <-ch:
 					if !ok {
 						return
 					}
@@ -102,17 +101,16 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 
 				case <-ctx.Done():
 					return
-
 				case <-done:
 					return
 				}
 			}
-		}(inputChannel)
+		}(in)
 	}
 
 	<-ctx.Done()
 	close(done)
-	waitGroup.Wait()
+	wg.Wait()
 
 	return nil
 }
