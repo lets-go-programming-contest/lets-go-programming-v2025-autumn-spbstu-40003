@@ -21,6 +21,7 @@ type handleMock struct {
 
 func (h *handleMock) Interfaces() ([]*wifi.Interface, error) {
 	h.calls++
+
 	return h.ifaces, h.err
 }
 
