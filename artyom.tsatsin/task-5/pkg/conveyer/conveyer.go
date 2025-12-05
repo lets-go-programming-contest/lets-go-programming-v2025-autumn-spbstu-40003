@@ -18,9 +18,23 @@ const (
 	undefined = "undefined"
 )
 
-type DecoratorFunc func(context.Context, chan string, chan string) error
-type MultiplexerFunc func(context.Context, []chan string, chan string) error
-type SeparatorFunc func(context.Context, chan string, []chan string) error
+type DecoratorFunc func(
+	context.Context,
+	chan string,
+	chan string,
+) error
+
+type MultiplexerFunc func(
+	context.Context,
+	[]chan string,
+	chan string,
+) error
+
+type SeparatorFunc func(
+	context.Context,
+	chan string,
+	[]chan string,
+) error
 
 type decoratorTask struct {
 	decorator DecoratorFunc
