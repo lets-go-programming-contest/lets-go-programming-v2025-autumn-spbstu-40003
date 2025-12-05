@@ -19,83 +19,143 @@ type pipeline struct {
 
 	decorators []DecoratorFunc
 
-	inCh  chan string
-	outCh chan string
+	multiplexers []multiplexer
+
+	inputs  map[string]chan string
+	outputs map[string]chan string
+}
+
+type multiplexer struct {
+	inputNames []string
+	outputName string
 }
 
 func New(bufferSize int) *pipeline {
 	return &pipeline{
 		bufferSize: bufferSize,
-		inCh:       make(chan string),
-		outCh:      make(chan string),
+		inputs:     map[string]chan string{},
+		outputs:    map[string]chan string{},
 	}
 }
 
-func (p *pipeline) RegisterDecorator(fn DecoratorFunc, _, _ string) error {
+func (p *pipeline) getInput(name string) chan string {
+	ch, ok := p.inputs[name]
+	if !ok {
+		ch = make(chan string, p.bufferSize)
+		p.inputs[name] = ch
+	}
+	return ch
+}
+
+func (p *pipeline) getOutput(name string) chan string {
+	ch, ok := p.outputs[name]
+	if !ok {
+		ch = make(chan string, p.bufferSize)
+		p.outputs[name] = ch
+	}
+	return ch
+}
+
+func (p *pipeline) RegisterDecorator(fn DecoratorFunc, inputName string, outputName string) error {
 	if fn == nil {
 		return errors.New("nil decorator")
 	}
 
 	p.mu.Lock()
-	p.decorators = append(p.decorators, fn)
+	defer p.mu.Unlock()
+
+	in := p.getInput(inputName)
+	out := p.getOutput(outputName)
+
+	p.decorators = append(p.decorators, func(ctx context.Context, _, _ chan string) error {
+		return fn(ctx, in, out)
+	})
+
+	return nil
+}
+
+func (p *pipeline) RegisterMultiplexer(inputNames []string, outputName string) error {
+	if len(inputNames) == 0 {
+		return errors.New("no inputs")
+	}
+
+	p.mu.Lock()
+	p.multiplexers = append(p.multiplexers, multiplexer{
+		inputNames: inputNames,
+		outputName: outputName,
+	})
 	p.mu.Unlock()
 
 	return nil
 }
 
-func (p *pipeline) Send(value string) error {
+func (p *pipeline) Send(inputName string, value string) error {
+	ch, ok := p.inputs[inputName]
+	if !ok {
+		return errors.New("input not found")
+	}
+
 	select {
-	case p.inCh <- value:
+	case ch <- value:
 		return nil
 	default:
 		return errors.New("pipeline closed")
 	}
 }
 
-func (p *pipeline) Recv(_ string) (string, error) {
-	value, ok := <-p.outCh
+func (p *pipeline) Recv(outputName string) (string, error) {
+	ch, ok := p.outputs[outputName]
 	if !ok {
-		return "", errors.New("pipeline closed")
+		return "", errors.New("output not found")
 	}
 
-	return value, nil
+	val, ok := <-ch
+	if !ok {
+		return "", errors.New("output closed")
+	}
+
+	return val, nil
 }
 
-func (p *pipeline) Run() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+func (p *pipeline) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 
-	in := p.inCh
-
-	for _, decorator := range p.decorators {
-		out := make(chan string, p.bufferSize)
-
-		currentDecorator := decorator
+	for _, d := range p.decorators {
+		decorator := d
 
 		group.Go(func() error {
-			if err := currentDecorator(ctx, in, out); err != nil {
+			if err := decorator(ctx, nil, nil); err != nil {
 				return fmt.Errorf("decorator error: %w", err)
 			}
+			return nil
+		})
+	}
 
-			close(out)
+	for _, m := range p.multiplexers {
+		mp := m
+
+		group.Go(func() error {
+			var inputs []chan string
+
+			for _, name := range mp.inputNames {
+				inputs = append(inputs, p.inputs[name])
+			}
+
+			output := p.getOutput(mp.outputName)
+
+			if err := handlers.MultiplexerFunc(ctx, inputs, output); err != nil {
+				return fmt.Errorf("multiplexer error: %w", err)
+			}
+
+			close(output)
 
 			return nil
 		})
-
-		in = out
 	}
-
-	group.Go(func() error {
-		return handlers.MultiplexerFunc(ctx, []chan string{in}, p.outCh)
-	})
 
 	if err := group.Wait(); err != nil {
-		return fmt.Errorf("pipeline error: %w", err)
+		return err
 	}
-
-	close(p.outCh)
 
 	return nil
 }
