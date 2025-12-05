@@ -1,23 +1,32 @@
 package wifi_test
 
 import (
-	"fmt"
+	"errors"
 	"net"
 	"testing"
 
 	"github.com/ArtttNik/task-6/internal/wifi"
-
 	mdlayherwifi "github.com/mdlayher/wifi"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+var (
+	errInterfaces = errors.New("interfaces error")
 )
 
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	mockHandle := &wifi.MockWiFiHandle{}
 	s := wifi.New(mockHandle)
+
 	assert.Equal(t, mockHandle, s.WiFi)
 }
 
 func TestWiFiService_GetAddresses(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		setup   func(mock *wifi.MockWiFiHandle)
@@ -48,14 +57,17 @@ func TestWiFiService_GetAddresses(t *testing.T) {
 		{
 			name: "error",
 			setup: func(mock *wifi.MockWiFiHandle) {
-				mock.On("Interfaces").Return(([]*mdlayherwifi.Interface)(nil), fmt.Errorf("interfaces error"))
+				mock.On("Interfaces").Return([]*mdlayherwifi.Interface(nil), errInterfaces)
 			},
 			wantErr: "getting interfaces: interfaces error",
 		},
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			mockHandle := &wifi.MockWiFiHandle{}
 			tt.setup(mockHandle)
 
@@ -63,11 +75,13 @@ func TestWiFiService_GetAddresses(t *testing.T) {
 			got, err := s.GetAddresses()
 
 			if tt.wantErr != "" {
-				assert.Error(t, err)
+				require.Error(t, err)
+
 				assert.Equal(t, tt.wantErr, err.Error())
 				assert.Nil(t, got)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
+
 				assert.Equal(t, tt.want, got)
 			}
 
@@ -77,6 +91,8 @@ func TestWiFiService_GetAddresses(t *testing.T) {
 }
 
 func TestWiFiService_GetNames(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		setup   func(mock *wifi.MockWiFiHandle)
@@ -104,14 +120,17 @@ func TestWiFiService_GetNames(t *testing.T) {
 		{
 			name: "error",
 			setup: func(mock *wifi.MockWiFiHandle) {
-				mock.On("Interfaces").Return(([]*mdlayherwifi.Interface)(nil), fmt.Errorf("interfaces error"))
+				mock.On("Interfaces").Return([]*mdlayherwifi.Interface(nil), errInterfaces)
 			},
 			wantErr: "getting interfaces: interfaces error",
 		},
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			mockHandle := &wifi.MockWiFiHandle{}
 			tt.setup(mockHandle)
 
@@ -119,11 +138,13 @@ func TestWiFiService_GetNames(t *testing.T) {
 			got, err := s.GetNames()
 
 			if tt.wantErr != "" {
-				assert.Error(t, err)
+				require.Error(t, err)
+
 				assert.Equal(t, tt.wantErr, err.Error())
 				assert.Nil(t, got)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
+
 				assert.Equal(t, tt.want, got)
 			}
 
