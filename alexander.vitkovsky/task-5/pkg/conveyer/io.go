@@ -17,15 +17,15 @@ func (conv *Conveyer) Send(input string, data string) error {
 		return errors.New(ChanNotFoundMsg)
 	}
 
-	var done <-chan struct{}
-	if runCtx != nil {
-		done = runCtx.Done()
+	if runCtx == nil {
+		ch <- data
+		return nil
 	}
 
 	select {
 	case ch <- data:
 		return nil
-	case <-done:
+	case <-runCtx.Done():
 		return runCtx.Err()
 	}
 }
@@ -40,9 +40,12 @@ func (conv *Conveyer) Recv(output string) (string, error) {
 		return "", errors.New(ChanNotFoundMsg)
 	}
 
-	var done <-chan struct{}
-	if runCtx != nil {
-		done = runCtx.Done()
+	if runCtx == nil {
+		msg, ok := <-ch
+		if !ok {
+			return UndefinedValue, nil
+		}
+		return msg, nil
 	}
 
 	select {
@@ -51,7 +54,7 @@ func (conv *Conveyer) Recv(output string) (string, error) {
 			return UndefinedValue, nil
 		}
 		return msg, nil
-	case <-done:
+	case <-runCtx.Done():
 		return UndefinedValue, runCtx.Err()
 	}
 }
