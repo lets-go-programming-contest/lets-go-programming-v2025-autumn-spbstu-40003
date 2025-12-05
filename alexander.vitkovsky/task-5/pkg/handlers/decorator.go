@@ -10,11 +10,9 @@ var ErrCantDecorated = errors.New("can't be decorated")
 
 func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan string) error {
 	const prefix = "decorated: "
+
 	for {
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
-
 		case msg, ok := <-input:
 			if !ok {
 				close(output)
@@ -31,6 +29,9 @@ func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan str
 			} else {
 				output <- prefix + msg
 			}
+
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
 }

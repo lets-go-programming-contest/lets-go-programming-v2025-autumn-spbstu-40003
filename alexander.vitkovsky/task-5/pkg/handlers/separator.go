@@ -11,9 +11,6 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 
 	for {
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
-
 		case msg, ok := <-input:
 			if !ok {
 				for _, output := range outputs {
@@ -23,6 +20,9 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 			}
 			outputs[index] <- msg
 			index = (index + 1) % n
+
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
 }

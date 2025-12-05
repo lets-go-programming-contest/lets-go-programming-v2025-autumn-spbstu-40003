@@ -15,8 +15,6 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 			defer wg.Done()
 			for {
 				select {
-				case <-ctx.Done():
-					return
 				case msg, ok := <-in:
 					if !ok {
 						return
@@ -25,10 +23,13 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 						continue
 					}
 					select {
+					case output <- msg:
 					case <-ctx.Done():
 						return
-					case output <- msg:
 					}
+
+				case <-ctx.Done():
+					return
 				}
 			}
 		}(ch)

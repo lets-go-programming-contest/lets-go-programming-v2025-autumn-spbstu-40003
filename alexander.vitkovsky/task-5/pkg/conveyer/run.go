@@ -64,10 +64,12 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 	}()
 
 	if err, ok := <-conv.errCh; ok {
+		conv.cancel()
 		conv.wg.Wait()
 		conv.closeAllChannels()
 		return err
 	}
 
+	conv.wg.Wait()
 	return nil
 }
