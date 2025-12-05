@@ -160,12 +160,7 @@ func (p *Pipeline) RegisterSeparator(
 
 	p.getOrCreateStream(input)
 
-	streamsToCreate := make([]string, len(outputs))
-	for i, output := range outputs {
-		streamsToCreate[i] = output
-	}
-
-	for _, output := range streamsToCreate {
+	for _, output := range outputs {
 		p.getOrCreateStream(output)
 	}
 }
