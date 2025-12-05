@@ -18,8 +18,16 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 				}
 				return nil
 			}
-			outputs[index] <- msg
-			index = (index + 1) % n
+
+			select {
+			case outputs[index] <- msg:
+				index = (index + 1) % n
+			case <-ctx.Done():
+				for _, output := range outputs {
+					close(output)
+				}
+				return ctx.Err()
+			}
 
 		case <-ctx.Done():
 			for _, output := range outputs {

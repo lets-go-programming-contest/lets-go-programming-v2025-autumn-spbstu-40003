@@ -27,7 +27,6 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 					case <-ctx.Done():
 						return
 					}
-
 				case <-ctx.Done():
 					return
 				}

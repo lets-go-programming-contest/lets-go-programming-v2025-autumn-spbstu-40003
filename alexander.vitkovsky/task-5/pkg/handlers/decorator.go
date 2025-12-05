@@ -25,9 +25,17 @@ func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan str
 			}
 
 			if strings.HasPrefix(msg, prefix) {
-				output <- msg
+				select {
+				case output <- msg:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
 			} else {
-				output <- prefix + msg
+				select {
+				case output <- prefix + msg:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
 			}
 
 		case <-ctx.Done():
