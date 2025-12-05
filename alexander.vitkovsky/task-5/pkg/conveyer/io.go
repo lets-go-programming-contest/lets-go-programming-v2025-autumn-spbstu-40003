@@ -63,7 +63,6 @@ func (conv *Conveyer) Close(input string) error {
 		conv.mutex.Unlock()
 		return errors.New(ChanNotFoundMsg)
 	}
-	conv.channels[input] = nil
 	conv.mutex.Unlock()
 
 	defer func() { _ = recover() }()

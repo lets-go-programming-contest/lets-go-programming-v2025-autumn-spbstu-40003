@@ -60,11 +60,12 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 
 	go func() {
 		conv.wg.Wait()
-		conv.closeAllChannels()
 		close(conv.errCh)
 	}()
 
 	if err, ok := <-conv.errCh; ok {
+		conv.wg.Wait()
+		conv.closeAllChannels()
 		return err
 	}
 

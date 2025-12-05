@@ -65,13 +65,12 @@ func (conv *Conveyer) closeAllChannels() {
 	conv.mutex.Lock()
 	defer conv.mutex.Unlock()
 
-	for name, ch := range conv.channels {
+	for _, ch := range conv.channels {
 		func() {
 			defer func() { _ = recover() }()
 			if ch != nil {
 				close(ch)
 			}
-			conv.channels[name] = nil
 		}()
 	}
 }

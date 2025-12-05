@@ -13,7 +13,6 @@ func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan str
 	for {
 		select {
 		case <-ctx.Done():
-			close(output)
 			return ctx.Err()
 
 		case msg, ok := <-input:
