@@ -64,7 +64,6 @@ func (p *Pipeline) Send(input string, data string) error {
 		return nil
 	default:
 		inputChannel <- data
-
 		return nil
 	}
 }
@@ -108,7 +107,6 @@ func (p *Pipeline) closeAllStreams() {
 	for _, ch := range p.streams {
 		if !closed[ch] {
 			close(ch)
-
 			closed[ch] = true
 		}
 	}
