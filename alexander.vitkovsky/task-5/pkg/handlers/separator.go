@@ -22,6 +22,9 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 			index = (index + 1) % n
 
 		case <-ctx.Done():
+			for _, output := range outputs {
+				close(output)
+			}
 			return ctx.Err()
 		}
 	}

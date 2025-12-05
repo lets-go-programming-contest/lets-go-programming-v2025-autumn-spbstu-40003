@@ -31,6 +31,7 @@ func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan str
 			}
 
 		case <-ctx.Done():
+			close(output)
 			return ctx.Err()
 		}
 	}
