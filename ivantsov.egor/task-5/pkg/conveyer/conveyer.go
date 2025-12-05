@@ -6,174 +6,186 @@ import (
 	"sync"
 )
 
-const Undefined = "undefined"
+var errChanNotFound = errors.New("channel not found")
+
+type Job func(context.Context) error
 
 type Conveyer interface {
-	RegisterDecorator(
-		fn func(context.Context, chan string, chan string) error,
-		input string,
-		output string,
+	AddJob(
+		string,
+		string,
+		func(context.Context, chan string, chan string) error,
 	)
 
-	RegisterMultiplexer(
-		fn func(context.Context, []chan string, chan string) error,
-		inputs []string,
-		output string,
+	AddJobs(
+		[]string,
+		string,
+		func(context.Context, []chan string, chan string) error,
 	)
 
-	RegisterSeparator(
-		fn func(context.Context, chan string, []chan string) error,
-		input string,
-		outputs []string,
+	AddSplitter(
+		string,
+		[]string,
+		func(context.Context, chan string, []chan string) error,
 	)
 
-	Run(ctx context.Context) error
-	Send(input string, data string) error
-	Recv(output string) (string, error)
+	Run(context.Context) error
 }
 
 type pipeline struct {
 	size    int
-	mu      sync.Mutex
 	chans   map[string]chan string
-	workers []func(context.Context) error
+	workers []Job
+	mu      sync.Mutex
 }
 
-func New(size int) Conveyer {
+func New(size int) *pipeline {
 	return &pipeline{
-		size:  size,
-		chans: make(map[string]chan string),
+		size:    size,
+		chans:   make(map[string]chan string),
+		workers: make([]Job, 0),
+		mu:      sync.Mutex{},
 	}
 }
 
-func (p *pipeline) getOrCreate(name string) chan string {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+func (pipelineInstance *pipeline) getOrCreate(name string) chan string {
+	pipelineInstance.mu.Lock()
+	defer pipelineInstance.mu.Unlock()
 
-	if ch, ok := p.chans[name]; ok {
-		return ch
+	if channel, exists := pipelineInstance.chans[name]; exists {
+		return channel
 	}
 
-	ch := make(chan string, p.size)
-	p.chans[name] = ch
-	return ch
+	channel := make(chan string, pipelineInstance.size)
+
+	pipelineInstance.chans[name] = channel
+
+	return channel
 }
 
-func (p *pipeline) RegisterDecorator(
-	fn func(context.Context, chan string, chan string) error,
+func (pipelineInstance *pipeline) AddJob(
 	input string,
 	output string,
+	function func(context.Context, chan string, chan string) error,
 ) {
-	in := p.getOrCreate(input)
-	out := p.getOrCreate(output)
 
-	p.workers = append(p.workers, func(ctx context.Context) error {
-		return fn(ctx, in, out)
-	})
+	inputChan := pipelineInstance.getOrCreate(input)
+	outputChan := pipelineInstance.getOrCreate(output)
+
+	pipelineInstance.workers = append(
+		pipelineInstance.workers,
+		func(ctx context.Context) error {
+			defer close(outputChan)
+			return function(ctx, inputChan, outputChan)
+		},
+	)
 }
 
-func (p *pipeline) RegisterMultiplexer(
-	fn func(context.Context, []chan string, chan string) error,
-	inputs []string,
+func (pipelineInstance *pipeline) AddJobs(
+	inputNames []string,
 	output string,
+	function func(context.Context, []chan string, chan string) error,
 ) {
-	var ins []chan string
-	for _, name := range inputs {
-		ins = append(ins, p.getOrCreate(name))
-	}
-	out := p.getOrCreate(output)
 
-	p.workers = append(p.workers, func(ctx context.Context) error {
-		return fn(ctx, ins, out)
-	})
+	inputs := make([]chan string, 0, len(inputNames))
+
+	for _, name := range inputNames {
+		inputs = append(inputs, pipelineInstance.getOrCreate(name))
+	}
+
+	outputChan := pipelineInstance.getOrCreate(output)
+
+	pipelineInstance.workers = append(
+		pipelineInstance.workers,
+		func(ctx context.Context) error {
+			defer close(outputChan)
+			return function(ctx, inputs, outputChan)
+		},
+	)
 }
 
-func (p *pipeline) RegisterSeparator(
-	fn func(context.Context, chan string, []chan string) error,
+func (pipelineInstance *pipeline) AddSplitter(
 	input string,
 	outputs []string,
+	function func(context.Context, chan string, []chan string) error,
 ) {
-	in := p.getOrCreate(input)
 
-	var outs []chan string
+	inputChan := pipelineInstance.getOrCreate(input)
+
+	outputChannels := make([]chan string, 0, len(outputs))
+
 	for _, name := range outputs {
-		outs = append(outs, p.getOrCreate(name))
+		outputChannels = append(
+			outputChannels,
+			pipelineInstance.getOrCreate(name),
+		)
 	}
 
-	p.workers = append(p.workers, func(ctx context.Context) error {
-		return fn(ctx, in, outs)
-	})
+	pipelineInstance.workers = append(
+		pipelineInstance.workers,
+		func(ctx context.Context) error {
+			for _, ch := range outputChannels {
+				defer close(ch)
+			}
+
+			return function(ctx, inputChan, outputChannels)
+		},
+	)
 }
 
-func (p *pipeline) Run(ctx context.Context) error {
+func (pipelineInstance *pipeline) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	var wg sync.WaitGroup
-	errCh := make(chan error, len(p.workers))
+	errChannel := make(chan error, len(pipelineInstance.workers))
 
-	for _, w := range p.workers {
-		wg.Add(1)
-		go func(job func(context.Context) error) {
-			defer wg.Done()
-			if err := job(ctx); err != nil {
-				errCh <- err
+	var waitGroup sync.WaitGroup
+
+	for _, job := range pipelineInstance.workers {
+		waitGroup.Add(1)
+
+		go func(jobFunction Job) {
+			defer waitGroup.Done()
+
+			if err := jobFunction(ctx); err != nil {
+				errChannel <- err
 				cancel()
 			}
-		}(w)
+
+		}(job)
 	}
 
-	go func() {
-		wg.Wait()
-		close(errCh)
-	}()
+	waitGroup.Wait()
+	close(errChannel)
 
-	var first error
-	for err := range errCh {
-		if err != nil && first == nil {
-			first = err
-		}
+	for err := range errChannel {
+		return err
 	}
 
-	p.closeAll()
-	return first
-}
-
-func (p *pipeline) closeAll() {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	for _, ch := range p.chans {
-		close(ch)
-	}
-}
-
-func (p *pipeline) Send(input string, data string) error {
-	p.mu.Lock()
-	ch, ok := p.chans[input]
-	p.mu.Unlock()
-
-	if !ok {
-		return errors.New("chan not found")
-	}
-
-	ch <- data
 	return nil
 }
 
-func (p *pipeline) Recv(output string) (string, error) {
-	p.mu.Lock()
-	ch, ok := p.chans[output]
-	p.mu.Unlock()
+func (pipelineInstance *pipeline) getChannel(
+	name string,
+) (chan string, error) {
 
-	if !ok {
-		return "", errors.New("chan not found")
+	channel, exists := pipelineInstance.chans[name]
+
+	if !exists {
+		return nil, errChanNotFound
 	}
 
-	val, ok := <-ch
-	if !ok {
-		return Undefined, nil
+	return channel, nil
+}
+
+func (pipelineInstance *pipeline) Receive(
+	name string,
+) (<-chan string, error) {
+
+	ch, err := pipelineInstance.getChannel(name)
+	if err != nil {
+		return nil, err
 	}
 
-	return val, nil
+	return ch, nil
 }

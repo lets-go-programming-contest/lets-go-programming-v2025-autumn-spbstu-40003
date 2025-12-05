@@ -2,43 +2,105 @@ package handlers
 
 import (
 	"context"
-	"errors"
+	"strings"
 	"sync"
 )
 
-var ErrCantBeDecorated = errors.New("can't be decorated")
+type ProcessorFunc func(context.Context, chan string, chan string) error
 
-type FanInHandler func(ctx context.Context, inputs []chan string, output chan string) error
+func PrefixDecoratorFunc(prefix string) ProcessorFunc {
+	return func(
+		ctx context.Context,
+		input chan string,
+		output chan string,
+	) error {
 
-func FanIn(ctx context.Context, inputs []chan string, output chan string) error {
-	var waitGroup sync.WaitGroup
+		for {
+			select {
+			case <-ctx.Done():
+				return nil
 
-	waitGroup.Add(len(inputs))
+			case value, ok := <-input:
+				if !ok {
+					return nil
+				}
 
-	for _, inputChannel := range inputs {
-		currentChannel := inputChannel
+				output <- prefix + value
+			}
+		}
+	}
+}
 
-		go func(inChan chan string) {
-			defer waitGroup.Done()
+func MultiplexerFunc() func(
+	context.Context,
+	[]chan string,
+	chan string,
+) error {
 
-			for {
-				select {
-				case value, ok := <-inChan:
-					if !ok {
+	return func(
+		ctx context.Context,
+		inputs []chan string,
+		output chan string,
+	) error {
+
+		var waitGroup sync.WaitGroup
+
+		for _, inputChannel := range inputs {
+			waitGroup.Add(1)
+
+			go func(channel chan string) {
+				defer waitGroup.Done()
+
+				for {
+					select {
+					case <-ctx.Done():
 						return
-					}
 
-					output <- value
-				case <-ctx.Done():
-					return
+					case value, ok := <-channel:
+						if !ok {
+							return
+						}
+
+						output <- value
+					}
+				}
+
+			}(inputChannel)
+		}
+
+		waitGroup.Wait()
+		return nil
+	}
+}
+
+func SeparatorFunc(separator string) func(
+	context.Context,
+	chan string,
+	[]chan string,
+) error {
+
+	return func(
+		ctx context.Context,
+		input chan string,
+		outputs []chan string,
+	) error {
+
+		for {
+			select {
+			case <-ctx.Done():
+				return nil
+
+			case value, ok := <-input:
+				if !ok {
+					return nil
+				}
+
+				parts := strings.Split(value, separator)
+
+				for index, part := range parts {
+					outputs[index] <- part
 				}
 			}
-		}(currentChannel)
+		}
 	}
-
-	waitGroup.Wait()
-
-	close(output)
-
-	return nil
 }
