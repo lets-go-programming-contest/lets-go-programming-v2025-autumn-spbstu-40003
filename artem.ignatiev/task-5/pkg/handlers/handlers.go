@@ -2,27 +2,32 @@ package handlers
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 	"sync"
 )
 
+var (
+	ErrCantDecorate = errors.New("can't be decorated")
+)
+
 func PrefixDecoratorFunc(
 	ctx context.Context,
-	input chan string,
-	output chan string,
+	inputChannel chan string,
+	outputChannel chan string,
 ) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case item, ok := <-input:
+
+		case item, ok := <-inputChannel:
 			if !ok {
 				return nil
 			}
 
 			if strings.Contains(item, "no decorator") {
-				return fmt.Errorf("can't be decorated")
+				return ErrCantDecorate
 			}
 
 			prefix := "decorated: "
@@ -31,7 +36,7 @@ func PrefixDecoratorFunc(
 			}
 
 			select {
-			case output <- item:
+			case outputChannel <- item:
 			case <-ctx.Done():
 				return nil
 			}
@@ -41,28 +46,30 @@ func PrefixDecoratorFunc(
 
 func SeparatorFunc(
 	ctx context.Context,
-	input chan string,
-	outputs []chan string,
+	inputChannel chan string,
+	outputsChannels []chan string,
 ) error {
-	if len(outputs) == 0 {
+	if len(outputsChannels) == 0 {
 		return nil
 	}
 
-	var i int
+	var index int
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case item, ok := <-input:
+
+		case item, ok := <-inputChannel:
 			if !ok {
 				return nil
 			}
 
-			targetCh := outputs[i%len(outputs)]
-			i++
+			targetChannel := outputsChannels[index%len(outputsChannels)]
+			index++
 
 			select {
-			case targetCh <- item:
+			case targetChannel <- item:
 			case <-ctx.Done():
 				return nil
 			}
@@ -72,17 +79,19 @@ func SeparatorFunc(
 
 func MultiplexerFunc(
 	ctx context.Context,
-	inputs []chan string,
-	output chan string,
+	inputsChannels []chan string,
+	outputChannel chan string,
 ) error {
-	var wg sync.WaitGroup
+	var waitGroup sync.WaitGroup
 
-	readCh := func(ch chan string) {
-		defer wg.Done()
+	readFunc := func(ch chan string) {
+		defer waitGroup.Done()
+
 		for {
 			select {
 			case <-ctx.Done():
 				return
+
 			case item, ok := <-ch:
 				if !ok {
 					return
@@ -93,7 +102,7 @@ func MultiplexerFunc(
 				}
 
 				select {
-				case output <- item:
+				case outputChannel <- item:
 				case <-ctx.Done():
 					return
 				}
@@ -101,11 +110,13 @@ func MultiplexerFunc(
 		}
 	}
 
-	for _, ch := range inputs {
-		wg.Add(1)
-		go readCh(ch)
+	for _, channel := range inputsChannels {
+		waitGroup.Add(1)
+
+		go readFunc(channel)
 	}
 
-	wg.Wait()
+	waitGroup.Wait()
+
 	return nil
 }

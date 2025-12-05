@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
@@ -10,16 +9,21 @@ import (
 	"github.com/kryjkaqq/task-5/pkg/handlers"
 )
 
+const (
+	ChanSize      = 5
+	TimeoutSec    = 2
+	SleepDuration = 100
+	MessagesCount = 4
+)
+
 func main() {
-	conv := conveyer.New(5)
+	conv := conveyer.New(ChanSize)
 
 	conv.RegisterDecorator(handlers.PrefixDecoratorFunc, "input", "decorated_stream")
-
 	conv.RegisterSeparator(handlers.SeparatorFunc, "decorated_stream", []string{"part1", "part2"})
-
 	conv.RegisterMultiplexer(handlers.MultiplexerFunc, []string{"part1", "part2"}, "final_output")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), TimeoutSec*time.Second)
 	defer cancel()
 
 	go func() {
@@ -37,19 +41,22 @@ func main() {
 		}
 	}
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(SleepDuration * time.Millisecond)
 
-	for i := 0; i < 4; i++ {
+	for range MessagesCount {
 		res, err := conv.Recv("final_output")
 		if err != nil {
 			log.Printf("Error receiving: %v", err)
 			continue
 		}
-		fmt.Printf("Received: %s\n", res)
+		log.Printf("Received: %s\n", res)
 	}
 
-	fmt.Println("--- Testing Error ---")
-	conv.Send("input", "no decorator")
+	log.Println("--- Testing Error ---")
+
+	if err := conv.Send("input", "no decorator"); err != nil {
+		log.Printf("Error sending trigger: %v", err)
+	}
 
 	<-ctx.Done()
 }
