@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 )
@@ -14,75 +13,98 @@ var (
 	ErrContextDoneInSeparator = errors.New("context done in separator")
 )
 
-var (
-	ErrNilDecorator   = errors.New("nil decorator")
-	ErrPipelineClosed = errors.New("pipeline closed")
-)
-
 const (
 	StrNoDecorator = "no decorator"
 	StrNoMult      = "no multiplexer"
 	StrDecorated   = "decorated: "
 )
 
-func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan string) error {
+func PrefixDecoratorFunc(
+	ctx context.Context,
+	in chan string,
+	out chan string,
+) error {
 	for {
 		select {
-		case data, ok := <-input:
+		case value, ok := <-in:
 			if !ok {
 				return nil
 			}
 
-			if strings.Contains(data, StrNoDecorator) {
+			if strings.Contains(value, StrNoDecorator) {
 				return ErrCantDecorate
 			}
 
-			if !strings.HasPrefix(data, StrDecorated) {
-				data = StrDecorated + data
+			if !strings.HasPrefix(value, StrDecorated) {
+				value = StrDecorated + value
 			}
 
 			select {
-			case output <- data:
+			case out <- value:
 			case <-ctx.Done():
-				return fmt.Errorf("%w: %w", ErrContextDoneInDecorator, ctx.Err())
+				return errors.Join(
+					ErrContextDoneInDecorator,
+					ctx.Err(),
+				)
 			}
 
 		case <-ctx.Done():
-			return fmt.Errorf("%w: %w", ErrContextDoneInDecorator, ctx.Err())
+			return errors.Join(
+				ErrContextDoneInDecorator,
+				ctx.Err(),
+			)
 		}
 	}
 }
 
-func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string) error {
-	index := 0
+func SeparatorFunc(
+	ctx context.Context,
+	in chan string,
+	outs []chan string,
+) error {
+	pos := 0
+	count := len(outs)
 
 	for {
 		select {
-		case data, ok := <-input:
+		case value, ok := <-in:
 			if !ok {
 				return nil
 			}
 
 			select {
-			case outputs[index] <- data:
+			case outs[pos] <- value:
 			case <-ctx.Done():
-				return fmt.Errorf("%w: %w", ErrContextDoneInSeparator, ctx.Err())
+				return errors.Join(
+					ErrContextDoneInSeparator,
+					ctx.Err(),
+				)
 			}
 
-			index = (index + 1) % len(outputs)
+			pos++
+
+			if pos >= count {
+				pos = 0
+			}
 
 		case <-ctx.Done():
-			return fmt.Errorf("%w: %w", ErrContextDoneInSeparator, ctx.Err())
+			return errors.Join(
+				ErrContextDoneInSeparator,
+				ctx.Err(),
+			)
 		}
 	}
 }
 
-func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan string) error {
+func MultiplexerFunc(
+	ctx context.Context,
+	ins []chan string,
+	out chan string,
+) error {
 	var waitGroup sync.WaitGroup
+	stopSignal := make(chan struct{})
 
-	done := make(chan struct{})
-
-	for _, inputChan := range inputs {
+	for _, source := range ins {
 		waitGroup.Add(1)
 
 		go func(ch chan string) {
@@ -90,37 +112,35 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 
 			for {
 				select {
-				case data, ok := <-ch:
+				case value, ok := <-ch:
 					if !ok {
 						return
 					}
 
-					if strings.Contains(data, StrNoMult) {
+					if strings.Contains(value, StrNoMult) {
 						continue
 					}
 
 					select {
-					case output <- data:
+					case out <- value:
 					case <-ctx.Done():
 						return
-					case <-done:
+					case <-stopSignal:
 						return
 					}
 
 				case <-ctx.Done():
 					return
-
-				case <-done:
+				case <-stopSignal:
 					return
 				}
 			}
-		}(inputChan)
+		}(source)
 	}
 
 	<-ctx.Done()
 
-	close(done)
-
+	close(stopSignal)
 	waitGroup.Wait()
 
 	return nil

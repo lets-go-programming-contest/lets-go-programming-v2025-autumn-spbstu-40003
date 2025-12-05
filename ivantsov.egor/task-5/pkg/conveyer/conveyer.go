@@ -7,86 +7,101 @@ import (
 	"sync"
 
 	"golang.org/x/sync/errgroup"
-
-	"ivantsov.egor/task-5/pkg/handlers"
 )
 
 type DecoratorFunc = func(context.Context, chan string, chan string) error
+type MultiplexerFunc = func(context.Context, []chan string, chan string) error
+type SeparatorFunc = func(context.Context, chan string, []chan string) error
 
 var (
-	ErrNilDecorator   = errors.New("nil decorator")
-	ErrNoInputs       = errors.New("no inputs")
-	ErrInputNotFound  = errors.New("input not found")
-	ErrOutputNotFound = errors.New("output not found")
-	ErrOutputClosed   = errors.New("output closed")
+	ErrNilFunc        = errors.New("nil function")
 	ErrPipelineClosed = errors.New("pipeline closed")
 )
 
 type pipeline struct {
 	bufferSize int
-	mu         sync.Mutex
+	lock       sync.Mutex
 
 	decorators   []DecoratorFunc
 	multiplexers []multiplexer
+	separators   []separator
 
 	inputs  map[string]chan string
 	outputs map[string]chan string
 }
 
 type multiplexer struct {
+	fn         MultiplexerFunc
 	inputNames []string
 	outputName string
+}
+
+type separator struct {
+	fn        SeparatorFunc
+	inputName string
+	outNames  []string
 }
 
 func New(bufferSize int) *pipeline {
 	return &pipeline{
 		bufferSize:   bufferSize,
-		mu:           sync.Mutex{},
-		decorators:   nil,
-		multiplexers: nil,
-		inputs:       map[string]chan string{},
-		outputs:      map[string]chan string{},
+		decorators:   make([]DecoratorFunc, 0),
+		multiplexers: make([]multiplexer, 0),
+		separators:   make([]separator, 0),
+		inputs:       make(map[string]chan string),
+		outputs:      make(map[string]chan string),
 	}
 }
 
 func (p *pipeline) getInput(name string) chan string {
-	channel, ok := p.inputs[name]
-	if !ok {
-		channel = make(chan string, p.bufferSize)
-		p.inputs[name] = channel
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	ch, ok := p.inputs[name]
+	if ok {
+		return ch
 	}
-	return channel
+
+	ch = make(chan string, p.bufferSize)
+	p.inputs[name] = ch
+
+	return ch
 }
 
 func (p *pipeline) getOutput(name string) chan string {
-	channel, ok := p.outputs[name]
-	if !ok {
-		channel = make(chan string, p.bufferSize)
-		p.outputs[name] = channel
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	ch, ok := p.outputs[name]
+	if ok {
+		return ch
 	}
-	return channel
+
+	ch = make(chan string, p.bufferSize)
+	p.outputs[name] = ch
+
+	return ch
 }
 
 func (p *pipeline) RegisterDecorator(
-	decoratorFunc DecoratorFunc,
-	inputName string,
-	outputName string,
+	fn DecoratorFunc,
+	input string,
+	output string,
 ) error {
-
-	if decoratorFunc == nil {
-		return ErrNilDecorator
+	if fn == nil {
+		return ErrNilFunc
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	inChan := p.getInput(input)
+	outChan := p.getOutput(output)
 
-	inputChannel := p.getInput(inputName)
-	outputChannel := p.getOutput(outputName)
+	p.lock.Lock()
+	defer p.lock.Unlock()
 
 	p.decorators = append(
 		p.decorators,
 		func(ctx context.Context, _, _ chan string) error {
-			return decoratorFunc(ctx, inputChannel, outputChannel)
+			return fn(ctx, inChan, outChan)
 		},
 	)
 
@@ -94,91 +109,151 @@ func (p *pipeline) RegisterDecorator(
 }
 
 func (p *pipeline) RegisterMultiplexer(
-	inputNames []string,
-	outputName string,
+	fn MultiplexerFunc,
+	inputs []string,
+	output string,
 ) error {
-
-	if len(inputNames) == 0 {
-		return ErrNoInputs
+	if fn == nil {
+		return ErrNilFunc
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	if len(inputs) == 0 {
+		return errors.New("empty inputs")
+	}
 
-	p.multiplexers = append(p.multiplexers, multiplexer{
-		inputNames: inputNames,
-		outputName: outputName,
-	})
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	p.multiplexers = append(
+		p.multiplexers,
+		multiplexer{
+			fn:         fn,
+			inputNames: inputs,
+			outputName: output,
+		},
+	)
 
 	return nil
 }
 
-func (p *pipeline) Send(inputName string, value string) error {
-	channel, ok := p.inputs[inputName]
+func (p *pipeline) RegisterSeparator(
+	fn SeparatorFunc,
+	input string,
+	outputs []string,
+) error {
+	if fn == nil {
+		return ErrNilFunc
+	}
+
+	if len(outputs) == 0 {
+		return errors.New("empty outputs")
+	}
+
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	p.separators = append(
+		p.separators,
+		separator{
+			fn:        fn,
+			inputName: input,
+			outNames:  outputs,
+		},
+	)
+
+	return nil
+}
+
+func (p *pipeline) Send(name string, value string) error {
+	ch, ok := p.inputs[name]
 	if !ok {
-		return ErrInputNotFound
+		return ErrPipelineClosed
 	}
 
 	select {
-	case channel <- value:
+	case ch <- value:
 		return nil
 	default:
 		return ErrPipelineClosed
 	}
 }
 
-func (p *pipeline) Recv(outputName string) (string, error) {
-	channel, ok := p.outputs[outputName]
+func (p *pipeline) Recv(name string) (string, error) {
+	ch, ok := p.outputs[name]
 	if !ok {
-		return "", ErrOutputNotFound
+		return "", ErrPipelineClosed
 	}
 
-	value, ok := <-channel
+	res, ok := <-ch
 	if !ok {
-		return "", ErrOutputClosed
+		return "", ErrPipelineClosed
 	}
 
-	return value, nil
+	return res, nil
 }
 
 func (p *pipeline) Run(ctx context.Context) error {
-	group, groupContext := errgroup.WithContext(ctx)
+	group, ctx := errgroup.WithContext(ctx)
 
 	for _, decorator := range p.decorators {
-		decoratorFunc := decorator
+		fn := decorator
 
 		group.Go(func() error {
-			if err := decoratorFunc(groupContext, nil, nil); err != nil {
-				return fmt.Errorf("decorator error: %w", err)
+			err := fn(ctx, nil, nil)
+			if err != nil {
+				return fmt.Errorf("decorator failed: %w", err)
 			}
+
 			return nil
 		})
 	}
 
-	for _, multiplexerCfg := range p.multiplexers {
-		cfg := multiplexerCfg
+	for _, mul := range p.multiplexers {
+		item := mul
 
 		group.Go(func() error {
-			var inputChannels []chan string
+			ins := make([]chan string, 0, len(item.inputNames))
 
-			for _, name := range cfg.inputNames {
-				inputChannels = append(inputChannels, p.inputs[name])
+			for _, n := range item.inputNames {
+				ins = append(ins, p.inputs[n])
 			}
 
-			outputChannel := p.getOutput(cfg.outputName)
+			out := p.getOutput(item.outputName)
 
-			if err := handlers.MultiplexerFunc(groupContext, inputChannels, outputChannel); err != nil {
-				return fmt.Errorf("multiplexer error: %w", err)
+			err := item.fn(ctx, ins, out)
+			if err != nil {
+				return fmt.Errorf("multiplexer failed: %w", err)
 			}
 
-			close(outputChannel)
+			close(out)
+
+			return nil
+		})
+	}
+
+	for _, sep := range p.separators {
+		item := sep
+
+		group.Go(func() error {
+			in := p.getInput(item.inputName)
+
+			outs := make([]chan string, 0, len(item.outNames))
+
+			for _, n := range item.outNames {
+				outs = append(outs, p.getOutput(n))
+			}
+
+			err := item.fn(ctx, in, outs)
+			if err != nil {
+				return fmt.Errorf("separator failed: %w", err)
+			}
 
 			return nil
 		})
 	}
 
 	if err := group.Wait(); err != nil {
-		return fmt.Errorf("run error: %w", err)
+		return fmt.Errorf("pipeline error: %w", err)
 	}
 
 	return nil
