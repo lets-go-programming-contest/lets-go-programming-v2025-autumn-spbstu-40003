@@ -40,6 +40,7 @@ func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan str
 			case <-ctx.Done():
 				return errors.Join(ErrContextDoneInDecorator, ctx.Err())
 			}
+
 		case <-ctx.Done():
 			return errors.Join(ErrContextDoneInDecorator, ctx.Err())
 		}
@@ -63,6 +64,7 @@ func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string
 			}
 
 			index = (index + 1) % len(outputs)
+
 		case <-ctx.Done():
 			return errors.Join(ErrContextDoneInSeparator, ctx.Err())
 		}
@@ -97,8 +99,10 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan stri
 					case <-done:
 						return
 					}
+
 				case <-ctx.Done():
 					return
+
 				case <-done:
 					return
 				}
