@@ -20,7 +20,7 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 
 	select {
 	case <-conv.ready:
-		// уже закрыт — ничего делать не нужно
+		// already closed
 	default:
 		close(conv.ready)
 	}
@@ -49,9 +49,8 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 
 			if err != nil {
 				select {
-				case conv.errCh <- err: // ничего не отменяем
-				case <-ctx.Done():
-					// игнорируем
+				case conv.errCh <- err:
+				default:
 				}
 			}
 		}(handlerCopy, inputChannels, outputChannels)
@@ -62,13 +61,23 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 		close(conv.errCh)
 	}()
 
-	if err, ok := <-conv.errCh; ok {
-		conv.cancel()
-		conv.wg.Wait()
+	errC := make(chan error, 1)
+	go func() {
+		if err, ok := <-conv.errCh; ok {
+			select {
+			case errC <- err:
+			default:
+			}
+		}
+		close(errC)
+	}()
+
+	conv.wg.Wait()
+
+	if err, ok := <-errC; ok && err != nil {
 		conv.closeAllChannels()
 		return err
 	}
 
-	conv.wg.Wait()
 	return nil
 }
