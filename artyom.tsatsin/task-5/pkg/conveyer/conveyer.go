@@ -14,7 +14,9 @@ var (
 	ErrChanFull     = errors.New("chan is full")
 )
 
-const undefined = "undefined"
+const (
+	undefined = "undefined"
+)
 
 type DecoratorFunc func(context.Context, chan string, chan string) error
 type MultiplexerFunc func(context.Context, []chan string, chan string) error
