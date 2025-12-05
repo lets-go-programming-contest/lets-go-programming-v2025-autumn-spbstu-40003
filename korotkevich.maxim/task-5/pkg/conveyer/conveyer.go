@@ -47,6 +47,7 @@ func New(size int) *Conveyer {
 	return &Conveyer{
 		size:         size,
 		channels:     make(map[string]chan string),
+		mu:           sync.RWMutex{},
 		decorators:   make([]decoratorEntry, 0),
 		multiplexers: make([]multiplexerEntry, 0),
 		separators:   make([]separatorEntry, 0),
@@ -57,21 +58,23 @@ func (conv *Conveyer) getOrCreateChan(name string) chan string {
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
-	if ch, ok := conv.channels[name]; ok {
-		return ch
+	if chn, ok := conv.channels[name]; ok {
+		return chn
 	}
 
-	ch := make(chan string, conv.size)
-	conv.channels[name] = ch
-	return ch
+	chn := make(chan string, conv.size)
+	conv.channels[name] = chn
+
+	return chn
 }
 
 func (conv *Conveyer) getChan(name string) (chan string, bool) {
 	conv.mu.RLock()
 	defer conv.mu.RUnlock()
 
-	ch, ok := conv.channels[name]
-	return ch, ok
+	chn, exists := conv.channels[name]
+
+	return chn, exists
 }
 
 func (conv *Conveyer) RegisterDecorator(
@@ -97,6 +100,7 @@ func (conv *Conveyer) RegisterMultiplexer(
 	for _, name := range inputs {
 		conv.getOrCreateChan(name)
 	}
+
 	conv.getOrCreateChan(output)
 
 	conv.multiplexers = append(conv.multiplexers, multiplexerEntry{
@@ -112,6 +116,7 @@ func (conv *Conveyer) RegisterSeparator(
 	outputs []string,
 ) {
 	conv.getOrCreateChan(input)
+
 	for _, name := range outputs {
 		conv.getOrCreateChan(name)
 	}
@@ -128,13 +133,16 @@ func (conv *Conveyer) closeAllChannels() {
 	defer conv.mu.Unlock()
 
 	closed := make(map[chan string]bool)
-	for _, ch := range conv.channels {
-		if ch == nil {
+
+	for _, chn := range conv.channels {
+		if chn == nil {
 			continue
 		}
-		if !closed[ch] {
-			closed[ch] = true
-			close(ch)
+
+		if !closed[chn] {
+			closed[chn] = true
+
+			close(chn)
 		}
 	}
 }
@@ -144,49 +152,51 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 
 	group, gctx := errgroup.WithContext(ctx)
 
-	startDecorator := func(d decoratorEntry) {
-		inputChan := conv.getOrCreateChan(d.input)
-		outputCh := conv.getOrCreateChan(d.output)
+	startDecorator := func(decr decoratorEntry) {
+		inputChan := conv.getOrCreateChan(decr.input)
+		outputCh := conv.getOrCreateChan(decr.output)
 
 		group.Go(func() error {
-			return d.function(gctx, inputChan, outputCh)
+			return decr.function(gctx, inputChan, outputCh)
 		})
 	}
 
-	startMultiplexer := func(m multiplexerEntry) {
-		outputCh := conv.getOrCreateChan(m.output)
-		inputChans := make([]chan string, len(m.inputs))
-		for i, name := range m.inputs {
+	startMultiplexer := func(mulp multiplexerEntry) {
+		outputCh := conv.getOrCreateChan(mulp.output)
+		inputChans := make([]chan string, len(mulp.inputs))
+
+		for i, name := range mulp.inputs {
 			inputChans[i] = conv.getOrCreateChan(name)
 		}
 
 		group.Go(func() error {
-			return m.function(gctx, inputChans, outputCh)
+			return mulp.function(gctx, inputChans, outputCh)
 		})
 	}
 
-	startSeparator := func(s separatorEntry) {
-		inputChan := conv.getOrCreateChan(s.input)
-		outputChans := make([]chan string, len(s.outputs))
-		for i, name := range s.outputs {
+	startSeparator := func(sepr separatorEntry) {
+		inputChan := conv.getOrCreateChan(sepr.input)
+		outputChans := make([]chan string, len(sepr.outputs))
+
+		for i, name := range sepr.outputs {
 			outputChans[i] = conv.getOrCreateChan(name)
 		}
 
 		group.Go(func() error {
-			return s.function(gctx, inputChan, outputChans)
+			return sepr.function(gctx, inputChan, outputChans)
 		})
 	}
 
-	for _, d := range conv.decorators {
-		startDecorator(d)
+	for _, decr := range conv.decorators {
+		startDecorator(decr)
 	}
 
-	for _, m := range conv.multiplexers {
-		startMultiplexer(m)
+	for _, mulp := range conv.multiplexers {
+		startMultiplexer(mulp)
 	}
 
-	for _, s := range conv.separators {
-		startSeparator(s)
+	for _, sepr := range conv.separators {
+		startSeparator(sepr)
 	}
 
 	if err := group.Wait(); err != nil {
@@ -197,13 +207,13 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 }
 
 func (conv *Conveyer) Send(input string, data string) error {
-	ch, ok := conv.getChan(input)
-	if !ok {
+	chn, exists := conv.getChan(input)
+	if !exists {
 		return ErrChanNotFound
 	}
 
 	select {
-	case ch <- data:
+	case chn <- data:
 		return nil
 	default:
 		return ErrChanFull
@@ -211,13 +221,13 @@ func (conv *Conveyer) Send(input string, data string) error {
 }
 
 func (conv *Conveyer) Recv(output string) (string, error) {
-	ch, ok := conv.getChan(output)
-	if !ok {
+	chn, exists := conv.getChan(output)
+	if !exists {
 		return "", ErrChanNotFound
 	}
 
-	data, ok := <-ch
-	if !ok {
+	data, received := <-chn
+	if !received {
 		return undefined, nil
 	}
 
