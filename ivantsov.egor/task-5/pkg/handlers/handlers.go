@@ -19,10 +19,10 @@ const (
 	StrDecorated   = "decorated: "
 )
 
-func PrefixDecoratorFunc(ctx context.Context, inputChannel chan string, outputChannel chan string) error {
+func PrefixDecoratorFunc(ctx context.Context, inputChan chan string, outputChan chan string) error {
 	for {
 		select {
-		case data, ok := <-inputChannel:
+		case data, ok := <-inputChan:
 			if !ok {
 				return nil
 			}
@@ -36,57 +36,54 @@ func PrefixDecoratorFunc(ctx context.Context, inputChannel chan string, outputCh
 			}
 
 			select {
-			case outputChannel <- data:
+			case outputChan <- data:
 			case <-ctx.Done():
 				return errors.Join(ErrContextDoneInDecorator, ctx.Err())
 			}
+
 		case <-ctx.Done():
 			return errors.Join(ErrContextDoneInDecorator, ctx.Err())
 		}
 	}
 }
 
-func SeparatorFunc(ctx context.Context, inputChannel chan string, outputChannels []chan string) error {
-	outputIndex := 0
+func SeparatorFunc(ctx context.Context, inputChan chan string, outputs []chan string) error {
+	index := 0
 
 	for {
 		select {
-		case data, ok := <-inputChannel:
+		case data, ok := <-inputChan:
 			if !ok {
 				return nil
 			}
 
 			select {
-			case outputChannels[outputIndex] <- data:
+			case outputs[index] <- data:
 			case <-ctx.Done():
 				return errors.Join(ErrContextDoneInSeparator, ctx.Err())
 			}
 
-			outputIndex++
-			if outputIndex == len(outputChannels) {
-				outputIndex = 0
-			}
+			index = (index + 1) % len(outputs)
+
 		case <-ctx.Done():
 			return errors.Join(ErrContextDoneInSeparator, ctx.Err())
 		}
 	}
 }
 
-func MultiplexerFunc(ctx context.Context, inputChannels []chan string, outputChannel chan string) error {
+func MultiplexerFunc(ctx context.Context, inputs []chan string, outputChan chan string) error {
 	waitGroup := &sync.WaitGroup{}
 	done := make(chan struct{})
 
-	for _, inputChannel := range inputChannels {
-		channelCopy := inputChannel
-
+	for _, inputChannel := range inputs {
 		waitGroup.Add(1)
 
-		go func(ch chan string) {
+		go func(channel chan string) {
 			defer waitGroup.Done()
 
 			for {
 				select {
-				case data, ok := <-ch:
+				case data, ok := <-channel:
 					if !ok {
 						return
 					}
@@ -96,19 +93,21 @@ func MultiplexerFunc(ctx context.Context, inputChannels []chan string, outputCha
 					}
 
 					select {
-					case outputChannel <- data:
+					case outputChan <- data:
 					case <-ctx.Done():
 						return
 					case <-done:
 						return
 					}
+
 				case <-ctx.Done():
 					return
+
 				case <-done:
 					return
 				}
 			}
-		}(channelCopy)
+		}(inputChannel)
 	}
 
 	<-ctx.Done()
