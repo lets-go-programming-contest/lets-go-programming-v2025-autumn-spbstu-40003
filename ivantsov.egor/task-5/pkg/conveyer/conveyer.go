@@ -31,6 +31,7 @@ type pipeline struct {
 func New(bufferSize int) *pipeline {
 	return &pipeline{
 		bufferSize: bufferSize,
+		mu:         sync.Mutex{},
 		chans:      make(map[string]chan string),
 		workers:    make([]func(context.Context) error, 0),
 	}
@@ -40,8 +41,8 @@ func (p *pipeline) getOrCreate(name string) chan string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	ch, exists := p.chans[name]
-	if exists {
+	ch, ok := p.chans[name]
+	if ok {
 		return ch
 	}
 
@@ -102,25 +103,25 @@ func (p *pipeline) AddSplitter(input string, outputs []string, splitter Splitter
 }
 
 func (p *pipeline) Run(ctx context.Context) error {
-	var waitGroup sync.WaitGroup
+	var wg sync.WaitGroup
+
 	errChan := make(chan error, len(p.workers))
 
 	for _, worker := range p.workers {
-		waitGroup.Add(1)
+		wg.Add(1)
 
-		job := worker
+		current := worker
 
 		go func() {
-			defer waitGroup.Done()
-
-			if err := job(ctx); err != nil {
+			defer wg.Done()
+			if err := current(ctx); err != nil {
 				errChan <- err
 			}
 		}()
 	}
 
 	go func() {
-		waitGroup.Wait()
+		wg.Wait()
 		close(errChan)
 	}()
 
@@ -130,7 +131,7 @@ func (p *pipeline) Run(ctx context.Context) error {
 			return err
 		}
 	case <-ctx.Done():
-		return ctx.Err()
+		return errors.New(ctx.Err().Error())
 	}
 
 	return nil
