@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 )
@@ -19,129 +20,99 @@ const (
 	StrDecorated   = "decorated: "
 )
 
-func PrefixDecoratorFunc(
-	ctx context.Context,
-	in chan string,
-	out chan string,
-) error {
+func PrefixDecoratorFunc(ctx context.Context, inputChannel chan string, outputChannel chan string) error {
 	for {
 		select {
-		case value, ok := <-in:
+		case payload, ok := <-inputChannel:
 			if !ok {
 				return nil
 			}
 
-			if strings.Contains(value, StrNoDecorator) {
+			if strings.Contains(payload, StrNoDecorator) {
 				return ErrCantDecorate
 			}
 
-			if !strings.HasPrefix(value, StrDecorated) {
-				value = StrDecorated + value
+			if !strings.HasPrefix(payload, StrDecorated) {
+				payload = StrDecorated + payload
 			}
 
 			select {
-			case out <- value:
+			case outputChannel <- payload:
 			case <-ctx.Done():
-				return errors.Join(
-					ErrContextDoneInDecorator,
-					ctx.Err(),
-				)
+				return fmt.Errorf("%w: %w", ErrContextDoneInDecorator, ctx.Err())
 			}
 
 		case <-ctx.Done():
-			return errors.Join(
-				ErrContextDoneInDecorator,
-				ctx.Err(),
-			)
+			return fmt.Errorf("%w: %w", ErrContextDoneInDecorator, ctx.Err())
 		}
 	}
 }
 
-func SeparatorFunc(
-	ctx context.Context,
-	in chan string,
-	outs []chan string,
-) error {
-	pos := 0
-	count := len(outs)
+func SeparatorFunc(ctx context.Context, inputChannel chan string, outputGroups []chan string) error {
+	current := 0
 
 	for {
 		select {
-		case value, ok := <-in:
+		case message, ok := <-inputChannel:
 			if !ok {
 				return nil
 			}
 
 			select {
-			case outs[pos] <- value:
+			case outputGroups[current] <- message:
 			case <-ctx.Done():
-				return errors.Join(
-					ErrContextDoneInSeparator,
-					ctx.Err(),
-				)
+				return fmt.Errorf("%w: %w", ErrContextDoneInSeparator, ctx.Err())
 			}
 
-			pos++
-
-			if pos >= count {
-				pos = 0
-			}
+			current = (current + 1) % len(outputGroups)
 
 		case <-ctx.Done():
-			return errors.Join(
-				ErrContextDoneInSeparator,
-				ctx.Err(),
-			)
+			return fmt.Errorf("%w: %w", ErrContextDoneInSeparator, ctx.Err())
 		}
 	}
 }
 
-func MultiplexerFunc(
-	ctx context.Context,
-	ins []chan string,
-	out chan string,
-) error {
-	var waitGroup sync.WaitGroup
-	stopSignal := make(chan struct{})
+func MultiplexerFunc(ctx context.Context, sourceChannels []chan string, outputChannel chan string) error {
+	var group sync.WaitGroup
+	termination := make(chan struct{})
 
-	for _, source := range ins {
-		waitGroup.Add(1)
+	for _, channel := range sourceChannels {
+		group.Add(1)
 
-		go func(ch chan string) {
-			defer waitGroup.Done()
+		go func(localChannel chan string) {
+			defer group.Done()
 
 			for {
 				select {
-				case value, ok := <-ch:
+				case msg, ok := <-localChannel:
 					if !ok {
 						return
 					}
 
-					if strings.Contains(value, StrNoMult) {
+					if strings.Contains(msg, StrNoMult) {
 						continue
 					}
 
 					select {
-					case out <- value:
+					case outputChannel <- msg:
 					case <-ctx.Done():
 						return
-					case <-stopSignal:
+					case <-termination:
 						return
 					}
 
 				case <-ctx.Done():
 					return
-				case <-stopSignal:
+				case <-termination:
 					return
 				}
 			}
-		}(source)
+		}(channel)
 	}
 
 	<-ctx.Done()
-
-	close(stopSignal)
-	waitGroup.Wait()
+	close(termination)
+	group.Wait()
 
 	return nil
 }
