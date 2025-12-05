@@ -135,7 +135,6 @@ func (p *Pipeline) RegisterDecorator(
 	p.getOrCreateStream(input)
 	p.getOrCreateStream(output)
 }
-
 func (p *Pipeline) RegisterMultiplexer(
 	function func(ctx context.Context, inputs []chan string, output chan string) error,
 	inputs []string,
