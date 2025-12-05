@@ -42,13 +42,15 @@ func New(size int) *Conveyer {
 }
 
 func (conv *Conveyer) getOrCreateChannel(name string) chan string {
+	conv.mutex.Lock()
+	defer conv.mutex.Unlock()
+
 	if ch, ok := conv.channels[name]; ok {
 		return ch
-	} else {
-		ch := make(chan string, conv.size)
-		conv.channels[name] = ch
-		return ch
 	}
+	ch := make(chan string, conv.size)
+	conv.channels[name] = ch
+	return ch
 }
 
 func (conv *Conveyer) resolveChannels(names []string) []chan string {

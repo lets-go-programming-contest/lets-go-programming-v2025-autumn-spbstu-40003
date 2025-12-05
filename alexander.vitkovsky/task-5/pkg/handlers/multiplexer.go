@@ -3,61 +3,38 @@ package handlers
 import (
 	"context"
 	"strings"
+	"sync"
 )
 
 func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan string) error {
-	type msgWrap struct {
-		msg string
-		ok  bool
-	}
-
-	n := len(inputs)
-	if n == 0 {
-		close(output)
-		return nil
-	}
-
-	out := make(chan msgWrap)
+	var wg sync.WaitGroup
+	wg.Add(len(inputs))
 
 	for _, ch := range inputs {
-		go func(ch chan string) {
+		go func(in chan string) {
+			defer wg.Done()
 			for {
 				select {
 				case <-ctx.Done():
-					out <- msgWrap{ok: false}
 					return
-
-				case m, ok := <-ch:
+				case msg, ok := <-in:
 					if !ok {
-						out <- msgWrap{ok: false}
 						return
 					}
-					if strings.Contains(m, "no multiplexer") {
+					if strings.Contains(msg, "no multiplexer") {
 						continue
 					}
-					out <- msgWrap{msg: m, ok: true}
+					select {
+					case <-ctx.Done():
+						return
+					case output <- msg:
+					}
 				}
 			}
 		}(ch)
 	}
 
-	closedCount := 0
-
-	for closedCount < n {
-		select {
-		case <-ctx.Done():
-			close(output)
-			return ctx.Err()
-
-		case w := <-out:
-			if !w.ok {
-				closedCount++
-				continue
-			}
-			output <- w.msg
-		}
-	}
-
+	wg.Wait()
 	close(output)
 	return nil
 }
