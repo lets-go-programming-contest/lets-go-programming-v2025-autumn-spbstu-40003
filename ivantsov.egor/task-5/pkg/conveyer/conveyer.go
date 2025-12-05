@@ -182,7 +182,6 @@ func (conv *Conveyer) Run(parentContext context.Context) error {
 
 		return receivedErr
 	case <-internalContext.Done():
-
 		return nil
 	}
 }
@@ -268,10 +267,8 @@ func (conv *Conveyer) Send(channelName string, payload string) error {
 
 	select {
 	case existingChannel <- payload:
-
 		return nil
 	default:
-
 		return ErrChanFull
 	}
 }

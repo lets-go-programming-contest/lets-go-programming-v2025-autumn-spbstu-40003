@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrCantDecorate           = errors.New("can't decorate value")
+	ErrCantDecorate           = errors.New("can't be decorated")
 	ErrContextDoneInDecorator = errors.New("decorator context canceled")
 	ErrContextDoneInSeparator = errors.New("separator context canceled")
 )
