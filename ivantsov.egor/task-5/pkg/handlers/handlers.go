@@ -19,10 +19,10 @@ const (
 	StrDecorated   = "decorated: "
 )
 
-func PrefixDecoratorFunc(ctx context.Context, inputChan chan string, outputChan chan string) error {
+func PrefixDecoratorFunc(ctx context.Context, input chan string, output chan string) error {
 	for {
 		select {
-		case data, ok := <-inputChan:
+		case data, ok := <-input:
 			if !ok {
 				return nil
 			}
@@ -36,23 +36,22 @@ func PrefixDecoratorFunc(ctx context.Context, inputChan chan string, outputChan 
 			}
 
 			select {
-			case outputChan <- data:
+			case output <- data:
 			case <-ctx.Done():
 				return errors.Join(ErrContextDoneInDecorator, ctx.Err())
 			}
-
 		case <-ctx.Done():
 			return errors.Join(ErrContextDoneInDecorator, ctx.Err())
 		}
 	}
 }
 
-func SeparatorFunc(ctx context.Context, inputChan chan string, outputs []chan string) error {
+func SeparatorFunc(ctx context.Context, input chan string, outputs []chan string) error {
 	index := 0
 
 	for {
 		select {
-		case data, ok := <-inputChan:
+		case data, ok := <-input:
 			if !ok {
 				return nil
 			}
@@ -64,26 +63,25 @@ func SeparatorFunc(ctx context.Context, inputChan chan string, outputs []chan st
 			}
 
 			index = (index + 1) % len(outputs)
-
 		case <-ctx.Done():
 			return errors.Join(ErrContextDoneInSeparator, ctx.Err())
 		}
 	}
 }
 
-func MultiplexerFunc(ctx context.Context, inputs []chan string, outputChan chan string) error {
+func MultiplexerFunc(ctx context.Context, inputs []chan string, output chan string) error {
 	waitGroup := &sync.WaitGroup{}
 	done := make(chan struct{})
 
 	for _, inputChannel := range inputs {
 		waitGroup.Add(1)
 
-		go func(channel chan string) {
+		go func(inputChan chan string) {
 			defer waitGroup.Done()
 
 			for {
 				select {
-				case data, ok := <-channel:
+				case data, ok := <-inputChan:
 					if !ok {
 						return
 					}
@@ -93,16 +91,14 @@ func MultiplexerFunc(ctx context.Context, inputs []chan string, outputChan chan 
 					}
 
 					select {
-					case outputChan <- data:
+					case output <- data:
 					case <-ctx.Done():
 						return
 					case <-done:
 						return
 					}
-
 				case <-ctx.Done():
 					return
-
 				case <-done:
 					return
 				}

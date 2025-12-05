@@ -2,37 +2,42 @@ package conveyer
 
 import (
 	"context"
-	"errors"
 	"sync"
 )
 
-var ErrChanNotFound = errors.New("chan not found")
-
-type (
-	JobSingle   func(ctx context.Context, input chan string, output chan string) error
-	JobMultiIn  func(ctx context.Context, inputs []chan string, output chan string) error
-	JobMultiOut func(ctx context.Context, input chan string, outputs []chan string) error
-)
-
 type Conveyer interface {
-	AddJob(inputName string, outputName string, function JobSingle)
-	AddJobs(inputNames []string, outputName string, function JobMultiIn)
-	AddSplitter(inputName string, outputNames []string, function JobMultiOut)
+	AddJob(
+		inputName string,
+		outputName string,
+		handler func(context.Context, chan string, chan string) error,
+	)
+
+	AddJobs(
+		inputNames []string,
+		outputName string,
+		handler func(context.Context, []chan string, chan string) error,
+	)
+
+	AddSplitter(
+		inputName string,
+		outputNames []string,
+		handler func(context.Context, chan string, []chan string) error,
+	)
+
 	Run(ctx context.Context) error
 }
 
 type pipeline struct {
-	size    int
 	chans   map[string]chan string
-	workers []func(ctx context.Context) error
+	workers []func(context.Context) error
 	mu      sync.Mutex
 }
 
-func New(size int) *pipeline {
+func New(bufferSize int) Conveyer {
 	return &pipeline{
-		size:    size,
 		chans:   make(map[string]chan string),
-		workers: []func(ctx context.Context) error{},
+		workers: nil,
+		mu:      sync.Mutex{},
 	}
 }
 
@@ -40,57 +45,72 @@ func (p *pipeline) getOrCreate(name string) chan string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	channel, ok := p.chans[name]
-	if ok {
-		return channel
+	if ch, ok := p.chans[name]; ok {
+		return ch
 	}
 
-	channel = make(chan string, p.size)
-	p.chans[name] = channel
+	created := make(chan string)
+	p.chans[name] = created
 
-	return channel
+	return created
 }
 
-func (p *pipeline) AddJob(inputName string, outputName string, function JobSingle) {
-	inputChan := p.getOrCreate(inputName)
-	outputChan := p.getOrCreate(outputName)
+func (p *pipeline) AddJob(
+	inputName string,
+	outputName string,
+	handler func(context.Context, chan string, chan string) error,
+) {
+	input := p.getOrCreate(inputName)
+	output := p.getOrCreate(outputName)
 
 	p.workers = append(p.workers, func(ctx context.Context) error {
-		return function(ctx, inputChan, outputChan)
+		return handler(ctx, input, output)
 	})
 }
 
-func (p *pipeline) AddJobs(inputNames []string, outputName string, function JobMultiIn) {
-	ins := make([]chan string, 0, len(inputNames))
+func (p *pipeline) AddJobs(
+	inputNames []string,
+	outputName string,
+	handler func(context.Context, []chan string, chan string) error,
+) {
+	inputs := make([]chan string, len(inputNames))
 
-	for _, name := range inputNames {
-		ins = append(ins, p.getOrCreate(name))
+	for i, name := range inputNames {
+		inputs[i] = p.getOrCreate(name)
 	}
 
-	outputChan := p.getOrCreate(outputName)
+	output := p.getOrCreate(outputName)
 
 	p.workers = append(p.workers, func(ctx context.Context) error {
-		return function(ctx, ins, outputChan)
+		return handler(ctx, inputs, output)
 	})
 }
 
-func (p *pipeline) AddSplitter(inputName string, outputNames []string, function JobMultiOut) {
-	inputChan := p.getOrCreate(inputName)
+func (p *pipeline) AddSplitter(
+	inputName string,
+	outputNames []string,
+	handler func(context.Context, chan string, []chan string) error,
+) {
+	input := p.getOrCreate(inputName)
 	outputNamesCopy := append([]string(nil), outputNames...)
-	outputs := make([]chan string, 0, len(outputNamesCopy))
 
-	for _, name := range outputNamesCopy {
-		outputs = append(outputs, p.getOrCreate(name))
+	outputs := make([]chan string, len(outputNamesCopy))
+
+	for i, name := range outputNamesCopy {
+		outputs[i] = p.getOrCreate(name)
 	}
 
 	p.workers = append(p.workers, func(ctx context.Context) error {
-		return function(ctx, inputChan, outputs)
+		return handler(ctx, input, outputs)
 	})
 }
 
 func (p *pipeline) Run(ctx context.Context) error {
-	waitGroup := &sync.WaitGroup{}
-	errCh := make(chan error, len(p.workers))
+	errChan := make(chan error, len(p.workers))
+	waitGroup := sync.WaitGroup{}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	for _, worker := range p.workers {
 		waitGroup.Add(1)
@@ -99,15 +119,16 @@ func (p *pipeline) Run(ctx context.Context) error {
 			defer waitGroup.Done()
 
 			if err := job(ctx); err != nil {
-				errCh <- err
+				errChan <- err
+				cancel()
 			}
 		}(worker)
 	}
 
 	waitGroup.Wait()
-	close(errCh)
+	close(errChan)
 
-	for err := range errCh {
+	for err := range errChan {
 		if err != nil {
 			return err
 		}
