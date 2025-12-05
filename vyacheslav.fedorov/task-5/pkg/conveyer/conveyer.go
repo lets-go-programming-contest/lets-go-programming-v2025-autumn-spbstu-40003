@@ -60,7 +60,7 @@ func (p *Pipeline) Send(input string, data string) error {
 		return ErrStreamNotFound
 	}
 	select {
-	case inputChannel <- data:
+	case inputChannel <- 
 		return nil
 	default:
 		inputChannel <- data
@@ -98,16 +98,6 @@ func (p *Pipeline) getOrCreateStream(name string) chan string {
 	p.streams[name] = channel
 
 	return channel
-}
-
-// getStream is currently unused but kept for potential future use or interface compliance.
-func (p *Pipeline) getStream(name string) (chan string, bool) {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
-	ch, exists := p.streams[name]
-
-	return ch, exists
 }
 
 func (p *Pipeline) closeAllStreams() {
@@ -169,7 +159,13 @@ func (p *Pipeline) RegisterSeparator(
 	})
 
 	p.getOrCreateStream(input)
-	for _, output := range outputs {
+
+	streamsToCreate := make([]string, len(outputs))
+	for i, output := range outputs {
+		streamsToCreate[i] = output
+	}
+
+	for _, output := range streamsToCreate {
 		p.getOrCreateStream(output)
 	}
 }
