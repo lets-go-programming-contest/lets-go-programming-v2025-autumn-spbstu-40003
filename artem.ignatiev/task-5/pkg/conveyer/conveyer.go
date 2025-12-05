@@ -3,14 +3,13 @@ package conveyer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
 )
 
-var (
-	ErrChanNotFound = errors.New("chan not found")
-)
+var ErrChanNotFound = errors.New("chan not found")
 
 const (
 	resUndefined = "undefined"
@@ -118,7 +117,11 @@ func (c *Conveyer) Run(ctx context.Context) error {
 	}
 	c.mu.Unlock()
 
-	return err
+	if err != nil {
+		return fmt.Errorf("conveyer run error: %w", err)
+	}
+
+	return nil
 }
 
 func (c *Conveyer) Send(inputName string, data string) error {
