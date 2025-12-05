@@ -47,8 +47,10 @@ func main() {
 		res, err := conv.Recv("final_output")
 		if err != nil {
 			log.Printf("Error receiving: %v", err)
+
 			continue
 		}
+
 		log.Printf("Received: %s\n", res)
 	}
 

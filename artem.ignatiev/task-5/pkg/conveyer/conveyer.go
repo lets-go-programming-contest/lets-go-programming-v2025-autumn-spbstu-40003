@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"sync"
+
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -98,32 +100,17 @@ func (c *Conveyer) RegisterSeparator(
 }
 
 func (c *Conveyer) Run(ctx context.Context) error {
-	cancelCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	var waitGroup sync.WaitGroup
-
-	errChannel := make(chan error, 1)
+	group, groupCtx := errgroup.WithContext(ctx)
 
 	for _, task := range c.tasks {
-		waitGroup.Add(1)
-
 		currentTask := task
 
-		go func(t TaskFunc) {
-			defer waitGroup.Done()
-
-			if err := t(cancelCtx); err != nil {
-				select {
-				case errChannel <- err:
-					cancel()
-				default:
-				}
-			}
-		}(currentTask)
+		group.Go(func() error {
+			return currentTask(groupCtx)
+		})
 	}
 
-	waitGroup.Wait()
+	err := group.Wait()
 
 	c.mu.Lock()
 	for _, name := range c.channelsKey {
@@ -131,12 +118,7 @@ func (c *Conveyer) Run(ctx context.Context) error {
 	}
 	c.mu.Unlock()
 
-	select {
-	case err := <-errChannel:
-		return err
-	default:
-		return nil
-	}
+	return err
 }
 
 func (c *Conveyer) Send(inputName string, data string) error {

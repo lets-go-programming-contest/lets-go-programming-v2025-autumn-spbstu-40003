@@ -84,7 +84,7 @@ func MultiplexerFunc(
 ) error {
 	var waitGroup sync.WaitGroup
 
-	readFunc := func(ch chan string) {
+	readFunc := func(channel chan string) {
 		defer waitGroup.Done()
 
 		for {
@@ -92,7 +92,7 @@ func MultiplexerFunc(
 			case <-ctx.Done():
 				return
 
-			case item, ok := <-ch:
+			case item, ok := <-channel:
 				if !ok {
 					return
 				}
