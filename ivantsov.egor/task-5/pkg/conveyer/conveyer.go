@@ -3,231 +3,263 @@ package conveyer
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
-
-	"golang.org/x/sync/errgroup"
 )
 
-type DecoratorFunc func(context.Context, chan string, chan string) error
-type SeparatorFunc func(context.Context, chan string, []chan string) error
-type MultiplexerFunc func(context.Context, []chan string, chan string) error
+var (
+	ErrChanNotFound   = errors.New("chan not found")
+	ErrChanFull       = errors.New("chan is full")
+	ErrNotInitialized = errors.New("conveyer not initialized")
+)
 
-type pipeline struct {
-	queueSize int
-	lock      sync.Mutex
+const StrUndefined = "undefined"
 
-	decorators []decoratorTask
-	separators []separatorTask
-	mults      []multiplexerTask
-
-	inputMap  map[string]chan string
-	outputMap map[string]chan string
+type decoratorItem struct {
+	handlerFunc func(context.Context, chan string, chan string) error
+	inputName   string
+	outputName  string
 }
 
-type decoratorTask struct {
-	handler   DecoratorFunc
-	inputTag  string
-	outputTag string
+type multiplexerItem struct {
+	handlerFunc func(context.Context, []chan string, chan string) error
+	inputNames  []string
+	outputName  string
 }
 
-type separatorTask struct {
-	handler    SeparatorFunc
-	inputTag   string
-	outputTags []string
+type separatorItem struct {
+	handlerFunc func(context.Context, chan string, []chan string) error
+	inputName   string
+	outputNames []string
 }
 
-type multiplexerTask struct {
-	handler   MultiplexerFunc
-	inputTags []string
-	outputTag string
+type Conveyer struct {
+	bufferSize     int
+	channelsMap    map[string]chan string
+	decoratorSet   []decoratorItem
+	multiplexerSet []multiplexerItem
+	separatorSet   []separatorItem
+	channelLock    sync.RWMutex
+	initialized    bool
 }
 
-func New(buffer int) *pipeline {
-	return &pipeline{
-		queueSize: buffer,
-		inputMap:  make(map[string]chan string),
-		outputMap: make(map[string]chan string),
+func New(bufferSize int) *Conveyer {
+	return &Conveyer{
+		bufferSize:     bufferSize,
+		channelsMap:    make(map[string]chan string),
+		decoratorSet:   make([]decoratorItem, 0),
+		multiplexerSet: make([]multiplexerItem, 0),
+		separatorSet:   make([]separatorItem, 0),
+		initialized:    true,
 	}
 }
 
-func (p *pipeline) channelIn(name string) chan string {
-	val, ok := p.inputMap[name]
-	if ok {
-		return val
+func (conv *Conveyer) ensureChannel(channelName string) chan string {
+	conv.channelLock.Lock()
+	defer conv.channelLock.Unlock()
+
+	existingChannel, found := conv.channelsMap[channelName]
+	if found {
+		return existingChannel
 	}
 
-	channel := make(chan string, p.queueSize)
-	p.inputMap[name] = channel
+	createdChannel := make(chan string, conv.bufferSize)
+	conv.channelsMap[channelName] = createdChannel
 
-	return channel
+	return createdChannel
 }
 
-func (p *pipeline) channelOut(name string) chan string {
-	val, ok := p.outputMap[name]
-	if ok {
-		return val
-	}
+func (conv *Conveyer) getChannel(channelName string) (chan string, bool) {
+	conv.channelLock.RLock()
+	defer conv.channelLock.RUnlock()
 
-	channel := make(chan string, p.queueSize)
-	p.outputMap[name] = channel
-
-	return channel
+	existingChannel, found := conv.channelsMap[channelName]
+	return existingChannel, found
 }
 
-func (p *pipeline) RegisterDecorator(fn DecoratorFunc, inLabel string, outLabel string) error {
-	if fn == nil {
-		return errors.New("nil decorator")
-	}
-
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	p.decorators = append(p.decorators, decoratorTask{
-		handler:   fn,
-		inputTag:  inLabel,
-		outputTag: outLabel,
+func (conv *Conveyer) RegisterDecorator(
+	handlerFunc func(context.Context, chan string, chan string) error,
+	inputName string,
+	outputName string,
+) {
+	conv.decoratorSet = append(conv.decoratorSet, decoratorItem{
+		handlerFunc: handlerFunc,
+		inputName:   inputName,
+		outputName:  outputName,
 	})
 
-	return nil
+	conv.ensureChannel(inputName)
+	conv.ensureChannel(outputName)
 }
 
-func (p *pipeline) RegisterSeparator(fn SeparatorFunc, inLabel string, outputs []string) error {
-	if fn == nil {
-		return errors.New("nil separator")
-	}
-
-	if len(outputs) == 0 {
-		return errors.New("empty outputs")
-	}
-
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	p.separators = append(p.separators, separatorTask{
-		handler:    fn,
-		inputTag:   inLabel,
-		outputTags: outputs,
+func (conv *Conveyer) RegisterMultiplexer(
+	handlerFunc func(context.Context, []chan string, chan string) error,
+	inputNames []string,
+	outputName string,
+) {
+	conv.multiplexerSet = append(conv.multiplexerSet, multiplexerItem{
+		handlerFunc: handlerFunc,
+		inputNames:  inputNames,
+		outputName:  outputName,
 	})
 
-	return nil
+	for _, inputItem := range inputNames {
+		conv.ensureChannel(inputItem)
+	}
+
+	conv.ensureChannel(outputName)
 }
 
-func (p *pipeline) RegisterMultiplexer(fn MultiplexerFunc, inputLabels []string, outputLabel string) error {
-	if fn == nil {
-		return errors.New("nil multiplexer")
-	}
-
-	if len(inputLabels) == 0 {
-		return errors.New("empty inputs")
-	}
-
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	p.mults = append(p.mults, multiplexerTask{
-		handler:   fn,
-		inputTags: append([]string(nil), inputLabels...),
-		outputTag: outputLabel,
+func (conv *Conveyer) RegisterSeparator(
+	handlerFunc func(context.Context, chan string, []chan string) error,
+	inputName string,
+	outputNames []string,
+) {
+	conv.separatorSet = append(conv.separatorSet, separatorItem{
+		handlerFunc: handlerFunc,
+		inputName:   inputName,
+		outputNames: outputNames,
 	})
 
-	return nil
+	conv.ensureChannel(inputName)
+
+	for _, outputItem := range outputNames {
+		conv.ensureChannel(outputItem)
+	}
 }
 
-func (p *pipeline) Send(input string, value string) error {
-	ch, ok := p.inputMap[input]
-	if !ok {
-		return errors.New("chan not found")
+func (conv *Conveyer) Run(parentContext context.Context) error {
+	if !conv.initialized {
+		return ErrNotInitialized
+	}
+
+	internalContext, cancelFunction := context.WithCancel(parentContext)
+	defer cancelFunction()
+
+	var workersGroup sync.WaitGroup
+	errorChannel := make(chan error, 1)
+
+	startWorker := func(workerFunc func()) {
+		workersGroup.Add(1)
+		go func() {
+			defer workersGroup.Done()
+			workerFunc()
+		}()
+	}
+
+	for _, decoratorEntry := range conv.decoratorSet {
+		entry := decoratorEntry
+		startWorker(func() {
+			execErr := entry.handlerFunc(
+				internalContext,
+				conv.ensureChannel(entry.inputName),
+				conv.ensureChannel(entry.outputName),
+			)
+			if execErr != nil {
+				conv.sendError(errorChannel, execErr)
+			}
+		})
+	}
+
+	for _, multiplexerEntry := range conv.multiplexerSet {
+		entry := multiplexerEntry
+		startWorker(func() {
+			inputChannels := make([]chan string, len(entry.inputNames))
+			for indexValue, channelName := range entry.inputNames {
+				inputChannels[indexValue] = conv.ensureChannel(channelName)
+			}
+
+			execErr := entry.handlerFunc(
+				internalContext,
+				inputChannels,
+				conv.ensureChannel(entry.outputName),
+			)
+			if execErr != nil {
+				conv.sendError(errorChannel, execErr)
+			}
+		})
+	}
+
+	for _, separatorEntry := range conv.separatorSet {
+		entry := separatorEntry
+		startWorker(func() {
+			outputChannels := make([]chan string, len(entry.outputNames))
+			for indexValue, outputName := range entry.outputNames {
+				outputChannels[indexValue] = conv.ensureChannel(outputName)
+			}
+
+			execErr := entry.handlerFunc(
+				internalContext,
+				conv.ensureChannel(entry.inputName),
+				outputChannels,
+			)
+			if execErr != nil {
+				conv.sendError(errorChannel, execErr)
+			}
+		})
+	}
+
+	go func() {
+		workersGroup.Wait()
+		conv.closeAllChannels()
+		close(errorChannel)
+	}()
+
+	select {
+	case receivedErr := <-errorChannel:
+		cancelFunction()
+		return receivedErr
+	case <-internalContext.Done():
+		return nil
+	}
+}
+
+func (conv *Conveyer) Send(channelName string, payload string) error {
+	existingChannel, found := conv.getChannel(channelName)
+	if !found {
+		return ErrChanNotFound
 	}
 
 	select {
-	case ch <- value:
+	case existingChannel <- payload:
 		return nil
 	default:
-		return errors.New("pipeline closed")
+		return ErrChanFull
 	}
 }
 
-func (p *pipeline) Recv(out string) (string, error) {
-	ch, ok := p.outputMap[out]
-	if !ok {
-		return "", errors.New("chan not found")
+func (conv *Conveyer) Recv(channelName string) (string, error) {
+	existingChannel, found := conv.getChannel(channelName)
+	if !found {
+		return "", ErrChanNotFound
 	}
 
-	val, ok := <-ch
-	if !ok {
-		return "", errors.New("pipeline closed")
+	receivedValue, channelOpen := <-existingChannel
+	if !channelOpen {
+		return StrUndefined, nil
 	}
 
-	return val, nil
+	return receivedValue, nil
 }
 
-func (p *pipeline) Run(ctx context.Context) error {
-	group, ctx := errgroup.WithContext(ctx)
-
-	for _, job := range p.decorators {
-		item := job
-
-		group.Go(func() error {
-			in := p.channelIn(item.inputTag)
-			out := p.channelOut(item.outputTag)
-
-			err := item.handler(ctx, in, out)
-			if err != nil {
-				return fmt.Errorf("decorator failed: %w", err)
-			}
-			close(out)
-
-			return nil
-		})
+func (conv *Conveyer) sendError(errorChannel chan error, execErr error) {
+	select {
+	case errorChannel <- execErr:
+	default:
 	}
+}
 
-	for _, job := range p.separators {
-		item := job
+func (conv *Conveyer) closeAllChannels() {
+	conv.channelLock.Lock()
+	defer conv.channelLock.Unlock()
 
-		group.Go(func() error {
-			input := p.channelIn(item.inputTag)
+	closedChannelSet := make(map[chan string]struct{})
 
-			var outputs []chan string
-			for _, name := range item.outputTags {
-				outputs = append(outputs, p.channelOut(name))
-			}
+	for _, currentChannel := range conv.channelsMap {
+		if _, exists := closedChannelSet[currentChannel]; exists {
+			continue
+		}
 
-			err := item.handler(ctx, input, outputs)
-			if err != nil {
-				return fmt.Errorf("separator failed: %w", err)
-			}
-
-			for _, channel := range outputs {
-				close(channel)
-			}
-
-			return nil
-		})
+		close(currentChannel)
+		closedChannelSet[currentChannel] = struct{}{}
 	}
-
-	for _, job := range p.mults {
-		item := job
-
-		group.Go(func() error {
-			var inputs []chan string
-
-			for _, name := range item.inputTags {
-				inputs = append(inputs, p.channelIn(name))
-			}
-
-			output := p.channelOut(item.outputTag)
-
-			err := item.handler(ctx, inputs, output)
-			if err != nil {
-				return fmt.Errorf("multiplexer failed: %w", err)
-			}
-
-			close(output)
-
-			return nil
-		})
-	}
-
-	return group.Wait()
 }

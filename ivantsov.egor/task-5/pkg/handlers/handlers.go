@@ -3,116 +3,130 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 )
 
 var (
-	ErrCantDecorate           = errors.New("can't be decorated")
-	ErrContextDoneInDecorator = errors.New("context done in decorator")
-	ErrContextDoneInSeparator = errors.New("context done in separator")
+	ErrCantDecorate           = errors.New("can't decorate value")
+	ErrContextDoneInDecorator = errors.New("decorator context canceled")
+	ErrContextDoneInSeparator = errors.New("separator context canceled")
 )
 
 const (
+	StrDecorated   = "decorated: "
 	StrNoDecorator = "no decorator"
 	StrNoMult      = "no multiplexer"
-	StrDecorated   = "decorated: "
 )
 
-func PrefixDecoratorFunc(ctx context.Context, inputChannel chan string, outputChannel chan string) error {
+func PrefixDecoratorFunc(
+	internalContext context.Context,
+	inputChannel chan string,
+	outputChannel chan string,
+) error {
 	for {
 		select {
-		case payload, ok := <-inputChannel:
-			if !ok {
+		case receivedValue, channelOpen := <-inputChannel:
+			if !channelOpen {
 				return nil
 			}
 
-			if strings.Contains(payload, StrNoDecorator) {
+			if strings.Contains(receivedValue, StrNoDecorator) {
 				return ErrCantDecorate
 			}
 
-			if !strings.HasPrefix(payload, StrDecorated) {
-				payload = StrDecorated + payload
+			if !strings.HasPrefix(receivedValue, StrDecorated) {
+				receivedValue = StrDecorated + receivedValue
 			}
 
 			select {
-			case outputChannel <- payload:
-			case <-ctx.Done():
-				return fmt.Errorf("%w: %w", ErrContextDoneInDecorator, ctx.Err())
+			case outputChannel <- receivedValue:
+			case <-internalContext.Done():
+				return ErrContextDoneInDecorator
 			}
 
-		case <-ctx.Done():
-			return fmt.Errorf("%w: %w", ErrContextDoneInDecorator, ctx.Err())
+		case <-internalContext.Done():
+			return ErrContextDoneInDecorator
 		}
 	}
 }
 
-func SeparatorFunc(ctx context.Context, inputChannel chan string, outputGroups []chan string) error {
-	current := 0
+func SeparatorFunc(
+	internalContext context.Context,
+	inputChannel chan string,
+	outputChannels []chan string,
+) error {
+	channelIndex := 0
 
 	for {
 		select {
-		case message, ok := <-inputChannel:
-			if !ok {
+		case receivedValue, channelOpen := <-inputChannel:
+			if !channelOpen {
 				return nil
 			}
 
 			select {
-			case outputGroups[current] <- message:
-			case <-ctx.Done():
-				return fmt.Errorf("%w: %w", ErrContextDoneInSeparator, ctx.Err())
+			case outputChannels[channelIndex] <- receivedValue:
+			case <-internalContext.Done():
+				return ErrContextDoneInSeparator
 			}
 
-			current = (current + 1) % len(outputGroups)
+			channelIndex++
+			if channelIndex >= len(outputChannels) {
+				channelIndex = 0
+			}
 
-		case <-ctx.Done():
-			return fmt.Errorf("%w: %w", ErrContextDoneInSeparator, ctx.Err())
+		case <-internalContext.Done():
+			return ErrContextDoneInSeparator
 		}
 	}
 }
 
-func MultiplexerFunc(ctx context.Context, sourceChannels []chan string, outputChannel chan string) error {
-	var group sync.WaitGroup
-	termination := make(chan struct{})
+func MultiplexerFunc(
+	internalContext context.Context,
+	inputChannels []chan string,
+	outputChannel chan string,
+) error {
+	var workersGroup sync.WaitGroup
+	stopChannel := make(chan struct{})
 
-	for _, channel := range sourceChannels {
-		group.Add(1)
+	for _, inputChannel := range inputChannels {
+		workersGroup.Add(1)
 
-		go func(localChannel chan string) {
-			defer group.Done()
+		go func(sourceChannel chan string) {
+			defer workersGroup.Done()
 
 			for {
 				select {
-				case msg, ok := <-localChannel:
-					if !ok {
+				case receivedValue, channelOpen := <-sourceChannel:
+					if !channelOpen {
 						return
 					}
 
-					if strings.Contains(msg, StrNoMult) {
+					if strings.Contains(receivedValue, StrNoMult) {
 						continue
 					}
 
 					select {
-					case outputChannel <- msg:
-					case <-ctx.Done():
+					case outputChannel <- receivedValue:
+					case <-internalContext.Done():
 						return
-					case <-termination:
+					case <-stopChannel:
 						return
 					}
 
-				case <-ctx.Done():
+				case <-internalContext.Done():
 					return
-				case <-termination:
+				case <-stopChannel:
 					return
 				}
 			}
-		}(channel)
+		}(inputChannel)
 	}
 
-	<-ctx.Done()
-	close(termination)
-	group.Wait()
+	<-internalContext.Done()
+	close(stopChannel)
+	workersGroup.Wait()
 
 	return nil
 }
