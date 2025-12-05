@@ -223,4 +223,3 @@ func (conv *Conveyer) Recv(output string) (string, error) {
 
 	return data, nil
 }
-
