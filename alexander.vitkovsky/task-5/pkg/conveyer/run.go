@@ -5,18 +5,25 @@ import (
 	"errors"
 )
 
-// pipe executing: Run()
-
 func (conv *Conveyer) Run(ctx context.Context) error {
+	conv.mutex.Lock()
 	if conv.started {
+		conv.mutex.Unlock()
 		return errors.New("conveyor already started")
 	}
 	conv.started = true
+	conv.mutex.Unlock()
 
 	ctx, cancel := context.WithCancel(ctx)
 	conv.runCtx = ctx
 	conv.cancel = cancel
-	close(conv.ready)
+
+	select {
+	case <-conv.ready:
+		// уже закрыт — ничего делать не нужно
+	default:
+		close(conv.ready)
+	}
 
 	for _, handler := range conv.handlers {
 		inputChannels := conv.resolveChannels(handler.inputs)
@@ -44,7 +51,8 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 				select {
 				case conv.errCh <- err:
 					conv.cancel()
-				case <-ctx.Done(): // ignore
+				case <-ctx.Done():
+					// игнорируем
 				}
 			}
 		}(handlerCopy, inputChannels, outputChannels)
@@ -52,6 +60,7 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 
 	go func() {
 		conv.wg.Wait()
+		conv.closeAllChannels()
 		close(conv.errCh)
 	}()
 

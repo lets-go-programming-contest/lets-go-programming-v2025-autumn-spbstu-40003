@@ -8,8 +8,6 @@ const ChanNotFoundMsg = "chan not found"
 const UndefinedValue = "undefined"
 
 func (conv *Conveyer) Send(input string, data string) error {
-	<-conv.ready
-
 	conv.mutex.Lock()
 	ch, ok := conv.channels[input]
 	runCtx := conv.runCtx
@@ -19,18 +17,20 @@ func (conv *Conveyer) Send(input string, data string) error {
 		return errors.New(ChanNotFoundMsg)
 	}
 
+	var done <-chan struct{}
+	if runCtx != nil {
+		done = runCtx.Done()
+	}
+
 	select {
 	case ch <- data:
 		return nil
-	case <-runCtx.Done():
+	case <-done:
 		return runCtx.Err()
 	}
 }
 
 func (conv *Conveyer) Recv(output string) (string, error) {
-	// ждём Run()
-	<-conv.ready
-
 	conv.mutex.Lock()
 	ch, ok := conv.channels[output]
 	runCtx := conv.runCtx
@@ -40,13 +40,18 @@ func (conv *Conveyer) Recv(output string) (string, error) {
 		return "", errors.New(ChanNotFoundMsg)
 	}
 
+	var done <-chan struct{}
+	if runCtx != nil {
+		done = runCtx.Done()
+	}
+
 	select {
 	case msg, ok := <-ch:
 		if !ok {
 			return UndefinedValue, nil
 		}
 		return msg, nil
-	case <-runCtx.Done():
+	case <-done:
 		return UndefinedValue, runCtx.Err()
 	}
 }
@@ -58,7 +63,7 @@ func (conv *Conveyer) Close(input string) error {
 		conv.mutex.Unlock()
 		return errors.New(ChanNotFoundMsg)
 	}
-	delete(conv.channels, input)
+	conv.channels[input] = nil
 	conv.mutex.Unlock()
 
 	defer func() { _ = recover() }()
