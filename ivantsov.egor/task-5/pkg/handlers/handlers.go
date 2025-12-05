@@ -44,7 +44,6 @@ func PrefixDecoratorFunc(
 			case <-internalContext.Done():
 				return ErrContextDoneInDecorator
 			}
-
 		case <-internalContext.Done():
 			return ErrContextDoneInDecorator
 		}
@@ -75,7 +74,6 @@ func SeparatorFunc(
 			if channelIndex >= len(outputChannels) {
 				channelIndex = 0
 			}
-
 		case <-internalContext.Done():
 			return ErrContextDoneInSeparator
 		}
@@ -88,6 +86,7 @@ func MultiplexerFunc(
 	outputChannel chan string,
 ) error {
 	var workersGroup sync.WaitGroup
+
 	stopChannel := make(chan struct{})
 
 	for _, inputChannel := range inputChannels {
@@ -114,7 +113,6 @@ func MultiplexerFunc(
 					case <-stopChannel:
 						return
 					}
-
 				case <-internalContext.Done():
 					return
 				case <-stopChannel:
@@ -125,7 +123,9 @@ func MultiplexerFunc(
 	}
 
 	<-internalContext.Done()
+
 	close(stopChannel)
+
 	workersGroup.Wait()
 
 	return nil

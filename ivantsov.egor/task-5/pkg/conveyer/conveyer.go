@@ -49,6 +49,7 @@ func New(bufferSize int) *Conveyer {
 		decoratorSet:   make([]decoratorItem, 0),
 		multiplexerSet: make([]multiplexerItem, 0),
 		separatorSet:   make([]separatorItem, 0),
+		channelLock:    sync.RWMutex{},
 		initialized:    true,
 	}
 }
@@ -73,6 +74,7 @@ func (conv *Conveyer) getChannel(channelName string) (chan string, bool) {
 	defer conv.channelLock.RUnlock()
 
 	existingChannel, found := conv.channelsMap[channelName]
+
 	return existingChannel, found
 }
 
@@ -136,18 +138,63 @@ func (conv *Conveyer) Run(parentContext context.Context) error {
 	defer cancelFunction()
 
 	var workersGroup sync.WaitGroup
+
 	errorChannel := make(chan error, 1)
 
 	startWorker := func(workerFunc func()) {
 		workersGroup.Add(1)
+
 		go func() {
 			defer workersGroup.Done()
 			workerFunc()
 		}()
 	}
 
+	conv.launchDecorators(
+		internalContext,
+		startWorker,
+		errorChannel,
+	)
+
+	conv.launchMultiplexers(
+		internalContext,
+		startWorker,
+		errorChannel,
+	)
+
+	conv.launchSeparators(
+		internalContext,
+		startWorker,
+		errorChannel,
+	)
+
+	go func() {
+		workersGroup.Wait()
+
+		conv.closeAllChannels()
+
+		close(errorChannel)
+	}()
+
+	select {
+	case receivedErr := <-errorChannel:
+		cancelFunction()
+
+		return receivedErr
+	case <-internalContext.Done():
+
+		return nil
+	}
+}
+
+func (conv *Conveyer) launchDecorators(
+	internalContext context.Context,
+	startWorker func(func()),
+	errorChannel chan error,
+) {
 	for _, decoratorEntry := range conv.decoratorSet {
 		entry := decoratorEntry
+
 		startWorker(func() {
 			execErr := entry.handlerFunc(
 				internalContext,
@@ -159,9 +206,16 @@ func (conv *Conveyer) Run(parentContext context.Context) error {
 			}
 		})
 	}
+}
 
+func (conv *Conveyer) launchMultiplexers(
+	internalContext context.Context,
+	startWorker func(func()),
+	errorChannel chan error,
+) {
 	for _, multiplexerEntry := range conv.multiplexerSet {
 		entry := multiplexerEntry
+
 		startWorker(func() {
 			inputChannels := make([]chan string, len(entry.inputNames))
 			for indexValue, channelName := range entry.inputNames {
@@ -178,13 +232,20 @@ func (conv *Conveyer) Run(parentContext context.Context) error {
 			}
 		})
 	}
+}
 
+func (conv *Conveyer) launchSeparators(
+	internalContext context.Context,
+	startWorker func(func()),
+	errorChannel chan error,
+) {
 	for _, separatorEntry := range conv.separatorSet {
 		entry := separatorEntry
+
 		startWorker(func() {
 			outputChannels := make([]chan string, len(entry.outputNames))
-			for indexValue, outputName := range entry.outputNames {
-				outputChannels[indexValue] = conv.ensureChannel(outputName)
+			for indexValue, channelName := range entry.outputNames {
+				outputChannels[indexValue] = conv.ensureChannel(channelName)
 			}
 
 			execErr := entry.handlerFunc(
@@ -197,20 +258,6 @@ func (conv *Conveyer) Run(parentContext context.Context) error {
 			}
 		})
 	}
-
-	go func() {
-		workersGroup.Wait()
-		conv.closeAllChannels()
-		close(errorChannel)
-	}()
-
-	select {
-	case receivedErr := <-errorChannel:
-		cancelFunction()
-		return receivedErr
-	case <-internalContext.Done():
-		return nil
-	}
 }
 
 func (conv *Conveyer) Send(channelName string, payload string) error {
@@ -221,8 +268,10 @@ func (conv *Conveyer) Send(channelName string, payload string) error {
 
 	select {
 	case existingChannel <- payload:
+
 		return nil
 	default:
+
 		return ErrChanFull
 	}
 }
@@ -260,6 +309,7 @@ func (conv *Conveyer) closeAllChannels() {
 		}
 
 		close(currentChannel)
+
 		closedChannelSet[currentChannel] = struct{}{}
 	}
 }
