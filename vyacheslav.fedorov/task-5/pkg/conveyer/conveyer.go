@@ -55,15 +55,16 @@ func (p *Pipeline) Send(input string, data string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	ch, exists := p.streams[input]
+	inputChannel, exists := p.streams[input]
 	if !exists {
 		return ErrStreamNotFound
 	}
 	select {
-	case ch <- data:
+	case inputChannel <- data:
 		return nil
 	default:
-		ch <- data
+		inputChannel <- data
+
 		return nil
 	}
 }
@@ -72,12 +73,12 @@ func (p *Pipeline) Recv(output string) (string, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	ch, exists := p.streams[output]
+	outputChannel, exists := p.streams[output]
 	if !exists {
 		return "", ErrStreamNotFound
 	}
 
-	data, ok := <-ch
+	data, ok := <-outputChannel
 	if !ok {
 		return undef, nil
 	}
@@ -89,16 +90,17 @@ func (p *Pipeline) getOrCreateStream(name string) chan string {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	if ch, exists := p.streams[name]; exists {
-		return ch
+	if channel, exists := p.streams[name]; exists {
+		return channel
 	}
 
-	ch := make(chan string, p.bufferSize)
-	p.streams[name] = ch
+	channel := make(chan string, p.bufferSize)
+	p.streams[name] = channel
 
-	return ch
+	return channel
 }
 
+// getStream is currently unused but kept for potential future use or interface compliance.
 func (p *Pipeline) getStream(name string) (chan string, bool) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
@@ -116,6 +118,7 @@ func (p *Pipeline) closeAllStreams() {
 	for _, ch := range p.streams {
 		if !closed[ch] {
 			close(ch)
+
 			closed[ch] = true
 		}
 	}
@@ -135,6 +138,7 @@ func (p *Pipeline) RegisterDecorator(
 	p.getOrCreateStream(input)
 	p.getOrCreateStream(output)
 }
+
 func (p *Pipeline) RegisterMultiplexer(
 	function func(ctx context.Context, inputs []chan string, output chan string) error,
 	inputs []string,
@@ -149,6 +153,7 @@ func (p *Pipeline) RegisterMultiplexer(
 	for _, input := range inputs {
 		p.getOrCreateStream(input)
 	}
+
 	p.getOrCreateStream(output)
 }
 
@@ -189,6 +194,7 @@ func (p *Pipeline) Run(ctx context.Context) error {
 			for index, input := range multiplexerItem.ins {
 				inputChannels[index] = p.getOrCreateStream(input)
 			}
+
 			outputChan := p.getOrCreateStream(multiplexerItem.out)
 
 			return multiplexerItem.function(workerGroupCtx, inputChannels, outputChan)
@@ -206,6 +212,7 @@ func (p *Pipeline) Run(ctx context.Context) error {
 			return separatorItem.function(workerGroupCtx, inputChan, outputChannels)
 		})
 	}
+
 	err := workerGroup.Wait()
 	if err != nil {
 		return fmt.Errorf("conveyer run failed: %w", err)
