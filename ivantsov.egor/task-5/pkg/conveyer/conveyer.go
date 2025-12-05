@@ -2,190 +2,148 @@ package conveyer
 
 import (
 	"context"
-	"errors"
 	"sync"
 )
 
-var errChanNotFound = errors.New("channel not found")
-
-type Job func(context.Context) error
-
 type Conveyer interface {
 	AddJob(
-		string,
-		string,
-		func(context.Context, chan string, chan string) error,
+		inputName string,
+		outputName string,
+		handler func(ctx context.Context, inputChannel chan string, outputChannel chan string) error,
 	)
-
 	AddJobs(
-		[]string,
-		string,
-		func(context.Context, []chan string, chan string) error,
+		inputNames []string,
+		outputName string,
+		handler func(ctx context.Context, inputChannels []chan string, outputChannel chan string) error,
 	)
-
 	AddSplitter(
-		string,
-		[]string,
-		func(context.Context, chan string, []chan string) error,
+		inputName string,
+		outputNames []string,
+		handler func(ctx context.Context, inputChannel chan string, outputChannels []chan string) error,
 	)
-
-	Run(context.Context) error
+	Run(ctx context.Context) error
 }
+
+type workerFunc func(context.Context) error
 
 type pipeline struct {
-	size    int
 	chans   map[string]chan string
-	workers []Job
-	mu      sync.Mutex
+	size    int
+	mutex   *sync.Mutex
+	workers []workerFunc
 }
 
-func New(size int) *pipeline {
+//nolint:ireturn
+func New(bufferSize int) Conveyer {
 	return &pipeline{
-		size:    size,
 		chans:   make(map[string]chan string),
-		workers: make([]Job, 0),
-		mu:      sync.Mutex{},
+		size:    bufferSize,
+		mutex:   &sync.Mutex{},
+		workers: nil,
 	}
 }
 
-func (pipelineInstance *pipeline) getOrCreate(name string) chan string {
-	pipelineInstance.mu.Lock()
-	defer pipelineInstance.mu.Unlock()
-
-	if channel, exists := pipelineInstance.chans[name]; exists {
-		return channel
-	}
-
-	channel := make(chan string, pipelineInstance.size)
-
-	pipelineInstance.chans[name] = channel
-
-	return channel
-}
-
-func (pipelineInstance *pipeline) AddJob(
-	input string,
-	output string,
-	function func(context.Context, chan string, chan string) error,
+func (p *pipeline) AddJob(
+	inputName string,
+	outputName string,
+	handler func(ctx context.Context, inputChannel chan string, outputChannel chan string) error,
 ) {
+	inputChannelName := inputName
+	outputChannelName := outputName
 
-	inputChan := pipelineInstance.getOrCreate(input)
-	outputChan := pipelineInstance.getOrCreate(output)
+	job := func(ctx context.Context) error {
+		inputChannel := p.getOrCreateChannel(inputChannelName)
+		outputChannel := p.getOrCreateChannel(outputChannelName)
 
-	pipelineInstance.workers = append(
-		pipelineInstance.workers,
-		func(ctx context.Context) error {
-			defer close(outputChan)
-			return function(ctx, inputChan, outputChan)
-		},
-	)
+		return handler(ctx, inputChannel, outputChannel)
+	}
+
+	p.workers = append(p.workers, job)
 }
 
-func (pipelineInstance *pipeline) AddJobs(
+func (p *pipeline) AddJobs(
 	inputNames []string,
-	output string,
-	function func(context.Context, []chan string, chan string) error,
+	outputName string,
+	handler func(ctx context.Context, inputChannels []chan string, outputChannel chan string) error,
 ) {
+	namesCopy := append([]string(nil), inputNames...)
+	outputChannelName := outputName
 
-	inputs := make([]chan string, 0, len(inputNames))
+	job := func(ctx context.Context) error {
+		inputChannels := make([]chan string, 0, len(namesCopy))
+		for _, channelName := range namesCopy {
+			inputChannels = append(inputChannels, p.getOrCreateChannel(channelName))
+		}
 
-	for _, name := range inputNames {
-		inputs = append(inputs, pipelineInstance.getOrCreate(name))
+		outputChannel := p.getOrCreateChannel(outputChannelName)
+
+		return handler(ctx, inputChannels, outputChannel)
 	}
 
-	outputChan := pipelineInstance.getOrCreate(output)
-
-	pipelineInstance.workers = append(
-		pipelineInstance.workers,
-		func(ctx context.Context) error {
-			defer close(outputChan)
-			return function(ctx, inputs, outputChan)
-		},
-	)
+	p.workers = append(p.workers, job)
 }
 
-func (pipelineInstance *pipeline) AddSplitter(
-	input string,
-	outputs []string,
-	function func(context.Context, chan string, []chan string) error,
+func (p *pipeline) AddSplitter(
+	inputName string,
+	outputNames []string,
+	handler func(ctx context.Context, inputChannel chan string, outputChannels []chan string) error,
 ) {
+	inputChannelName := inputName
+	outputNamesCopy := append([]string(nil), outputNames...)
 
-	inputChan := pipelineInstance.getOrCreate(input)
+	job := func(ctx context.Context) error {
+		inputChannel := p.getOrCreateChannel(inputChannelName)
 
-	outputChannels := make([]chan string, 0, len(outputs))
+		outputChannels := make([]chan string, 0, len(outputNamesCopy))
+		for _, channelName := range outputNamesCopy {
+			outputChannels = append(outputChannels, p.getOrCreateChannel(channelName))
+		}
 
-	for _, name := range outputs {
-		outputChannels = append(
-			outputChannels,
-			pipelineInstance.getOrCreate(name),
-		)
+		return handler(ctx, inputChannel, outputChannels)
 	}
 
-	pipelineInstance.workers = append(
-		pipelineInstance.workers,
-		func(ctx context.Context) error {
-			for _, ch := range outputChannels {
-				defer close(ch)
-			}
-
-			return function(ctx, inputChan, outputChannels)
-		},
-	)
+	p.workers = append(p.workers, job)
 }
 
-func (pipelineInstance *pipeline) Run(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+func (p *pipeline) Run(ctx context.Context) error {
+	waitGroup := &sync.WaitGroup{}
+	errorChannel := make(chan error, len(p.workers))
 
-	errChannel := make(chan error, len(pipelineInstance.workers))
+	for _, workerJob := range p.workers {
+		jobCopy := workerJob
 
-	var waitGroup sync.WaitGroup
-
-	for _, job := range pipelineInstance.workers {
 		waitGroup.Add(1)
 
-		go func(jobFunction Job) {
+		go func(job workerFunc) {
 			defer waitGroup.Done()
 
-			if err := jobFunction(ctx); err != nil {
-				errChannel <- err
-				cancel()
+			if err := job(ctx); err != nil {
+				errorChannel <- err
 			}
-
-		}(job)
+		}(jobCopy)
 	}
 
 	waitGroup.Wait()
-	close(errChannel)
+	close(errorChannel)
 
-	for err := range errChannel {
-		return err
+	for err := range errorChannel {
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (pipelineInstance *pipeline) getChannel(
-	name string,
-) (chan string, error) {
+func (p *pipeline) getOrCreateChannel(name string) chan string {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 
-	channel, exists := pipelineInstance.chans[name]
-
+	channel, exists := p.chans[name]
 	if !exists {
-		return nil, errChanNotFound
+		channel = make(chan string, p.size)
+		p.chans[name] = channel
 	}
 
-	return channel, nil
-}
-
-func (pipelineInstance *pipeline) Receive(
-	name string,
-) (<-chan string, error) {
-
-	ch, err := pipelineInstance.getChannel(name)
-	if err != nil {
-		return nil, err
-	}
-
-	return ch, nil
+	return channel
 }
