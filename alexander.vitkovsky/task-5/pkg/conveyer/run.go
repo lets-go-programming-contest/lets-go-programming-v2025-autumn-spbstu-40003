@@ -49,8 +49,7 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 
 			if err != nil {
 				select {
-				case conv.errCh <- err:
-					conv.cancel()
+				case conv.errCh <- err: // ничего не отменяем
 				case <-ctx.Done():
 					// игнорируем
 				}
