@@ -1,10 +1,9 @@
 package main
 
 import (
+	"badligyg/task-8/config"
 	"fmt"
 	"os"
-
-	"badligyg/task-8/config"
 )
 
 func main() {
