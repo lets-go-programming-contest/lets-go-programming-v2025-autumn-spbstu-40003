@@ -5,8 +5,7 @@ package config
 
 import _ "embed"
 
-//nolint:gochecknoglobals // required by go:embed
 //go:embed dev.yaml
-var devYAML []byte
+var devYAML []byte //nolint:gochecknoglobals // required for embedding
 
 func rawYAML() []byte { return devYAML }
