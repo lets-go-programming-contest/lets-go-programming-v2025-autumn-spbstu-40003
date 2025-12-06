@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
 	"gopkg.in/yaml.v3"
@@ -11,21 +12,18 @@ type Config struct {
 	LogLevel    string `yaml:"log_level"`
 }
 
+var ErrEmptyRequiredFields = errors.New("config: empty required fields")
+
 func Load() (Config, error) {
 	var cfg Config
-	if err := yaml.Unmarshal(rawYAML(), &cfg); err != nil {
-		return Config{}, err
-	}
-	if cfg.Environment == "" || cfg.LogLevel == "" {
-		return Config{}, fmt.Errorf("bad config: environment/log_level is empty")
-	}
-	return cfg, nil
-}
 
-func MustLoad() Config {
-	cfg, err := Load()
-	if err != nil {
-		panic(err)
+	if err := yaml.Unmarshal(rawYAML(), &cfg); err != nil {
+		return Config{}, fmt.Errorf("config: unmarshal yaml: %w", err)
 	}
-	return cfg
+
+	if cfg.Environment == "" || cfg.LogLevel == "" {
+		return Config{}, ErrEmptyRequiredFields
+	}
+
+	return cfg, nil
 }
