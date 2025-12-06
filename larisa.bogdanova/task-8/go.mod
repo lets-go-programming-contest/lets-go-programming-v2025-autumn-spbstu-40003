@@ -1,4 +1,4 @@
-module badligyg/task-8
+module larisa.bogdanova/task-8
 
 go 1.22.7
 
