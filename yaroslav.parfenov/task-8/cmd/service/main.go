@@ -11,7 +11,7 @@ func main() {
 
 	cfg, err := cfg.GetConfig()
 	if err != nil {
-		fmt.Println("error getting config: ", err)
+		fmt.Printf("error getting config: %v\n", err)
 
 		return
 	}
