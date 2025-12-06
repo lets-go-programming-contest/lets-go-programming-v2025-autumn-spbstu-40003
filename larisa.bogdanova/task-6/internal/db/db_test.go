@@ -4,11 +4,11 @@ import (
 	"errors"
 	"testing"
 
+	"task-6/internal/db"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"task-6/internal/db"
 )
 
 var (
@@ -92,7 +92,7 @@ func TestGetNames_RowsScanError(t *testing.T) {
 
 	names, err := service.GetNames()
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "rows scanning:")
 	assert.Contains(t, err.Error(), "NULL to string")
 	assert.Nil(t, names)
@@ -186,7 +186,7 @@ func TestGetUniqueNames_RowsScanError(t *testing.T) {
 
 	names, err := service.GetUniqueNames()
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "rows scanning:")
 	assert.Contains(t, err.Error(), "NULL to string")
 	assert.Nil(t, names)

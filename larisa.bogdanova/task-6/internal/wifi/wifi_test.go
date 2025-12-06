@@ -106,6 +106,7 @@ func helperParseMACs(t *testing.T, macStr []string) []net.HardwareAddr {
 	t.Helper()
 
 	addrs := make([]net.HardwareAddr, 0)
+
 	for _, addr := range macStr {
 		if hwAddr := parseMAC(addr); hwAddr != nil {
 			addrs = append(addrs, hwAddr)
