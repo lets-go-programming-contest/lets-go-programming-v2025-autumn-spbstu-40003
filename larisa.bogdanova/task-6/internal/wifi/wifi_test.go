@@ -35,6 +35,7 @@ func TestGetAddresses(t *testing.T) {
 
 		if row.errExpected != nil {
 			require.ErrorIs(t, err, row.errExpected)
+
 			continue
 		}
 
@@ -58,6 +59,7 @@ func TestGetNames(t *testing.T) {
 
 		if row.errExpected != nil {
 			require.ErrorIs(t, err, row.errExpected)
+
 			continue
 		}
 
@@ -109,6 +111,7 @@ func helperParseMACs(t *testing.T, macStr []string) []net.HardwareAddr {
 			addrs = append(addrs, hwAddr)
 		}
 	}
+
 	return addrs
 }
 
@@ -117,6 +120,7 @@ func parseMAC(macStr string) net.HardwareAddr {
 	if err != nil {
 		return nil
 	}
+
 	return hwAddr
 }
 

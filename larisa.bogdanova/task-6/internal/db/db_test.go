@@ -11,7 +11,16 @@ import (
 	"task-6/internal/db"
 )
 
+var (
+	ErrDBConnectionFailed      = errors.New("db connection failed")
+	ErrNetworkFailureIteration = errors.New("network failure during iteration")
+	ErrDBTimeout               = errors.New("db timeout")
+	ErrConnectionReset         = errors.New("connection reset")
+)
+
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	mockDB, _, err := sqlmock.New()
 	require.NoError(t, err)
 	defer mockDB.Close()
@@ -22,6 +31,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestGetNames_Success(t *testing.T) {
+	t.Parallel()
+
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer mockDB.Close()
@@ -38,25 +49,27 @@ func TestGetNames_Success(t *testing.T) {
 
 	names, err := service.GetNames()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expectedNames, names)
 
-	assert.NoError(t, mock.ExpectationsWereMet())
+	require.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetNames_DBQueryError(t *testing.T) {
+	t.Parallel()
+
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer mockDB.Close()
 
 	service := db.New(mockDB)
-	expectedErr := errors.New("db connection failed")
+	expectedErr := ErrDBConnectionFailed
 
 	mock.ExpectQuery("SELECT name FROM users").WillReturnError(expectedErr)
 
 	names, err := service.GetNames()
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "db query: db connection failed")
 	assert.Nil(t, names)
 
@@ -64,6 +77,8 @@ func TestGetNames_DBQueryError(t *testing.T) {
 }
 
 func TestGetNames_RowsScanError(t *testing.T) {
+	t.Parallel()
+
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer mockDB.Close()
@@ -86,12 +101,14 @@ func TestGetNames_RowsScanError(t *testing.T) {
 }
 
 func TestGetNames_RowsIterationError(t *testing.T) {
+	t.Parallel()
+
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer mockDB.Close()
 
 	service := db.New(mockDB)
-	expectedErr := errors.New("network failure during iteration")
+	expectedErr := ErrNetworkFailureIteration
 
 	rows := sqlmock.NewRows([]string{"name"}).
 		AddRow("Alice").
@@ -101,7 +118,7 @@ func TestGetNames_RowsIterationError(t *testing.T) {
 
 	names, err := service.GetNames()
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "rows error: network failure during iteration")
 	assert.Nil(t, names)
 
@@ -109,6 +126,8 @@ func TestGetNames_RowsIterationError(t *testing.T) {
 }
 
 func TestGetUniqueNames_Success(t *testing.T) {
+	t.Parallel()
+
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer mockDB.Close()
@@ -124,25 +143,27 @@ func TestGetUniqueNames_Success(t *testing.T) {
 
 	names, err := service.GetUniqueNames()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expectedNames, names)
 
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetUniqueNames_DBQueryError(t *testing.T) {
+	t.Parallel()
+
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer mockDB.Close()
 
 	service := db.New(mockDB)
-	expectedErr := errors.New("db timeout")
+	expectedErr := ErrDBTimeout
 
 	mock.ExpectQuery("SELECT DISTINCT name FROM users").WillReturnError(expectedErr)
 
 	names, err := service.GetUniqueNames()
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "db query: db timeout")
 	assert.Nil(t, names)
 
@@ -150,6 +171,8 @@ func TestGetUniqueNames_DBQueryError(t *testing.T) {
 }
 
 func TestGetUniqueNames_RowsScanError(t *testing.T) {
+	t.Parallel()
+
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer mockDB.Close()
@@ -172,12 +195,14 @@ func TestGetUniqueNames_RowsScanError(t *testing.T) {
 }
 
 func TestGetUniqueNames_RowsIterationError(t *testing.T) {
+	t.Parallel()
+
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer mockDB.Close()
 
 	service := db.New(mockDB)
-	expectedErr := errors.New("connection reset")
+	expectedErr := ErrConnectionReset
 
 	rows := sqlmock.NewRows([]string{"name"}).
 		AddRow("Jane").
@@ -187,7 +212,7 @@ func TestGetUniqueNames_RowsIterationError(t *testing.T) {
 
 	names, err := service.GetUniqueNames()
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "rows error: connection reset")
 	assert.Nil(t, names)
 
