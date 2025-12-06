@@ -1,0 +1,195 @@
+package db_test
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"task-6/internal/db"
+)
+
+func TestNew(t *testing.T) {
+	mockDB, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	service := db.New(mockDB)
+
+	assert.NotNil(t, service.DB, "DBService должен быть инициализирован с DB")
+}
+
+func TestGetNames_Success(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	service := db.New(mockDB)
+
+	expectedNames := []string{"Alice", "Bob", "Alice"}
+	rows := sqlmock.NewRows([]string{"name"}).
+		AddRow("Alice").
+		AddRow("Bob").
+		AddRow("Alice")
+
+	mock.ExpectQuery("SELECT name FROM users").WillReturnRows(rows)
+
+	names, err := service.GetNames()
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedNames, names)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetNames_DBQueryError(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	service := db.New(mockDB)
+	expectedErr := errors.New("db connection failed")
+
+	mock.ExpectQuery("SELECT name FROM users").WillReturnError(expectedErr)
+
+	names, err := service.GetNames()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "db query: db connection failed")
+	assert.Nil(t, names)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetNames_RowsScanError(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	service := db.New(mockDB)
+
+	rows := sqlmock.NewRows([]string{"name"}).
+		AddRow(nil)
+
+	mock.ExpectQuery("SELECT name FROM users").WillReturnRows(rows)
+
+	names, err := service.GetNames()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "rows scanning:")
+	assert.Contains(t, err.Error(), "NULL to string")
+	assert.Nil(t, names)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetNames_RowsIterationError(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	service := db.New(mockDB)
+	expectedErr := errors.New("network failure during iteration")
+
+	rows := sqlmock.NewRows([]string{"name"}).
+		AddRow("Alice").
+		RowError(0, expectedErr)
+
+	mock.ExpectQuery("SELECT name FROM users").WillReturnRows(rows)
+
+	names, err := service.GetNames()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "rows error: network failure during iteration")
+	assert.Nil(t, names)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetUniqueNames_Success(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	service := db.New(mockDB)
+
+	expectedNames := []string{"Alice", "Bob"}
+	rows := sqlmock.NewRows([]string{"name"}).
+		AddRow("Alice").
+		AddRow("Bob")
+
+	mock.ExpectQuery("SELECT DISTINCT name FROM users").WillReturnRows(rows)
+
+	names, err := service.GetUniqueNames()
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedNames, names)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetUniqueNames_DBQueryError(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	service := db.New(mockDB)
+	expectedErr := errors.New("db timeout")
+
+	mock.ExpectQuery("SELECT DISTINCT name FROM users").WillReturnError(expectedErr)
+
+	names, err := service.GetUniqueNames()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "db query: db timeout")
+	assert.Nil(t, names)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetUniqueNames_RowsScanError(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	service := db.New(mockDB)
+
+	rows := sqlmock.NewRows([]string{"name"}).
+		AddRow(nil)
+
+	mock.ExpectQuery("SELECT DISTINCT name FROM users").WillReturnRows(rows)
+
+	names, err := service.GetUniqueNames()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "rows scanning:")
+	assert.Contains(t, err.Error(), "NULL to string")
+	assert.Nil(t, names)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetUniqueNames_RowsIterationError(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	service := db.New(mockDB)
+	expectedErr := errors.New("connection reset")
+
+	rows := sqlmock.NewRows([]string{"name"}).
+		AddRow("Jane").
+		RowError(0, expectedErr)
+
+	mock.ExpectQuery("SELECT DISTINCT name FROM users").WillReturnRows(rows)
+
+	names, err := service.GetUniqueNames()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "rows error: connection reset")
+	assert.Nil(t, names)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
