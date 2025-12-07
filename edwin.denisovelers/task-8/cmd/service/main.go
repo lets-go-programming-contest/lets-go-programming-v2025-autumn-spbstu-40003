@@ -14,5 +14,5 @@ func main() {
 		return
 	}
 
-	fmt.Printf("environment: %s, log_level: %s", cfg.Environment, cfg.LogLevel)
+	fmt.Printf("%s %s", cfg.Environment, cfg.LogLevel)
 }
