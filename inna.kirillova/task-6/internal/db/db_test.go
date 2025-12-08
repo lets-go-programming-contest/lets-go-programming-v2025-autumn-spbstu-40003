@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"errors"
 	"testing"
 
@@ -16,8 +15,6 @@ func TestNew(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer db.Close()
-
-	mock.ExpectClose()
 
 	service := New(db)
 
@@ -192,4 +189,3 @@ func TestDBService_GetUniqueNames(t *testing.T) {
 		})
 	}
 }
-

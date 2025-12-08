@@ -10,10 +10,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type mockWiFi struct {
+	ifaces []*wifi.Interface
+	err    error
+}
+
+func (m *mockWiFi) Interfaces() ([]*wifi.Interface, error) {
+	return m.ifaces, m.err
+}
+
 func TestNew(t *testing.T) {
 	t.Parallel()
 
-	mockHandle := new(MockWiFiHandle)
+	mockHandle := &mockWiFi{}
 	service := New(mockHandle)
 
 	assert.NotNil(t, service)
@@ -28,44 +37,44 @@ func TestWiFiService_GetAddresses(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		setupMock   func(*MockWiFiHandle)
+		mock        *mockWiFi
 		expectAddrs []net.HardwareAddr
 		expectErr   bool
 		errContains string
 	}{
 		{
 			name: "success two interfaces",
-			setupMock: func(m *MockWiFiHandle) {
-				m.On("Interfaces").Return([]*wifi.Interface{
+			mock: &mockWiFi{
+				ifaces: []*wifi.Interface{
 					{HardwareAddr: mac1},
 					{HardwareAddr: mac2},
-				}, nil).Once()
+				},
 			},
 			expectAddrs: []net.HardwareAddr{mac1, mac2},
 		},
 		{
 			name: "success four interfaces",
-			setupMock: func(m *MockWiFiHandle) {
-				m.On("Interfaces").Return([]*wifi.Interface{
+			mock: &mockWiFi{
+				ifaces: []*wifi.Interface{
 					{HardwareAddr: mac1},
 					{HardwareAddr: mac2},
 					{HardwareAddr: mac3},
 					{HardwareAddr: mac4},
-				}, nil).Once()
+				},
 			},
 			expectAddrs: []net.HardwareAddr{mac1, mac2, mac3, mac4},
 		},
 		{
 			name: "empty interfaces",
-			setupMock: func(m *MockWiFiHandle) {
-				m.On("Interfaces").Return([]*wifi.Interface{}, nil).Once()
+			mock: &mockWiFi{
+				ifaces: []*wifi.Interface{},
 			},
 			expectAddrs: []net.HardwareAddr{},
 		},
 		{
 			name: "interfaces error",
-			setupMock: func(m *MockWiFiHandle) {
-				m.On("Interfaces").Return(nil, errors.New("system error")).Once()
+			mock: &mockWiFi{
+				err: errors.New("system error"),
 			},
 			expectErr:   true,
 			errContains: "getting interfaces:",
@@ -77,10 +86,7 @@ func TestWiFiService_GetAddresses(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			mockHandle := new(MockWiFiHandle)
-			tc.setupMock(mockHandle)
-
-			svc := New(mockHandle)
+			svc := New(tc.mock)
 			addrs, err := svc.GetAddresses()
 
 			if tc.expectErr {
@@ -91,8 +97,6 @@ func TestWiFiService_GetAddresses(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, tc.expectAddrs, addrs)
 			}
-
-			mockHandle.AssertExpectations(t)
 		})
 	}
 }
@@ -103,42 +107,42 @@ func TestWiFiService_GetNames(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		setupMock   func(*MockWiFiHandle)
+		mock        *mockWiFi
 		expectNames []string
 		expectErr   bool
 		errContains string
 	}{
 		{
 			name: "success two names",
-			setupMock: func(m *MockWiFiHandle) {
-				m.On("Interfaces").Return([]*wifi.Interface{
+			mock: &mockWiFi{
+				ifaces: []*wifi.Interface{
 					{Name: "wlan0", HardwareAddr: mac1},
 					{Name: "eth0", HardwareAddr: mac2},
-				}, nil).Once()
+				},
 			},
 			expectNames: []string{"wlan0", "eth0"},
 		},
 		{
 			name: "empty list",
-			setupMock: func(m *MockWiFiHandle) {
-				m.On("Interfaces").Return([]*wifi.Interface{}, nil).Once()
+			mock: &mockWiFi{
+				ifaces: []*wifi.Interface{},
 			},
 			expectNames: []string{},
 		},
 		{
 			name: "interface with empty name",
-			setupMock: func(m *MockWiFiHandle) {
-				m.On("Interfaces").Return([]*wifi.Interface{
+			mock: &mockWiFi{
+				ifaces: []*wifi.Interface{
 					{Name: ""},
 					{Name: "wlan1"},
-				}, nil).Once()
+				},
 			},
 			expectNames: []string{"", "wlan1"},
 		},
 		{
 			name: "error from Interfaces",
-			setupMock: func(m *MockWiFiHandle) {
-				m.On("Interfaces").Return(nil, errors.New("permission error")).Once()
+			mock: &mockWiFi{
+				err: errors.New("permission error"),
 			},
 			expectErr:   true,
 			errContains: "getting interfaces:",
@@ -150,10 +154,7 @@ func TestWiFiService_GetNames(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			mockHandle := new(MockWiFiHandle)
-			tc.setupMock(mockHandle)
-
-			svc := New(mockHandle)
+			svc := New(tc.mock)
 			names, err := svc.GetNames()
 
 			if tc.expectErr {
@@ -164,8 +165,6 @@ func TestWiFiService_GetNames(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, tc.expectNames, names)
 			}
-
-			mockHandle.AssertExpectations(t)
 		})
 	}
 }
