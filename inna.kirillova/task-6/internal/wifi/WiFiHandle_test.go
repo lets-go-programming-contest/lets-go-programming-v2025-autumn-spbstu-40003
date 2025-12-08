@@ -1,7 +1,32 @@
 package wifi
 
-import mock "github.com/stretchr/testify/mock"
+import (
+	mock "github.com/stretchr/testify/mock"
+	wifi "github.com/mdlayher/wifi"
+)
 
 type MockWiFiHandle struct {
 	mock.Mock
+}
+
+func (_m *MockWiFiHandle) Interfaces() ([]*wifi.Interface, error) {
+	ret := _m.Called()
+
+	var r0 []*wifi.Interface
+	if rf, ok := ret.Get(0).(func() []*wifi.Interface); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*wifi.Interface)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
