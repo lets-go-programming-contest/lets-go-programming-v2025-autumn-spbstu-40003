@@ -1,6 +1,8 @@
 package wifi_test
 
 import (
+	"fmt"
+
 	"github.com/mdlayher/wifi"
 	"github.com/stretchr/testify/mock"
 )
@@ -24,6 +26,9 @@ func (_m *MockWiFiHandle) Interfaces() ([]*wifi.Interface, error) {
 		r1 = rf()
 	} else {
 		r1 = ret.Error(1)
+		if r1 != nil {
+			r1 = fmt.Errorf("mock error: %w", r1)
+		}
 	}
 
 	return r0, r1
