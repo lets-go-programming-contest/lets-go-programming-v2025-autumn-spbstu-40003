@@ -1,4 +1,4 @@
-package wifi
+package wifi_test
 
 import (
 	"errors"
@@ -8,19 +8,13 @@ import (
 	"github.com/mdlayher/wifi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	wifipkg "github.com/kirinnah/task-6/internal/wifi"
 )
 
-func TestNew(t *testing.T) {
+func TestWiFiService_GetAddresses(t *testing.T) {
 	t.Parallel()
 
-	mockHandle := new(MockWiFiHandle)
-	service := New(mockHandle)
-
-	assert.NotNil(t, service)
-	assert.Equal(t, mockHandle, service.WiFi)
-}
-
-func TestWiFiService_GetAddresses(t *testing.T) {
 	mac1 := net.HardwareAddr{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
 	mac2 := net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}
 	mac3 := net.HardwareAddr{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}
@@ -73,14 +67,13 @@ func TestWiFiService_GetAddresses(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
 			mockHandle := new(MockWiFiHandle)
 			tc.setupMock(mockHandle)
 
-			svc := New(mockHandle)
+			svc := wifipkg.New(mockHandle)
 			addrs, err := svc.GetAddresses()
 
 			if tc.expectErr {
@@ -98,6 +91,8 @@ func TestWiFiService_GetAddresses(t *testing.T) {
 }
 
 func TestWiFiService_GetNames(t *testing.T) {
+	t.Parallel()
+
 	mac1 := net.HardwareAddr{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
 	mac2 := net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}
 
@@ -146,14 +141,13 @@ func TestWiFiService_GetNames(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
 			mockHandle := new(MockWiFiHandle)
 			tc.setupMock(mockHandle)
 
-			svc := New(mockHandle)
+			svc := wifipkg.New(mockHandle)
 			names, err := svc.GetNames()
 
 			if tc.expectErr {
