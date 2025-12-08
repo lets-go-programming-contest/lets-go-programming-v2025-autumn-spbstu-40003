@@ -12,6 +12,11 @@ import (
 	wifipkg "github.com/kirinnah/task-6/internal/wifi"
 )
 
+var (
+	errSystem     = errors.New("system error")
+	errPermission = errors.New("permission error")
+)
+
 func TestWiFiService_GetAddresses(t *testing.T) {
 	t.Parallel()
 
@@ -59,7 +64,7 @@ func TestWiFiService_GetAddresses(t *testing.T) {
 		{
 			name: "interfaces error",
 			setupMock: func(m *MockWiFiHandle) {
-				m.On("Interfaces").Return(nil, errors.New("system error")).Once()
+				m.On("Interfaces").Return(nil, errSystem).Once()
 			},
 			expectErr:   true,
 			errContains: "getting interfaces:",
@@ -133,7 +138,7 @@ func TestWiFiService_GetNames(t *testing.T) {
 		{
 			name: "error from Interfaces",
 			setupMock: func(m *MockWiFiHandle) {
-				m.On("Interfaces").Return(nil, errors.New("permission error")).Once()
+				m.On("Interfaces").Return(nil, errPermission).Once()
 			},
 			expectErr:   true,
 			errContains: "getting interfaces:",

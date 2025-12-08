@@ -1,8 +1,8 @@
 package wifi_test
 
 import (
-	"github.com/stretchr/testify/mock"
 	"github.com/mdlayher/wifi"
+	"github.com/stretchr/testify/mock"
 )
 
 type MockWiFiHandle struct {
