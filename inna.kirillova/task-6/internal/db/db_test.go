@@ -26,11 +26,11 @@ func TestNew(t *testing.T) {
 
 func TestDBService_GetNames(t *testing.T) {
 	tests := []struct {
-		name          string
-		mockSetup     func(sqlmock.Sqlmock)
-		expectErr     bool
-		expectErrMsg  string
-		expectNames   []string
+		name         string
+		mockSetup    func(sqlmock.Sqlmock)
+		expectErr    bool
+		expectErrMsg string
+		expectNames  []string
 	}{
 		{
 			name: "success with two names",
@@ -109,11 +109,11 @@ func TestDBService_GetNames(t *testing.T) {
 
 func TestDBService_GetUniqueNames(t *testing.T) {
 	tests := []struct {
-		name          string
-		mockSetup     func(sqlmock.Sqlmock)
-		expectErr     bool
-		expectErrMsg  string
-		expectNames   []string
+		name         string
+		mockSetup    func(sqlmock.Sqlmock)
+		expectErr    bool
+		expectErrMsg string
+		expectNames  []string
 	}{
 		{
 			name: "success with unique names",
