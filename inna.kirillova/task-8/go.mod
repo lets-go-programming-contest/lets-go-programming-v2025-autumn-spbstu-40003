@@ -1,4 +1,4 @@
-module github.com/kirinnah/task-6
+module github.com/kirinnah/task-8
 
 go 1.22.7
 
