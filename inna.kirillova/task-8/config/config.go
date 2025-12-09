@@ -1,9 +1,7 @@
 package config
 
 import (
-	_ "embed"
 	"fmt"
-
 	"gopkg.in/yaml.v3"
 )
 
