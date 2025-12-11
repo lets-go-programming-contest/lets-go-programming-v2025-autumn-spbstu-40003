@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var ErrCantDecorate = errors.New("can't decorate")
+var ErrCantDecorate = errors.New("can't be decorated")
 
 const prefix = "decorated: "
 
