@@ -28,8 +28,8 @@ func SeparatorFunc(
 		case <-ctx.Done():
 			return nil
 
-		case message, ok := <-input:
-			if !ok {
+		case message, exists := <-input:
+			if !exists {
 				return nil
 			}
 			select {

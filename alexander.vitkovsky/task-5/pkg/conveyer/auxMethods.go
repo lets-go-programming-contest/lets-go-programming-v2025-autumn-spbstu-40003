@@ -3,12 +3,13 @@ package conveyer
 import "context"
 
 func (conv *Conveyer) EnsureChannel(name string) chan string {
-	ch, ok := conv.channels[name]
-	if !ok {
-		ch = make(chan string, conv.bufSize)
-		conv.channels[name] = ch
+	channel, exists := conv.channels[name]
+	if !exists {
+		channel = make(chan string, conv.bufSize)
+		conv.channels[name] = channel
 	}
-	return ch
+
+	return channel
 }
 
 func (conv *Conveyer) CreateChannel(names ...string) {

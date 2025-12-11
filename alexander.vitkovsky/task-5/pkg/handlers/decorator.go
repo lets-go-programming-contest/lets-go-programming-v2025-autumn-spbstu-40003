@@ -30,6 +30,7 @@ func PrefixDecoratorFunc(
 			if strings.Contains(message, "no decorator") {
 				return ErrCantDecorate
 			}
+
 			if !strings.HasPrefix(message, prefix) {
 				message = prefix + message
 			}

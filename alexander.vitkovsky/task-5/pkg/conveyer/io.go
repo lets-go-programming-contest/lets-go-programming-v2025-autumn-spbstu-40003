@@ -9,22 +9,23 @@ var errChanNotFound = errors.New("chan not found")
 const UndefinedValue = "undefined"
 
 func (conv *Conveyer) Send(name string, data string) error {
-	ch, ok := conv.channels[name]
-	if !ok {
+	channel, exists := conv.channels[name]
+	if !exists {
 		return errChanNotFound
 	}
-	ch <- data
+	channel <- data
+
 	return nil
 }
 
 func (conv *Conveyer) Recv(name string) (string, error) {
-	ch, ok := conv.channels[name]
-	if !ok {
+	channel, exists := conv.channels[name]
+	if !exists {
 		return "", errChanNotFound
 	}
 
-	message, ok := <-ch
-	if !ok {
+	message, exists := <-channel
+	if !exists {
 		return UndefinedValue, nil
 	}
 
@@ -32,10 +33,11 @@ func (conv *Conveyer) Recv(name string) (string, error) {
 }
 
 func (conv *Conveyer) Close(name string) error {
-	ch, ok := conv.channels[name]
-	if !ok {
+	channel, exists := conv.channels[name]
+	if !exists {
 		return errChanNotFound
 	}
-	close(ch)
+	close(channel)
+
 	return nil
 }

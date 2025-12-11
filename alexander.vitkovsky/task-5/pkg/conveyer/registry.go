@@ -44,10 +44,10 @@ func (conv *Conveyer) RegisterMultiplexer(
 	conv.CreateChannel(output)
 
 	conv.AddHandler(func(ctx context.Context) error {
-		in := make([]chan string, len(inputs))
+		input := make([]chan string, len(inputs))
 		for index, name := range inputs {
-			in[index] = conv.channels[name]
+			input[index] = conv.channels[name]
 		}
-		return handler(ctx, in, conv.channels[output])
+		return handler(ctx, input, conv.channels[output])
 	})
 }

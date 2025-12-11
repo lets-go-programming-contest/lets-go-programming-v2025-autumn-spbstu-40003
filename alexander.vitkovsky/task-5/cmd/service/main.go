@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 
 	"github.com/alexpi3/task-5/pkg/conveyer"
 	"github.com/alexpi3/task-5/pkg/handlers"
@@ -12,7 +12,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	conv := conveyer.New(10)
+	const bufferSize = 10
+	conv := conveyer.New(bufferSize)
 
 	conv.RegisterSeparator(
 		handlers.SeparatorFunc,
@@ -45,13 +46,14 @@ func main() {
 		for {
 			message, err := conv.Recv("output")
 			if err != nil {
-				fmt.Println("recv error:", err)
+				log.Println("recv error:", err)
 				return
 			}
+
 			if message == conveyer.UndefinedValue {
 				return
 			}
-			fmt.Println("Final:", message)
+			log.Println("Final:", message)
 		}
 	}()
 
@@ -64,7 +66,7 @@ func main() {
 	}()
 
 	if err := conv.Run(ctx); err != nil {
-		fmt.Println("run error:", err)
+		log.Println("run error:", err)
 	}
 
 	<-done
