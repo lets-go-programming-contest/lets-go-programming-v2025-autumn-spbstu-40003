@@ -37,6 +37,7 @@ func (conv *Conveyer) Close(name string) error {
 	if !exists {
 		return errChanNotFound
 	}
+
 	close(channel)
 
 	return nil

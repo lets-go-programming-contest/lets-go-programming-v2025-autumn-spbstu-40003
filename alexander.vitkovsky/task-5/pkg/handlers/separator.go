@@ -23,6 +23,7 @@ func SeparatorFunc(
 	}()
 
 	index := 0
+
 	for {
 		select {
 		case <-ctx.Done():

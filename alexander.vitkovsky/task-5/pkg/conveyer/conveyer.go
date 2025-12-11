@@ -28,6 +28,7 @@ func (conv *Conveyer) Run(ctx context.Context) error {
 
 	for _, handler := range conv.handlers {
 		h := handler
+
 		group.Go(func() error {
 			return h(groupCtx)
 		})

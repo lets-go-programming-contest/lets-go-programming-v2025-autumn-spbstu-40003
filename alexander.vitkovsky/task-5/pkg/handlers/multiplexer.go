@@ -20,6 +20,7 @@ func MultiplexerFunc(
 	}
 
 	var waitGroup sync.WaitGroup
+
 	waitGroup.Add(len(inputs))
 
 	readFunc := func(inputChannel chan string) {

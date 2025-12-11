@@ -31,6 +31,7 @@ func (conv *Conveyer) RegisterSeparator(
 		for index, name := range outputs {
 			out[index] = conv.channels[name]
 		}
+
 		return handler(ctx, conv.channels[input], out)
 	})
 }
@@ -48,6 +49,7 @@ func (conv *Conveyer) RegisterMultiplexer(
 		for index, name := range inputs {
 			input[index] = conv.channels[name]
 		}
+
 		return handler(ctx, input, conv.channels[output])
 	})
 }
