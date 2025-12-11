@@ -9,6 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	errDBDown         = errors.New("db down")
+	errFatal          = errors.New("fatal error")
+	errIterationError = errors.New("iteration error")
+)
+
 type dbTestestase struct {
 	name          string
 	query         string
@@ -18,12 +24,14 @@ type dbTestestase struct {
 }
 
 func TestNew(t *testing.T) {
+	t.Parallel()
 	mockDB, _, _ := sqlmock.New()
 	service := db.New(mockDB)
 	require.Equal(t, mockDB, service.DB)
 }
 
 func TestGetNames(t *testing.T) {
+	t.Parallel()
 	query := "SELECT name FROM users"
 
 	testTable := []dbTestestase{
@@ -40,7 +48,7 @@ func TestGetNames(t *testing.T) {
 			name:  "Query Error",
 			query: query,
 			mockBehavior: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(query).WillReturnError(errors.New("db down"))
+				mock.ExpectQuery(query).WillReturnError(errDBDown)
 			},
 			expectedError: "db query: db down",
 		},
@@ -58,7 +66,7 @@ func TestGetNames(t *testing.T) {
 			query: query,
 			mockBehavior: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"name"}).
-					RowError(0, errors.New("iteration error")).
+					RowError(0, errIterationError).
 					AddRow("d1mene")
 				mock.ExpectQuery(query).WillReturnRows(rows)
 			},
@@ -67,7 +75,9 @@ func TestGetNames(t *testing.T) {
 	}
 
 	for _, test := range testTable {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			mockDB, mock, err := sqlmock.New()
 			require.NoError(t, err)
 			defer mockDB.Close()
@@ -93,6 +103,7 @@ func TestGetNames(t *testing.T) {
 }
 
 func TestGetUniqueNames(t *testing.T) {
+	t.Parallel()
 	query := "SELECT DISTINCT name FROM users"
 
 	testTable := []dbTestestase{
@@ -109,7 +120,7 @@ func TestGetUniqueNames(t *testing.T) {
 			name:  "Query Error",
 			query: query,
 			mockBehavior: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(query).WillReturnError(errors.New("fatal error"))
+				mock.ExpectQuery(query).WillReturnError(errFatal)
 			},
 			expectedError: "db query: fatal error",
 		},
@@ -127,7 +138,7 @@ func TestGetUniqueNames(t *testing.T) {
 			query: query,
 			mockBehavior: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"name"}).
-					RowError(0, errors.New("iteration error")).
+					RowError(0, errIterationError).
 					AddRow("d1mene")
 				mock.ExpectQuery(query).WillReturnRows(rows)
 			},
@@ -136,7 +147,9 @@ func TestGetUniqueNames(t *testing.T) {
 	}
 
 	for _, test := range testTable {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			mockDB, mock, err := sqlmock.New()
 			require.NoError(t, err)
 			defer mockDB.Close()
