@@ -36,8 +36,10 @@ func getTestTable() []rowTestSysInfo {
 
 func TestNew(t *testing.T) {
 	t.Parallel()
+
 	mockWifi := NewWiFiHandle(t)
 	service := myWifi.New(mockWifi)
+
 	require.NotNil(t, service)
 }
 
@@ -45,6 +47,7 @@ func mockIfaces(addrs []string) []*wifi.Interface {
 	if addrs == nil {
 		return nil
 	}
+
 	interfaces := make([]*wifi.Interface, 0, len(addrs))
 
 	for i, addrStr := range addrs {
@@ -62,6 +65,7 @@ func mockIfaces(addrs []string) []*wifi.Interface {
 			Type:         wifi.InterfaceTypeAPVLAN,
 			Frequency:    0,
 		}
+
 		interfaces = append(interfaces, iface)
 	}
 
@@ -70,6 +74,7 @@ func mockIfaces(addrs []string) []*wifi.Interface {
 
 func parseMACs(macStr []string) []net.HardwareAddr {
 	addrs := make([]net.HardwareAddr, 0, len(macStr))
+
 	for _, addr := range macStr {
 		addrs = append(addrs, parseMAC(addr))
 	}
@@ -88,15 +93,17 @@ func parseMAC(macStr string) net.HardwareAddr {
 
 func TestGetAddresses(t *testing.T) {
 	t.Parallel()
+
 	mockWifi := NewWiFiHandle(t)
 	wifiService := myWifi.New(mockWifi)
 	testTable := getTestTable()
 
 	for i, row := range testTable {
-		row := row
 		t.Run(fmt.Sprintf("%d_%s", i, row.name), func(t *testing.T) {
 			t.Parallel()
-			call := mockWifi.On("Interfaces").Return(mockIfaces(row.addrs), row.errExpected)
+
+			call := mockWifi.On("Interfaces").
+				Return(mockIfaces(row.addrs), row.errExpected)
 
 			actualAddrs, err := wifiService.GetAddresses()
 
@@ -107,6 +114,7 @@ func TestGetAddresses(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, parseMACs(row.addrs), actualAddrs)
 			}
+
 			call.Unset()
 		})
 	}
@@ -114,15 +122,17 @@ func TestGetAddresses(t *testing.T) {
 
 func TestGetNames(t *testing.T) {
 	t.Parallel()
+
 	mockWifi := NewWiFiHandle(t)
 	wifiService := myWifi.New(mockWifi)
 	testTable := getTestTable()
 
 	for i, row := range testTable {
-		row := row
 		t.Run(fmt.Sprintf("%d_%s", i, row.name), func(t *testing.T) {
 			t.Parallel()
-			call := mockWifi.On("Interfaces").Return(mockIfaces(row.addrs), row.errExpected)
+
+			call := mockWifi.On("Interfaces").
+				Return(mockIfaces(row.addrs), row.errExpected)
 
 			actualNames, err := wifiService.GetNames()
 
@@ -133,6 +143,7 @@ func TestGetNames(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, row.ifaceNames, actualNames)
 			}
+
 			call.Unset()
 		})
 	}

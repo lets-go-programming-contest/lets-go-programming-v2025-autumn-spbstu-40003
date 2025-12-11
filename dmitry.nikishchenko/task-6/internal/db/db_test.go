@@ -25,13 +25,17 @@ type dbTestestase struct {
 
 func TestNew(t *testing.T) {
 	t.Parallel()
+
 	mockDB, _, _ := sqlmock.New()
+
 	service := db.New(mockDB)
+
 	require.Equal(t, mockDB, service.DB)
 }
 
 func TestGetNames(t *testing.T) {
 	t.Parallel()
+
 	query := "SELECT name FROM users"
 
 	testTable := []dbTestestase{
@@ -39,7 +43,9 @@ func TestGetNames(t *testing.T) {
 			name:  "Success Query",
 			query: query,
 			mockBehavior: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"name"}).AddRow("d1mene").AddRow("pupsik")
+				rows := sqlmock.NewRows([]string{"name"}).
+					AddRow("d1mene").
+					AddRow("pupsik")
 				mock.ExpectQuery(query).WillReturnRows(rows)
 			},
 			expectedNames: []string{"d1mene", "pupsik"},
@@ -75,11 +81,12 @@ func TestGetNames(t *testing.T) {
 	}
 
 	for _, test := range testTable {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
+
 			mockDB, mock, err := sqlmock.New()
 			require.NoError(t, err)
+
 			defer mockDB.Close()
 
 			dbService := db.New(mockDB)
@@ -104,6 +111,7 @@ func TestGetNames(t *testing.T) {
 
 func TestGetUniqueNames(t *testing.T) {
 	t.Parallel()
+
 	query := "SELECT DISTINCT name FROM users"
 
 	testTable := []dbTestestase{
@@ -147,11 +155,12 @@ func TestGetUniqueNames(t *testing.T) {
 	}
 
 	for _, test := range testTable {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
+
 			mockDB, mock, err := sqlmock.New()
 			require.NoError(t, err)
+
 			defer mockDB.Close()
 
 			dbService := db.New(mockDB)
