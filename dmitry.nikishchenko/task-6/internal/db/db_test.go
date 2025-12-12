@@ -77,9 +77,9 @@ func TestGetNames(t *testing.T) {
 	}
 
 	for _, test := range testTable {
-		t.Parallel()
-
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			mockDB, mock, err := sqlmock.New()
 			require.NoError(t, err)
 			defer mockDB.Close()
@@ -150,9 +150,9 @@ func TestGetUniqueNames(t *testing.T) {
 	}
 
 	for _, test := range testTable {
-		t.Parallel()
-
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			mockDB, mock, err := sqlmock.New()
 			require.NoError(t, err)
 			defer mockDB.Close()
