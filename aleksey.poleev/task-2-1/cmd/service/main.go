@@ -14,14 +14,12 @@ func main() {
 	var n int
 	if _, err := fmt.Scan(&n); err != nil {
 		fmt.Println(noSolution)
-
 		return
 	}
 
 	for range n {
 		if err := tempCalculator(); err != nil {
 			fmt.Println(noSolution)
-
 			return
 		}
 	}
@@ -39,7 +37,6 @@ func tempCalculator() error {
 
 	for range k {
 		var op string
-
 		var t int
 
 		if _, err := fmt.Scan(&op, &t); err != nil {
@@ -48,7 +45,6 @@ func tempCalculator() error {
 
 		if !possible {
 			fmt.Println(noSolution)
-
 			continue
 		}
 
@@ -63,9 +59,7 @@ func tempCalculator() error {
 			}
 		default:
 			fmt.Println(noSolution)
-
 			possible = false
-
 			continue
 		}
 
@@ -73,7 +67,6 @@ func tempCalculator() error {
 			fmt.Println(low)
 		} else {
 			fmt.Println(noSolution)
-
 			possible = false
 		}
 	}
