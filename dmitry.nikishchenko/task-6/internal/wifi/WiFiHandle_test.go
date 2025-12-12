@@ -24,11 +24,13 @@ func (_m *WiFiHandle) Interfaces() ([]*wifi.Interface, error) {
 	if rf, ok := ret.Get(0).(func() ([]*wifi.Interface, error)); ok {
 		return rf()
 	}
+
 	if rf, ok := ret.Get(0).(func() []*wifi.Interface); ok {
 		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*wifi.Interface)
+	} else if v := ret.Get(0); v != nil {
+		val, ok := v.([]*wifi.Interface)
+		if ok {
+			r0 = val
 		}
 	}
 
@@ -43,12 +45,13 @@ func (_m *WiFiHandle) Interfaces() ([]*wifi.Interface, error) {
 
 func NewWiFiHandle(t interface {
 	mock.TestingT
-	Cleanup(f func())
-}) *WiFiHandle {
-	mock := &WiFiHandle{}
-	mock.Mock.Test(t)
+	Cleanup(func())
+},
+) *WiFiHandle {
+	h := &WiFiHandle{}
+	h.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() { h.AssertExpectations(t) })
 
-	return mock
+	return h
 }

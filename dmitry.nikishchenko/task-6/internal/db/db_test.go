@@ -24,12 +24,16 @@ type dbTestestase struct {
 }
 
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	mockDB, _, _ := sqlmock.New()
 	service := db.New(mockDB)
 	require.Equal(t, mockDB, service.DB)
 }
 
 func TestGetNames(t *testing.T) {
+	t.Parallel()
+
 	query := "SELECT name FROM users"
 
 	testTable := []dbTestestase{
@@ -73,6 +77,8 @@ func TestGetNames(t *testing.T) {
 	}
 
 	for _, test := range testTable {
+		t.Parallel()
+
 		t.Run(test.name, func(t *testing.T) {
 			mockDB, mock, err := sqlmock.New()
 			require.NoError(t, err)
@@ -99,6 +105,8 @@ func TestGetNames(t *testing.T) {
 }
 
 func TestGetUniqueNames(t *testing.T) {
+	t.Parallel()
+
 	query := "SELECT DISTINCT name FROM users"
 
 	testTable := []dbTestestase{
@@ -142,6 +150,8 @@ func TestGetUniqueNames(t *testing.T) {
 	}
 
 	for _, test := range testTable {
+		t.Parallel()
+
 		t.Run(test.name, func(t *testing.T) {
 			mockDB, mock, err := sqlmock.New()
 			require.NoError(t, err)

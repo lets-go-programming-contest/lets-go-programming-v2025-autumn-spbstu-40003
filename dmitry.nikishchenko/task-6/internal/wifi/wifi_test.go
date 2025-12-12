@@ -11,9 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	errInterfaces = errors.New("interfaces error")
-)
+var errInterfaces = errors.New("interfaces error")
 
 type rowTestSysInfo struct {
 	name        string
@@ -110,7 +108,6 @@ func TestGetAddresses(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, parseMACs(row.addrs), actualAddrs)
 			}
-
 		})
 	}
 }
@@ -149,7 +146,6 @@ func TestGetNames(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, row.ifaceNames, actualNames)
 			}
-
 		})
 	}
 }
