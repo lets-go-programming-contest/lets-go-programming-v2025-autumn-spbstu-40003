@@ -20,7 +20,7 @@ func PrintTagAndLevel() error {
 		return fmt.Errorf("error unmarshal: %w", err)
 	}
 
-	fmt.Println(conf.Environment, conf.LogLevel)
+	fmt.Print(conf.Environment + " " + conf.LogLevel)
 
 	return nil
 }
