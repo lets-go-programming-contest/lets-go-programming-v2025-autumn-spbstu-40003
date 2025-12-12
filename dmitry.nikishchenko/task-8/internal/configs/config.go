@@ -7,11 +7,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	//go:embed yaml_configs/*.yaml
-	yamlFiles      embed.FS
-	configFileName string
-)
+//go:embed yaml_configs/*.yaml
+var yamlFiles embed.FS
 
 type Config struct {
 	Environment string `yaml:"environment"`
@@ -21,7 +18,7 @@ type Config struct {
 func LoadConfig() (*Config, error) {
 	var cfg Config
 
-	data, err := yamlFiles.ReadFile("yaml_configs/" + configFileName)
+	data, err := yamlFiles.ReadFile("yaml_configs/" + configFileName())
 	if err != nil {
 		return nil, fmt.Errorf("failed to read embedded file: %w", err)
 	}

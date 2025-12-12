@@ -2,6 +2,6 @@
 
 package configs
 
-func init() {
-	configFileName = "dev.yaml"
+func configFileName() string {
+	return "dev.yaml"
 }
