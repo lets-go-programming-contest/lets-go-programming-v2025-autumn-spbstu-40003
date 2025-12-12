@@ -15,7 +15,7 @@ var (
 	errScan         = errors.New("scan error")
 )
 
-type rowTestDb struct {
+type rowTestDB struct {
 	names           []string
 	errExpected     error
 	errScanExpected error
@@ -23,8 +23,8 @@ type rowTestDb struct {
 	errIndex        int
 }
 
-func getTestTable() []rowTestDb {
-	return []rowTestDb{
+func getTestTable() []rowTestDB {
+	return []rowTestDB{
 		{
 			names: []string{"Petr", "Kirill"},
 		},
@@ -49,6 +49,8 @@ func getTestTable() []rowTestDb {
 }
 
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	mockDB, _, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("sqlmock.New() error: %s", err)
@@ -63,6 +65,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestGetNames(t *testing.T) {
+	t.Parallel()
+
 	mockDB, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("sqlmock.New() error: %s", err)
@@ -85,14 +89,16 @@ func TestGetNames(t *testing.T) {
 		}
 
 		if test.errRowsExpected != nil {
-			require.ErrorIs(t, err, test.errRowsExpected, "row: %d, expected error: %w, actual error: %w", i, test.errRowsExpected, err)
+			require.ErrorIs(t, err, test.errRowsExpected, "row: %d, expected error: %w, actual error: %w", i,
+				test.errRowsExpected, err)
 			require.Nil(t, names, "row: %d, names must be nil", i)
 
 			continue
 		}
 
 		if test.errExpected != nil {
-			require.ErrorIs(t, err, test.errExpected, "row: %d, expected error: %w, actual error: %w", i, test.errExpected, err)
+			require.ErrorIs(t, err, test.errExpected, "row: %d, expected error: %w, actual error: %w", i,
+				test.errExpected, err)
 			require.Nil(t, names, "row: %d, names must be nil", i)
 
 			continue
@@ -148,7 +154,7 @@ func TestGetUniqueNames(t *testing.T) {
 	}
 }
 
-func mockDBRows(test rowTestDb) *sqlmock.Rows {
+func mockDBRows(test rowTestDB) *sqlmock.Rows {
 	rows := sqlmock.NewRows([]string{"name"})
 
 	for i, name := range test.names {
