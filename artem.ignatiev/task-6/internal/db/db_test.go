@@ -5,8 +5,10 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/kryjkaqq/task-6/internal/db"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	db "github.com/kryjkaqq/task-6/internal/db"
 )
 
 var (
@@ -17,16 +19,14 @@ var (
 func TestGetNames(t *testing.T) {
 	t.Parallel()
 
-	database, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create mock: %v", err)
-	}
-	defer database.Close()
-
-	service := db.New(database)
-
 	t.Run("successful get names", func(t *testing.T) {
 		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		service := db.New(mockDB)
 
 		rows := sqlmock.NewRows([]string{"name"}).
 			AddRow("Ivan").
@@ -38,12 +38,18 @@ func TestGetNames(t *testing.T) {
 		names, err := service.GetNames()
 
 		require.NoError(t, err)
-		require.Equal(t, []string{"Ivan", "Maria", "Petr"}, names)
+		assert.Equal(t, []string{"Ivan", "Maria", "Petr"}, names)
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("empty result", func(t *testing.T) {
 		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		service := db.New(mockDB)
 
 		rows := sqlmock.NewRows([]string{"name"})
 
@@ -52,12 +58,18 @@ func TestGetNames(t *testing.T) {
 		names, err := service.GetNames()
 
 		require.NoError(t, err)
-		require.Empty(t, names)
+		assert.Empty(t, names)
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("query error", func(t *testing.T) {
 		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		service := db.New(mockDB)
 
 		mock.ExpectQuery("SELECT name FROM users").
 			WillReturnError(errDatabase)
@@ -65,13 +77,19 @@ func TestGetNames(t *testing.T) {
 		names, err := service.GetNames()
 
 		require.Error(t, err)
-		require.Nil(t, names)
-		require.Contains(t, err.Error(), "db query")
+		assert.Nil(t, names)
+		assert.Contains(t, err.Error(), "db query")
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("scan error", func(t *testing.T) {
 		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		service := db.New(mockDB)
 
 		rows := sqlmock.NewRows([]string{"name", "extra"}).
 			AddRow("Ivan", "extra")
@@ -81,13 +99,19 @@ func TestGetNames(t *testing.T) {
 		names, err := service.GetNames()
 
 		require.Error(t, err)
-		require.Nil(t, names)
-		require.Contains(t, err.Error(), "rows scanning")
+		assert.Nil(t, names)
+		assert.Contains(t, err.Error(), "rows scanning")
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("rows error", func(t *testing.T) {
 		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		service := db.New(mockDB)
 
 		rows := sqlmock.NewRows([]string{"name"}).
 			AddRow("Ivan").
@@ -99,8 +123,8 @@ func TestGetNames(t *testing.T) {
 		names, err := service.GetNames()
 
 		require.Error(t, err)
-		require.Nil(t, names)
-		require.Contains(t, err.Error(), "rows error")
+		assert.Nil(t, names)
+		assert.Contains(t, err.Error(), "rows error")
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 }
@@ -108,16 +132,14 @@ func TestGetNames(t *testing.T) {
 func TestGetUniqueNames(t *testing.T) {
 	t.Parallel()
 
-	database, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create mock: %v", err)
-	}
-	defer database.Close()
-
-	service := db.New(database)
-
 	t.Run("successful get unique names", func(t *testing.T) {
 		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		service := db.New(mockDB)
 
 		rows := sqlmock.NewRows([]string{"name"}).
 			AddRow("Ivan").
@@ -128,12 +150,18 @@ func TestGetUniqueNames(t *testing.T) {
 		names, err := service.GetUniqueNames()
 
 		require.NoError(t, err)
-		require.Equal(t, []string{"Ivan", "Maria"}, names)
+		assert.Equal(t, []string{"Ivan", "Maria"}, names)
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("empty result", func(t *testing.T) {
 		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		service := db.New(mockDB)
 
 		rows := sqlmock.NewRows([]string{"name"})
 
@@ -142,12 +170,18 @@ func TestGetUniqueNames(t *testing.T) {
 		names, err := service.GetUniqueNames()
 
 		require.NoError(t, err)
-		require.Empty(t, names)
+		assert.Empty(t, names)
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("query error", func(t *testing.T) {
 		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		service := db.New(mockDB)
 
 		mock.ExpectQuery("SELECT DISTINCT name FROM users").
 			WillReturnError(errDatabase)
@@ -155,13 +189,19 @@ func TestGetUniqueNames(t *testing.T) {
 		names, err := service.GetUniqueNames()
 
 		require.Error(t, err)
-		require.Nil(t, names)
-		require.Contains(t, err.Error(), "db query")
+		assert.Nil(t, names)
+		assert.Contains(t, err.Error(), "db query")
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("scan error", func(t *testing.T) {
 		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		service := db.New(mockDB)
 
 		rows := sqlmock.NewRows([]string{"name", "extra"}).
 			AddRow("Ivan", "extra")
@@ -171,13 +211,19 @@ func TestGetUniqueNames(t *testing.T) {
 		names, err := service.GetUniqueNames()
 
 		require.Error(t, err)
-		require.Nil(t, names)
-		require.Contains(t, err.Error(), "rows scanning")
+		assert.Nil(t, names)
+		assert.Contains(t, err.Error(), "rows scanning")
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("rows error", func(t *testing.T) {
 		t.Parallel()
+
+		mockDB, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer mockDB.Close()
+
+		service := db.New(mockDB)
 
 		rows := sqlmock.NewRows([]string{"name"}).
 			AddRow("Ivan").
@@ -189,8 +235,8 @@ func TestGetUniqueNames(t *testing.T) {
 		names, err := service.GetUniqueNames()
 
 		require.Error(t, err)
-		require.Nil(t, names)
-		require.Contains(t, err.Error(), "rows error")
+		assert.Nil(t, names)
+		assert.Contains(t, err.Error(), "rows error")
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 }
