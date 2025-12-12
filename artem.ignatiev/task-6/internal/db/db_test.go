@@ -59,8 +59,7 @@ func TestGetNames(t *testing.T) {
 	t.Run("scan error", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"name"}).
 			AddRow("Ivan").
-			AddRow(nil).
-			RowError(1, errors.New("scan error"))
+			RowError(0, errors.New("scan error"))
 
 		mock.ExpectQuery("SELECT name FROM users").WillReturnRows(rows)
 
@@ -69,6 +68,22 @@ func TestGetNames(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, names)
 		assert.Contains(t, err.Error(), "rows scanning")
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("rows error", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"name"}).
+			AddRow("Ivan").
+			AddRow("Maria").
+			CloseError(errors.New("rows error"))
+
+		mock.ExpectQuery("SELECT name FROM users").WillReturnRows(rows)
+
+		names, err := service.GetNames()
+
+		assert.Error(t, err)
+		assert.Nil(t, names)
+		assert.Contains(t, err.Error(), "rows error")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
@@ -117,6 +132,37 @@ func TestGetUniqueNames(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, names)
 		assert.Contains(t, err.Error(), "db query")
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("scan error", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"name"}).
+			AddRow("Ivan").
+			RowError(0, errors.New("scan error"))
+
+		mock.ExpectQuery("SELECT DISTINCT name FROM users").WillReturnRows(rows)
+
+		names, err := service.GetUniqueNames()
+
+		assert.Error(t, err)
+		assert.Nil(t, names)
+		assert.Contains(t, err.Error(), "rows scanning")
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("rows error", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"name"}).
+			AddRow("Ivan").
+			AddRow("Maria").
+			CloseError(errors.New("rows error"))
+
+		mock.ExpectQuery("SELECT DISTINCT name FROM users").WillReturnRows(rows)
+
+		names, err := service.GetUniqueNames()
+
+		assert.Error(t, err)
+		assert.Nil(t, names)
+		assert.Contains(t, err.Error(), "rows error")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
