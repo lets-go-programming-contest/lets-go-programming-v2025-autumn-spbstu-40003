@@ -9,6 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	errDBDown    = errors.New("db down")
+	errIteration = errors.New("iteration error")
+	errFatal     = errors.New("fatal error")
+)
+
 type dbTestestase struct {
 	name          string
 	query         string
@@ -40,7 +46,7 @@ func TestGetNames(t *testing.T) {
 			name:  "Query Error",
 			query: query,
 			mockBehavior: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(query).WillReturnError(errors.New("db down"))
+				mock.ExpectQuery(query).WillReturnError(errDBDown)
 			},
 			expectedError: "db query: db down",
 		},
@@ -58,7 +64,7 @@ func TestGetNames(t *testing.T) {
 			query: query,
 			mockBehavior: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"name"}).
-					RowError(0, errors.New("iteration error")).
+					RowError(0, errIteration).
 					AddRow("d1mene")
 				mock.ExpectQuery(query).WillReturnRows(rows)
 			},
@@ -109,7 +115,7 @@ func TestGetUniqueNames(t *testing.T) {
 			name:  "Query Error",
 			query: query,
 			mockBehavior: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(query).WillReturnError(errors.New("fatal error"))
+				mock.ExpectQuery(query).WillReturnError(errFatal)
 			},
 			expectedError: "db query: fatal error",
 		},
@@ -127,7 +133,7 @@ func TestGetUniqueNames(t *testing.T) {
 			query: query,
 			mockBehavior: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"name"}).
-					RowError(0, errors.New("iteration error")).
+					RowError(0, errIteration).
 					AddRow("d1mene")
 				mock.ExpectQuery(query).WillReturnRows(rows)
 			},
