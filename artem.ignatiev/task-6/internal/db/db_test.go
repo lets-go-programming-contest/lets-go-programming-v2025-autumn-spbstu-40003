@@ -57,9 +57,8 @@ func TestGetNames(t *testing.T) {
 	})
 
 	t.Run("scan error", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"name"}).
-			AddRow("Ivan").
-			RowError(0, errors.New("scan error"))
+		rows := sqlmock.NewRows([]string{"name", "extra"}).
+			AddRow("Ivan", "extra")
 
 		mock.ExpectQuery("SELECT name FROM users").WillReturnRows(rows)
 
@@ -75,7 +74,7 @@ func TestGetNames(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"name"}).
 			AddRow("Ivan").
 			AddRow("Maria").
-			CloseError(errors.New("rows error"))
+			RowError(1, errors.New("row iteration error"))
 
 		mock.ExpectQuery("SELECT name FROM users").WillReturnRows(rows)
 
@@ -136,9 +135,8 @@ func TestGetUniqueNames(t *testing.T) {
 	})
 
 	t.Run("scan error", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"name"}).
-			AddRow("Ivan").
-			RowError(0, errors.New("scan error"))
+		rows := sqlmock.NewRows([]string{"name", "extra"}).
+			AddRow("Ivan", "extra")
 
 		mock.ExpectQuery("SELECT DISTINCT name FROM users").WillReturnRows(rows)
 
@@ -154,7 +152,7 @@ func TestGetUniqueNames(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"name"}).
 			AddRow("Ivan").
 			AddRow("Maria").
-			CloseError(errors.New("rows error"))
+			RowError(1, errors.New("row iteration error"))
 
 		mock.ExpectQuery("SELECT DISTINCT name FROM users").WillReturnRows(rows)
 
