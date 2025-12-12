@@ -23,8 +23,8 @@ type rowTestDb struct {
 	errIndex        int
 }
 
-var (
-	testTable = []rowTestDb{
+func getTestTable() []rowTestDb {
+	return []rowTestDb{
 		{
 			names: []string{"Petr", "Kirill"},
 		},
@@ -46,7 +46,7 @@ var (
 			errIndex:        1,
 		},
 	}
-)
+}
 
 func TestNew(t *testing.T) {
 	mockDB, _, err := sqlmock.New()
@@ -71,8 +71,8 @@ func TestGetNames(t *testing.T) {
 
 	dbService := db.DBService{DB: mockDB}
 
-	for i, test := range testTable {
-		mock.ExpectQuery("SELECT name FROM users").WillReturnRows(mockDbRows(test)).
+	for i, test := range getTestTable() {
+		mock.ExpectQuery("SELECT name FROM users").WillReturnRows(mockDBRows(test)).
 			WillReturnError(test.errExpected)
 
 		names, err := dbService.GetNames()
@@ -80,28 +80,32 @@ func TestGetNames(t *testing.T) {
 		if test.errScanExpected != nil {
 			require.Error(t, err, "row: %d, error: %w", i, err)
 			require.Nil(t, names, "row: %d, names must be nil", i)
+
 			continue
 		}
 
 		if test.errRowsExpected != nil {
 			require.ErrorIs(t, err, test.errRowsExpected, "row: %d, expected error: %w, actual error: %w", i, test.errRowsExpected, err)
 			require.Nil(t, names, "row: %d, names must be nil", i)
+
 			continue
 		}
 
 		if test.errExpected != nil {
 			require.ErrorIs(t, err, test.errExpected, "row: %d, expected error: %w, actual error: %w", i, test.errExpected, err)
 			require.Nil(t, names, "row: %d, names must be nil", i)
+
 			continue
 		}
 
 		require.NoError(t, err, "row: %d, error must be nil", i)
 		require.Equal(t, test.names, names, "row: %d, expected names: %s, actual names: %s", i, test.names, names)
-
 	}
 }
 
 func TestGetUniqueNames(t *testing.T) {
+	t.Parallel()
+
 	mockDB, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("sqlmock.New() error: %s", err)
@@ -110,8 +114,8 @@ func TestGetUniqueNames(t *testing.T) {
 
 	dbService := db.DBService{DB: mockDB}
 
-	for i, test := range testTable {
-		mock.ExpectQuery("SELECT DISTINCT name FROM users").WillReturnRows(mockDbRows(test)).
+	for i, test := range getTestTable() {
+		mock.ExpectQuery("SELECT DISTINCT name FROM users").WillReturnRows(mockDBRows(test)).
 			WillReturnError(test.errExpected)
 
 		names, err := dbService.GetUniqueNames()
@@ -119,18 +123,23 @@ func TestGetUniqueNames(t *testing.T) {
 		if test.errScanExpected != nil {
 			require.Error(t, err, "row: %d, error: %w", i, err)
 			require.Nil(t, names, "row: %d, names must be nil", i)
+
 			continue
 		}
 
 		if test.errRowsExpected != nil {
-			require.ErrorIs(t, err, test.errRowsExpected, "row: %d, expected error: %w, actual error: %w", i, test.errRowsExpected, err)
+			require.ErrorIs(t, err, test.errRowsExpected, "row: %d, expected error: %w, actual error: %w", i,
+				test.errRowsExpected, err)
 			require.Nil(t, names, "row: %d, names must be nil", i)
+
 			continue
 		}
 
 		if test.errExpected != nil {
-			require.ErrorIs(t, err, test.errExpected, "row: %d, expected error: %w, actual error: %w", i, test.errExpected, err)
+			require.ErrorIs(t, err, test.errExpected, "row: %d, expected error: %w, actual error: %w", i,
+				test.errExpected, err)
 			require.Nil(t, names, "row: %d, names must be nil", i)
+
 			continue
 		}
 
@@ -139,8 +148,9 @@ func TestGetUniqueNames(t *testing.T) {
 	}
 }
 
-func mockDbRows(test rowTestDb) *sqlmock.Rows {
+func mockDBRows(test rowTestDb) *sqlmock.Rows {
 	rows := sqlmock.NewRows([]string{"name"})
+
 	for i, name := range test.names {
 		if i == test.errIndex && test.errScanExpected != nil {
 			rows = rows.AddRow(nil)
