@@ -14,6 +14,7 @@ func main() {
 		reader      io.Reader = os.Stdin
 		departments int
 	)
+
 	_, err := fmt.Fscan(reader, &departments)
 	if err != nil {
 		fmt.Println("Could not read number of departments.")
