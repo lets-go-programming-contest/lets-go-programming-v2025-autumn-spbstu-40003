@@ -48,6 +48,7 @@ func (dp *DepartmentProcessor) reset() {
 
 func ProcessDepartment(reader io.Reader, writer io.Writer) error {
     processor := NewDepartmentProcessor()
+
     return processor.processDepartment(reader, writer)
 }
 
@@ -65,25 +66,25 @@ func (dp *DepartmentProcessor) processDepartment(reader io.Reader, writer io.Wri
 
     dp.reset()
     
-    for i := 0; i < employees; i++ {
-        command, err := bufReader.ReadString('\n')
-        if err != nil {
+    for range employees {
+        command, error := bufReader.ReadString('\n')
+        if error != nil {
             return errCommandRead
         }
 
-        err = dp.parseTemperature(command)
-        if err != nil {
+        error = dp.parseTemperature(command)
+        if error != nil {
             return errParseTemperature
         }
 
         if dp.minimalSetTemperature <= dp.maximalSetTemperature {
-            _, err := fmt.Fprintln(writer, dp.minimalSetTemperature)
-            if err != nil {
+            _, error = fmt.Fprintln(writer, dp.minimalSetTemperature)
+            if error != nil {
                 return errDataPrint
             }
         } else {
-            _, err := fmt.Fprintln(writer, -1)
-            if err != nil {
+            _, error = fmt.Fprintln(writer, -1)
+            if error != nil {
                 return errDataPrint
             }
         }
