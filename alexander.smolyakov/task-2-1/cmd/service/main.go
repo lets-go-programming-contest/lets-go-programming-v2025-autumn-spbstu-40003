@@ -13,7 +13,6 @@ func main() {
 		writer io.Writer = os.Stdout
 		reader io.Reader = os.Stdin
 	)
-	
 	var departments int
 
 	_, err := fmt.Fscan(reader, &departments)
