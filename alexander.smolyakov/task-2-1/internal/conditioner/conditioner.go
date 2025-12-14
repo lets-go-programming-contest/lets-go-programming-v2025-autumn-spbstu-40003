@@ -80,8 +80,8 @@ func (dp *DepartmentProcessor) processDepartments(reader io.Reader, writer io.Wr
 		}
 
 		employeeCountStr := scanner.Text()
-		employeeCount, err := strconv.Atoi(employeeCountStr)
 
+		employeeCount, err := strconv.Atoi(employeeCountStr)
 		if err != nil {
 			return errInvalidEmployeeFormat
 		}
@@ -91,6 +91,7 @@ func (dp *DepartmentProcessor) processDepartments(reader io.Reader, writer io.Wr
 		}
 
 		dp.reset()
+
 		departmentResults := make([]int, 0, employeeCount)
 
 		for range employeeCount {
