@@ -10,11 +10,10 @@ import (
 
 func main() {
 	var (
-		writer io.Writer = os.Stdout
-		reader io.Reader = os.Stdin
+		writer      io.Writer = os.Stdout
+		reader      io.Reader = os.Stdin
+		departments int
 	)
-	var departments int
-
 	_, err := fmt.Fscan(reader, &departments)
 	if err != nil {
 		fmt.Println("Could not read number of departments.")
