@@ -10,6 +10,18 @@ import (
 )
 
 var (
+    errInvalidEmployeeFormat = errors.New("Invalid employee count format.")
+    errInvalidEmployeeCount = errors.New("Employee count must be greater than 0.")
+    errCommandRead = errors.New("Could not read command.")
+    errParseTemperature = errors.New("Could not parse temperature.")
+    errDataPrint = errors.New("Error printing data.")
+    errInvalidArgumentCount = errors.New("Invalid argument count.")
+    errInvalidTemperatureFormat = errors.New("Invalid temperature value format.")
+    errTemperatureOutOfRange = errors.New("Temperature value out of range.")
+    errInvalidOperator = errors.New("Invalid operator.")
+)
+
+var (
     minimalSetTemperature int
     maximalSetTemperature int
 )
@@ -33,33 +45,33 @@ func ProcessDepartment(reader io.Reader, writer io.Writer) error {
     var employees int
     _, error := fmt.Fscanln(reader, &employees)
     if error != nil {
-        return errors.New("Invalid employee count format.")
+        return errInvalidEmployeeFormat
     }
     if employees <= 0 {
-        return errors.New("Employees count must be greater than 0.")
+        return errInvalidEmployeeCount
     }
 
     reset()
     for i := 0; i < employees; i++ {
         command, error := bufReader.ReadString('\n')
         if error != nil {
-            return errors.New("Could not read command.")
+            return errCommandRead
         }
 
         error = parseTemperature(command)
         if error != nil {
-            return fmt.Errorf("Could not parse temperature: %w", error) 
+            return errParseTemperature 
         }
 
 	if minimalSetTemperature <= maximalSetTemperature {
 	    _, error := fmt.Fprintln(writer, minimalSetTemperature)
 	    if error != nil {
-	        return errors.New("Error printing data.")
+	        return errDataPrint
 	    }
 	} else {
 	    _, error := fmt.Fprintln(writer, -1)
 	    if error != nil {
-	        return errors.New("Error printing data.")
+	        return errDataPrint
 	    }
 	}
     }
@@ -69,20 +81,17 @@ func ProcessDepartment(reader io.Reader, writer io.Writer) error {
 func parseTemperature(raw string) error {
     arguments := strings.Fields(raw)
     if len(arguments) != expectedArgumentCount {
-        errorMessage := fmt.Sprintf(
-	        "Invalid argument count. Expected %d but %d given",
-	        expectedArgumentCount, len(arguments))
-        return errors.New(errorMessage)
+        return errInvalidArgumentCount
     }
 
     operator := arguments[0]
     value, error := strconv.Atoi(arguments[1])
     if error != nil {
-        return errors.New("Invalid temperature value format.")
+        return errInvalidTemperatureFormat
     }
 
     if value > maximalTemperature || value < minimalTemperature {
-        return errors.New("Temperature value out of range.")
+        return errTemperatureOutOfRange
     }
 
     switch operator {
@@ -91,7 +100,7 @@ func parseTemperature(raw string) error {
     case operatorLess:
         maximalSetTemperature = value
     default:
-        return errors.New("Invalid operator.")
+        return errInvalidOperator
     }
 
     return nil
