@@ -50,67 +50,71 @@ func (dp *DepartmentProcessor) reset() {
 
 func ProcessDepartments(reader io.Reader, writer io.Writer) error {
 	processor := NewDepartmentProcessor()
+
 	return processor.processDepartments(reader, writer)
 }
 
 func (dp *DepartmentProcessor) processDepartments(reader io.Reader, writer io.Writer) error {
 	scanner := bufio.NewScanner(reader)
-	
+
 	if !scanner.Scan() {
 		return errInvalidDepartmentFormat
 	}
-	
+
 	departmentCountStr := scanner.Text()
+
 	departmentCount, err := strconv.Atoi(departmentCountStr)
 	if err != nil {
 		return errInvalidDepartmentFormat
 	}
-	
+
 	if departmentCount <= 0 {
 		return errInvalidDepartmentCount
 	}
-	
-	var allResults [][]int
-	
+
+	allResults := make([][]int, 0, departmentCount)
+
 	for range departmentCount {
 		if !scanner.Scan() {
 			return errInvalidEmployeeFormat
 		}
-		
+
 		employeeCountStr := scanner.Text()
 		employeeCount, err := strconv.Atoi(employeeCountStr)
+
 		if err != nil {
 			return errInvalidEmployeeFormat
 		}
-		
+
 		if employeeCount <= 0 {
 			return errInvalidEmployeeCount
 		}
-		
+
 		dp.reset()
 		departmentResults := make([]int, 0, employeeCount)
-		
+
 		for range employeeCount {
 			if !scanner.Scan() {
 				return errCommandRead
 			}
-			
+
 			command := scanner.Text()
+
 			err = dp.parseTemperature(command)
 			if err != nil {
 				return errParseTemperature
 			}
-			
+
 			if dp.minimalSetTemperature <= dp.maximalSetTemperature {
 				departmentResults = append(departmentResults, dp.minimalSetTemperature)
 			} else {
 				departmentResults = append(departmentResults, -1)
 			}
 		}
-		
+
 		allResults = append(allResults, departmentResults)
 	}
-	
+
 	for _, departmentResults := range allResults {
 		for _, result := range departmentResults {
 			_, err = fmt.Fprintln(writer, result)
@@ -119,7 +123,7 @@ func (dp *DepartmentProcessor) processDepartments(reader io.Reader, writer io.Wr
 			}
 		}
 	}
-	
+
 	return nil
 }
 

@@ -10,10 +10,10 @@ import (
 
 func main() {
 	var (
-		writer      io.Writer = os.Stdout
-		reader      io.Reader = os.Stdin
+		writer io.Writer = os.Stdout
+		reader io.Reader = os.Stdin
 	)
-	
+
 	err := conditioner.ProcessDepartments(reader, writer)
 	if err != nil {
 		fmt.Println(err)
