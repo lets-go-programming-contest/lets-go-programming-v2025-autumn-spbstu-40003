@@ -50,81 +50,125 @@ func (dp *DepartmentProcessor) reset() {
 
 func ProcessDepartments(reader io.Reader, writer io.Writer) error {
 	processor := NewDepartmentProcessor()
-
 	return processor.processDepartments(reader, writer)
 }
 
 func (dp *DepartmentProcessor) processDepartments(reader io.Reader, writer io.Writer) error {
 	scanner := bufio.NewScanner(reader)
-
-	if !scanner.Scan() {
-		return errInvalidDepartmentFormat
+	
+	departmentCount, err := dp.readDepartmentCount(scanner)
+	if err != nil {
+		return err
 	}
+	
+	allResults, err := dp.processAllDepartments(scanner, departmentCount)
+	if err != nil {
+		return err
+	}
+	
+	return dp.printAllResults(writer, allResults)
+}
 
+func (dp *DepartmentProcessor) readDepartmentCount(scanner *bufio.Scanner) (int, error) {
+	if !scanner.Scan() {
+		return 0, errInvalidDepartmentFormat
+	}
+	
 	departmentCountStr := scanner.Text()
-
 	departmentCount, err := strconv.Atoi(departmentCountStr)
 	if err != nil {
-		return errInvalidDepartmentFormat
+		return 0, errInvalidDepartmentFormat
 	}
-
+	
 	if departmentCount <= 0 {
-		return errInvalidDepartmentCount
+		return 0, errInvalidDepartmentCount
 	}
+	
+	return departmentCount, nil
+}
 
+func (dp *DepartmentProcessor) processAllDepartments(scanner *bufio.Scanner, departmentCount int) ([][]int, error) {
 	allResults := make([][]int, 0, departmentCount)
-
+	
 	for range departmentCount {
-		if !scanner.Scan() {
-			return errInvalidEmployeeFormat
-		}
-
-		employeeCountStr := scanner.Text()
-
-		employeeCount, err := strconv.Atoi(employeeCountStr)
+		departmentResults, err := dp.processSingleDepartment(scanner)
 		if err != nil {
-			return errInvalidEmployeeFormat
+			return nil, err
 		}
-
-		if employeeCount <= 0 {
-			return errInvalidEmployeeCount
-		}
-
-		dp.reset()
-
-		departmentResults := make([]int, 0, employeeCount)
-
-		for range employeeCount {
-			if !scanner.Scan() {
-				return errCommandRead
-			}
-
-			command := scanner.Text()
-
-			err = dp.parseTemperature(command)
-			if err != nil {
-				return errParseTemperature
-			}
-
-			if dp.minimalSetTemperature <= dp.maximalSetTemperature {
-				departmentResults = append(departmentResults, dp.minimalSetTemperature)
-			} else {
-				departmentResults = append(departmentResults, -1)
-			}
-		}
-
+		
 		allResults = append(allResults, departmentResults)
 	}
+	
+	return allResults, nil
+}
 
+func (dp *DepartmentProcessor) processSingleDepartment(scanner *bufio.Scanner) ([]int, error) {
+	employeeCount, err := dp.readEmployeeCount(scanner)
+	if err != nil {
+		return nil, err
+	}
+	
+	dp.reset()
+	departmentResults := make([]int, 0, employeeCount)
+	
+	for range employeeCount {
+		result, err := dp.processEmployeeCommand(scanner)
+		if err != nil {
+			return nil, err
+		}
+		
+		departmentResults = append(departmentResults, result)
+	}
+	
+	return departmentResults, nil
+}
+
+func (dp *DepartmentProcessor) readEmployeeCount(scanner *bufio.Scanner) (int, error) {
+	if !scanner.Scan() {
+		return 0, errInvalidEmployeeFormat
+	}
+	
+	employeeCountStr := scanner.Text()
+	employeeCount, err := strconv.Atoi(employeeCountStr)
+	if err != nil {
+		return 0, errInvalidEmployeeFormat
+	}
+	
+	if employeeCount <= 0 {
+		return 0, errInvalidEmployeeCount
+	}
+	
+	return employeeCount, nil
+}
+
+func (dp *DepartmentProcessor) processEmployeeCommand(scanner *bufio.Scanner) (int, error) {
+	if !scanner.Scan() {
+		return 0, errCommandRead
+	}
+	
+	command := scanner.Text()
+	err := dp.parseTemperature(command)
+	if err != nil {
+		return 0, errParseTemperature
+	}
+	
+	if dp.minimalSetTemperature <= dp.maximalSetTemperature {
+		return dp.minimalSetTemperature, nil
+	}
+	
+	return -1, nil
+}
+
+func (dp *DepartmentProcessor) printAllResults(writer io.Writer, allResults [][]int) error {
 	for _, departmentResults := range allResults {
 		for _, result := range departmentResults {
-			_, err = fmt.Fprintln(writer, result)
+			_, err := fmt.Fprintln(writer, result)
 			if err != nil {
 				return errDataPrint
 			}
 		}
 	}
-
+	
 	return nil
 }
 
