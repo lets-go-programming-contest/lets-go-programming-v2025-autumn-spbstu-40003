@@ -1,10 +1,12 @@
 package conditioner
 
 import (
-    "fmt"
+    "bufio"
     "errors"
-    "strings"
+    "fmt"
+    "io"
     "strconv"
+    "strings"
 )
 
 var (
@@ -25,12 +27,38 @@ func Reset() {
     maximalSetTemperature = maximalTemperature
 }
 
+func ProcessDepartment(reader io.Reader, writer io.Writer) error {
+    bufReader := bufio.NewReader(reader)
+
+    var employees int
+    _, error := fmt.Fscanln(reader, &employees)
+    if error != nil {
+        return errors.New("Invalid employee count format.")
+    }
+    if employees <= 0 {
+        return errors.New("Employees count must be greater than 0.")
+    }
+
+    for i := 0; i < employees; i++ {
+        command, error := bufReader.ReadString('\n')
+        if error != nil {
+            return errors.New("Could not read command.")
+        }
+
+        error = parseTemperature(command)
+        if error != nil {
+            return fmt.Errorf("Could not parse temperature: %w", error) 
+        }
+    }
+    return nil
+}
+
 func parseTemperature(raw string) error {
     arguments := strings.Fields(raw)
     if len(arguments) != expectedArgumentCount {
         errorMessage := fmt.Sprintf(
-	    "Invalid argument count. Expected %d but %d given",
-	    expectedArgumentCount, len(arguments))
+	        "Invalid argument count. Expected %d but %d given",
+	        expectedArgumentCount, len(arguments))
         return errors.New(errorMessage)
     }
 
@@ -48,9 +76,9 @@ func parseTemperature(raw string) error {
     case operatorGreater:
         minimalSetTemperature = value
     case operatorLess:
-	maximalSetTemperature = value
+        maximalSetTemperature = value
     default:
-	return errors.New("Invalid operator.")
+        return errors.New("Invalid operator.")
     }
 
     return nil
