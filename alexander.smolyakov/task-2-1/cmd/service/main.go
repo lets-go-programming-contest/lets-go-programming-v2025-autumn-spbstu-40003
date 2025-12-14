@@ -19,7 +19,7 @@ func main() {
     }
 
     for i := 0; i < departments; i++ {
-        error := conditioner.ProcessDepartment(reader, writer)
+        error = conditioner.ProcessDepartment(reader, writer)
         if error != nil {
             fmt.Println(error)
         }
