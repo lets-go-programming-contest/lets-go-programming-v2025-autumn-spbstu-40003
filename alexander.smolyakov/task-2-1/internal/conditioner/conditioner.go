@@ -10,6 +10,8 @@ import (
 )
 
 var (
+	errInvalidDepartmentFormat  = errors.New("invalid department count format")
+	errInvalidDepartmentCount   = errors.New("department count must be greater than 0")
 	errInvalidEmployeeFormat    = errors.New("invalid employee count format")
 	errInvalidEmployeeCount     = errors.New("employee count must be greater than 0")
 	errCommandRead              = errors.New("could not read command")
@@ -46,54 +48,78 @@ func (dp *DepartmentProcessor) reset() {
 	dp.maximalSetTemperature = maximalTemperature
 }
 
-func ProcessDepartment(reader io.Reader, writer io.Writer) error {
+func ProcessDepartments(reader io.Reader, writer io.Writer) error {
 	processor := NewDepartmentProcessor()
-
-	return processor.processDepartment(reader, writer)
+	return processor.processDepartments(reader, writer)
 }
 
-func (dp *DepartmentProcessor) processDepartment(reader io.Reader, writer io.Writer) error {
-	bufReader := bufio.NewReader(reader)
-
-	var employees int
-
-	_, err := fmt.Fscanln(reader, &employees)
+func (dp *DepartmentProcessor) processDepartments(reader io.Reader, writer io.Writer) error {
+	scanner := bufio.NewScanner(reader)
+	
+	if !scanner.Scan() {
+		return errInvalidDepartmentFormat
+	}
+	
+	departmentCountStr := scanner.Text()
+	departmentCount, err := strconv.Atoi(departmentCountStr)
 	if err != nil {
-		return errInvalidEmployeeFormat
+		return errInvalidDepartmentFormat
 	}
-
-	if employees <= 0 {
-		return errInvalidEmployeeCount
+	
+	if departmentCount <= 0 {
+		return errInvalidDepartmentCount
 	}
-
-	dp.reset()
-
-	for range employees {
-		var command string
-
-		command, err = bufReader.ReadString('\n')
-		if err != nil {
-			return errCommandRead
+	
+	var allResults [][]int
+	
+	for range departmentCount {
+		if !scanner.Scan() {
+			return errInvalidEmployeeFormat
 		}
-
-		err = dp.parseTemperature(command)
+		
+		employeeCountStr := scanner.Text()
+		employeeCount, err := strconv.Atoi(employeeCountStr)
 		if err != nil {
-			return errParseTemperature
+			return errInvalidEmployeeFormat
 		}
-
-		if dp.minimalSetTemperature <= dp.maximalSetTemperature {
-			_, err = fmt.Fprintln(writer, dp.minimalSetTemperature)
+		
+		if employeeCount <= 0 {
+			return errInvalidEmployeeCount
+		}
+		
+		dp.reset()
+		departmentResults := make([]int, 0, employeeCount)
+		
+		for range employeeCount {
+			if !scanner.Scan() {
+				return errCommandRead
+			}
+			
+			command := scanner.Text()
+			err = dp.parseTemperature(command)
+			if err != nil {
+				return errParseTemperature
+			}
+			
+			if dp.minimalSetTemperature <= dp.maximalSetTemperature {
+				departmentResults = append(departmentResults, dp.minimalSetTemperature)
+			} else {
+				departmentResults = append(departmentResults, -1)
+			}
+		}
+		
+		allResults = append(allResults, departmentResults)
+	}
+	
+	for _, departmentResults := range allResults {
+		for _, result := range departmentResults {
+			_, err = fmt.Fprintln(writer, result)
 			if err != nil {
 				return errDataPrint
 			}
-		} else {
-			_, err = fmt.Fprintln(writer, -1)
-			if err != nil {
-				return errDataPrint
-			}
 		}
 	}
-
+	
 	return nil
 }
 
@@ -116,9 +142,13 @@ func (dp *DepartmentProcessor) parseTemperature(raw string) error {
 
 	switch operator {
 	case operatorGreater:
-		dp.minimalSetTemperature = value
+		if value > dp.minimalSetTemperature {
+			dp.minimalSetTemperature = value
+		}
 	case operatorLess:
-		dp.maximalSetTemperature = value
+		if value < dp.maximalSetTemperature {
+			dp.maximalSetTemperature = value
+		}
 	default:
 		return errInvalidOperator
 	}
