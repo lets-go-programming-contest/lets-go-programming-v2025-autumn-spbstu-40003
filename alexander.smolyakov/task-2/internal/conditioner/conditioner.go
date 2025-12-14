@@ -22,7 +22,7 @@ const (
     operatorLess = "<="
 )
 
-func Reset() {
+func reset() {
     minimalSetTemperature = minimalTemperature
     maximalSetTemperature = maximalTemperature
 }
@@ -39,6 +39,7 @@ func ProcessDepartment(reader io.Reader, writer io.Writer) error {
         return errors.New("Employees count must be greater than 0.")
     }
 
+    reset()
     for i := 0; i < employees; i++ {
         command, error := bufReader.ReadString('\n')
         if error != nil {
@@ -49,6 +50,18 @@ func ProcessDepartment(reader io.Reader, writer io.Writer) error {
         if error != nil {
             return fmt.Errorf("Could not parse temperature: %w", error) 
         }
+
+	if minimalSetTemperature <= maximalSetTemperature {
+	    _, error := fmt.Fprintln(writer, minimalSetTemperature)
+	    if error != nil {
+	        return errors.New("Error printing data.")
+	    }
+	} else {
+	    _, error := fmt.Fprintln(writer, -1)
+	    if error != nil {
+	        return errors.New("Error printing data.")
+	    }
+	}
     }
     return nil
 }
