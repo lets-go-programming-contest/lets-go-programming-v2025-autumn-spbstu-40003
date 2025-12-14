@@ -10,15 +10,15 @@ import (
 )
 
 var (
-    errInvalidEmployeeFormat    = errors.New("Invalid employee count format.")
-    errInvalidEmployeeCount     = errors.New("Employee count must be greater than 0.")
-    errCommandRead              = errors.New("Could not read command.")
-    errParseTemperature         = errors.New("Could not parse temperature.")
-    errDataPrint                = errors.New("Error printing data.")
-    errInvalidArgumentCount     = errors.New("Invalid argument count.")
-    errInvalidTemperatureFormat = errors.New("Invalid temperature value format.")
-    errTemperatureOutOfRange    = errors.New("Temperature value out of range.")
-    errInvalidOperator          = errors.New("Invalid operator.")
+    errInvalidEmployeeFormat    = errors.New("invalid employee count format.")
+    errInvalidEmployeeCount     = errors.New("employee count must be greater than 0.")
+    errCommandRead              = errors.New("could not read command.")
+    errParseTemperature         = errors.New("could not parse temperature.")
+    errDataPrint                = errors.New("error printing data.")
+    errInvalidArgumentCount     = errors.New("invalid argument count.")
+    errInvalidTemperatureFormat = errors.New("invalid temperature value format.")
+    errTemperatureOutOfRange    = errors.New("temperature value out of range.")
+    errInvalidOperator          = errors.New("invalid operator.")
 )
 
 const (
@@ -88,6 +88,7 @@ func (dp *DepartmentProcessor) processDepartment(reader io.Reader, writer io.Wri
             }
         }
     }
+
     return nil
 }
 
