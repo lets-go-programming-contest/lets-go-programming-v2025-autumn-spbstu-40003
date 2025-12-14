@@ -9,9 +9,11 @@ import (
 )
 
 func main() {
-
-	var writer io.Writer = os.Stdout
-	var reader io.Reader = os.Stdin
+	var (
+		writer io.Writer = os.Stdout
+		reader io.Reader = os.Stdin
+	)
+	
 	var departments int
 
 	_, err := fmt.Fscan(reader, &departments)
@@ -19,7 +21,7 @@ func main() {
 		fmt.Println("Could not read number of departments.")
 	}
 
-	for i := 0; i < departments; i++ {
+	for range departments {
 		err = conditioner.ProcessDepartment(reader, writer)
 		if err != nil {
 			fmt.Println(err)

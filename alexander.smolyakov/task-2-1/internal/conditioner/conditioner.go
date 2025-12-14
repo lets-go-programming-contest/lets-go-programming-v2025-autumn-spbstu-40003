@@ -54,6 +54,7 @@ func ProcessDepartment(reader io.Reader, writer io.Writer) error {
 
 func (dp *DepartmentProcessor) processDepartment(reader io.Reader, writer io.Writer) error {
 	bufReader := bufio.NewReader(reader)
+
 	var employees int
 
 	_, err := fmt.Fscanln(reader, &employees)
@@ -69,6 +70,7 @@ func (dp *DepartmentProcessor) processDepartment(reader io.Reader, writer io.Wri
 
 	for range employees {
 		var command string
+
 		command, err = bufReader.ReadString('\n')
 		if err != nil {
 			return errCommandRead
