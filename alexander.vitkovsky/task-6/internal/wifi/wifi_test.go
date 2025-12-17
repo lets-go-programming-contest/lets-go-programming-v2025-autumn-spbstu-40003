@@ -1,4 +1,4 @@
-package wifi
+package wifi_test
 
 import (
 	"errors"
@@ -7,7 +7,11 @@ import (
 
 	"github.com/mdlayher/wifi"
 	"github.com/stretchr/testify/require"
+
+	wifiPkg "github.com/alexpi3/task-6/internal/wifi"
 )
+
+var ErrSomeError = errors.New("some error")
 
 type mockWifi struct {
 	interfaces []*wifi.Interface
@@ -21,7 +25,7 @@ func (m *mockWifi) Interfaces() ([]*wifi.Interface, error) {
 func TestNew(t *testing.T) {
 	mockWifi := &mockWifi{}
 
-	service := New(mockWifi)
+	service := wifiPkg.New(mockWifi)
 
 	require.Equal(t, mockWifi, service.WiFi)
 }
@@ -45,7 +49,7 @@ func TestGetNames(t *testing.T) {
 		},
 		{
 			name:        "interfaces error",
-			err:         errors.New("some error"),
+			err:         ErrSomeError,
 			expectedErr: true,
 		},
 		{
@@ -57,18 +61,20 @@ func TestGetNames(t *testing.T) {
 
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 			mockWifi := &mockWifi{
 				interfaces: testCase.interfaces,
 				err:        testCase.err,
 			}
 
-			service := New(mockWifi)
+			service := wifiPkg.New(mockWifi)
 
 			names, err := service.GetNames()
 
 			if testCase.expectedErr {
 				require.Error(t, err)
 				require.Nil(t, names)
+
 				return
 			}
 
@@ -101,7 +107,7 @@ func TestGetAddresses(t *testing.T) {
 		},
 		{
 			name:        "interfaces error",
-			err:         errors.New("some error"),
+			err:         ErrSomeError,
 			expectedErr: true,
 		},
 		{
@@ -113,12 +119,13 @@ func TestGetAddresses(t *testing.T) {
 
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 			mockWifi := &mockWifi{
 				interfaces: testCase.interfaces,
 				err:        testCase.err,
 			}
 
-			service := New(mockWifi)
+			service := wifiPkg.New(mockWifi)
 
 			addresses, err := service.GetAddresses()
 

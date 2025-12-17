@@ -1,18 +1,23 @@
-package db
+package db_test
 
 import (
 	"errors"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/alexpi3/task-6/internal/db"
 	"github.com/stretchr/testify/require"
 )
+
+var ErrRowsError = errors.New("rows error")
+var ErrQueryError = errors.New("query error")
 
 func mockDBRows(names []string) *sqlmock.Rows {
 	rows := sqlmock.NewRows([]string{"name"})
 	for _, name := range names {
 		rows = rows.AddRow(name)
 	}
+
 	return rows
 }
 
@@ -37,7 +42,7 @@ func getNamesTestCases() []getNamesTestCase {
 			name: "rows error",
 			rows: sqlmock.NewRows([]string{"name"}).
 				AddRow("Bob").
-				RowError(0, errors.New("rows error")),
+				RowError(0, ErrRowsError),
 			expectedError: true,
 		},
 		{
@@ -52,7 +57,7 @@ func getNamesTestCases() []getNamesTestCase {
 		},
 		{
 			name:          "query error",
-			queryError:    errors.New("query error"),
+			queryError:    ErrQueryError,
 			expectedError: true,
 		},
 	}
@@ -61,14 +66,15 @@ func getNamesTestCases() []getNamesTestCase {
 func testGetNamesMethod(
 	t *testing.T,
 	query string,
-	method func(DBService) getNamesFunc,
+	method func(db.DBService) getNamesFunc,
 ) {
+	t.Helper()
 	for _, testCase := range getNamesTestCases() {
 		t.Run(testCase.name, func(t *testing.T) {
 			mockDB, mock, err := sqlmock.New()
 			require.NoError(t, err)
 
-			service := DBService{DB: mockDB}
+			service := db.DBService{DB: mockDB}
 
 			expect := mock.ExpectQuery(query)
 
@@ -83,6 +89,7 @@ func testGetNamesMethod(
 			if testCase.expectedError {
 				require.Error(t, err)
 				require.Nil(t, names)
+
 				return
 			}
 
@@ -93,6 +100,7 @@ func testGetNamesMethod(
 }
 
 func TestNew(t *testing.T) {
+	t.Parallel()
 	/*
 		Насколько я понял, этот тест не имеет смысла.
 		Конструктор не имеет вообще никого ветвления -> нечему ломаться.
@@ -102,26 +110,29 @@ func TestNew(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	dbService := New(mockDB)
+
+	dbService := db.New(mockDB)
 
 	require.Equal(t, mockDB, dbService.DB,
 		"expected: %s, got: %s", mockDB, dbService.DB)
 }
 
 func TestGetNames(t *testing.T) {
+	t.Parallel()
 	testGetNamesMethod(
 		t,
 		"SELECT name FROM users",
-		func(service DBService) getNamesFunc {
+		func(service db.DBService) getNamesFunc {
 			return service.GetNames
 		})
 }
 
 func TestGetUniqueNames(t *testing.T) {
+	t.Parallel()
 	testGetNamesMethod(
 		t,
 		"SELECT DISTINCT name FROM users",
-		func(service DBService) getNamesFunc {
+		func(service db.DBService) getNamesFunc {
 			return service.GetUniqueNames
 		})
 }
