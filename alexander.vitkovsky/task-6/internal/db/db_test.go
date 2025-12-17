@@ -9,8 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var ErrRowsError = errors.New("rows error")
-var ErrQueryError = errors.New("query error")
+var (
+	ErrRowsError  = errors.New("rows error")
+	ErrQueryError = errors.New("query error")
+)
 
 func mockDBRows(names []string) *sqlmock.Rows {
 	rows := sqlmock.NewRows([]string{"name"})
@@ -69,8 +71,11 @@ func testGetNamesMethod(
 	method func(db.DBService) getNamesFunc,
 ) {
 	t.Helper()
+
 	for _, testCase := range getNamesTestCases() {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			mockDB, mock, err := sqlmock.New()
 			require.NoError(t, err)
 
@@ -101,6 +106,7 @@ func testGetNamesMethod(
 
 func TestNew(t *testing.T) {
 	t.Parallel()
+
 	/*
 		Насколько я понял, этот тест не имеет смысла.
 		Конструктор не имеет вообще никого ветвления -> нечему ломаться.
@@ -119,6 +125,7 @@ func TestNew(t *testing.T) {
 
 func TestGetNames(t *testing.T) {
 	t.Parallel()
+
 	testGetNamesMethod(
 		t,
 		"SELECT name FROM users",
@@ -129,6 +136,7 @@ func TestGetNames(t *testing.T) {
 
 func TestGetUniqueNames(t *testing.T) {
 	t.Parallel()
+
 	testGetNamesMethod(
 		t,
 		"SELECT DISTINCT name FROM users",

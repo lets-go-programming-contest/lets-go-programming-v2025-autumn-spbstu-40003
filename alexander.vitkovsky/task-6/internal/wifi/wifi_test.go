@@ -23,6 +23,8 @@ func (m *mockWifi) Interfaces() ([]*wifi.Interface, error) {
 }
 
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	mockWifi := &mockWifi{}
 
 	service := wifiPkg.New(mockWifi)
@@ -31,6 +33,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestGetNames(t *testing.T) {
+	t.Parallel()
+
 	cases := []struct {
 		name        string
 		interfaces  []*wifi.Interface
@@ -62,6 +66,7 @@ func TestGetNames(t *testing.T) {
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
+
 			mockWifi := &mockWifi{
 				interfaces: testCase.interfaces,
 				err:        testCase.err,
@@ -85,6 +90,8 @@ func TestGetNames(t *testing.T) {
 }
 
 func TestGetAddresses(t *testing.T) {
+	t.Parallel()
+
 	cases := []struct {
 		name        string
 		interfaces  []*wifi.Interface
@@ -120,6 +127,7 @@ func TestGetAddresses(t *testing.T) {
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
+
 			mockWifi := &mockWifi{
 				interfaces: testCase.interfaces,
 				err:        testCase.err,
@@ -132,6 +140,7 @@ func TestGetAddresses(t *testing.T) {
 			if testCase.expectedErr {
 				require.Error(t, err)
 				require.Nil(t, addresses)
+
 				return
 			}
 
