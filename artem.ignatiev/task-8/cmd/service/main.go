@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"log"
 
-	configs "github.com/kryjkaqq/task-8/internal/config"
+	"github.com/kryjkaqq/task-8/internal/config"
 )
 
 func main() {
-	cfg, err := configs.LoadConfig()
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
 
-	fmt.Println(cfg.Environment, cfg.LogLevel)
+	fmt.Printf("%s %s", cfg.Environment, cfg.LogLevel)
 }
