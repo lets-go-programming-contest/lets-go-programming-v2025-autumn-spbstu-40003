@@ -1,4 +1,4 @@
-package wifi
+package wifi_test
 
 import (
 	"errors"
@@ -34,6 +34,10 @@ func TestGetAddresses_OK(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %v, want %v", got, want)
 	}
+}
+
+func New(mock *WiFiHandleMock) any {
+	panic("unimplemented")
 }
 
 func TestGetAddresses_Error(t *testing.T) {

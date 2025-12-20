@@ -14,6 +14,13 @@ func setupDB(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {
 	if err != nil {
 		t.Fatalf("sqlmock error: %v", err)
 	}
+
+	t.Cleanup(func() {
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet sqlmock expectations: %v", err)
+		}
+	})
+
 	return db, mock
 }
 
@@ -25,7 +32,7 @@ func TestGetNames_OK(t *testing.T) {
 		AddRow("Alice").
 		AddRow("Bob")
 
-	mock.ExpectQuery("SELECT name FROM users").
+	mock.ExpectQuery("^SELECT name FROM users$").
 		WillReturnRows(rows)
 
 	service := New(dbConn)
@@ -45,14 +52,32 @@ func TestGetNames_QueryError(t *testing.T) {
 	dbConn, mock := setupDB(t)
 	defer dbConn.Close()
 
-	mock.ExpectQuery("SELECT name FROM users").
-		WillReturnError(errors.New("query fail"))
+	mock.ExpectQuery("^SELECT name FROM users$").
+		WillReturnError(errors.New("query error"))
 
 	service := New(dbConn)
 
 	_, err := service.GetNames()
 	if err == nil {
-		t.Fatal("expected error")
+		t.Fatal("expected query error")
+	}
+}
+
+func TestGetNames_ScanError(t *testing.T) {
+	dbConn, mock := setupDB(t)
+	defer dbConn.Close()
+
+	rows := sqlmock.NewRows([]string{"name"}).
+		AddRow(123)
+
+	mock.ExpectQuery("^SELECT name FROM users$").
+		WillReturnRows(rows)
+
+	service := New(dbConn)
+
+	_, err := service.GetNames()
+	if err == nil {
+		t.Fatal("expected scan error")
 	}
 }
 
@@ -64,7 +89,7 @@ func TestGetNames_RowsError(t *testing.T) {
 		AddRow("Alice").
 		RowError(0, errors.New("rows error"))
 
-	mock.ExpectQuery("SELECT name FROM users").
+	mock.ExpectQuery("^SELECT name FROM users$").
 		WillReturnRows(rows)
 
 	service := New(dbConn)
@@ -82,7 +107,7 @@ func TestGetUniqueNames_OK(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"name"}).
 		AddRow("Alice")
 
-	mock.ExpectQuery("SELECT DISTINCT name FROM users").
+	mock.ExpectQuery("^SELECT DISTINCT name FROM users$").
 		WillReturnRows(rows)
 
 	service := New(dbConn)
@@ -98,6 +123,21 @@ func TestGetUniqueNames_OK(t *testing.T) {
 	}
 }
 
+func TestGetUniqueNames_QueryError(t *testing.T) {
+	dbConn, mock := setupDB(t)
+	defer dbConn.Close()
+
+	mock.ExpectQuery("^SELECT DISTINCT name FROM users$").
+		WillReturnError(errors.New("query error"))
+
+	service := New(dbConn)
+
+	_, err := service.GetUniqueNames()
+	if err == nil {
+		t.Fatal("expected query error")
+	}
+}
+
 func TestGetUniqueNames_ScanError(t *testing.T) {
 	dbConn, mock := setupDB(t)
 	defer dbConn.Close()
@@ -105,7 +145,7 @@ func TestGetUniqueNames_ScanError(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"name"}).
 		AddRow(123)
 
-	mock.ExpectQuery("SELECT DISTINCT name FROM users").
+	mock.ExpectQuery("^SELECT DISTINCT name FROM users$").
 		WillReturnRows(rows)
 
 	service := New(dbConn)
@@ -124,7 +164,7 @@ func TestGetUniqueNames_RowsError(t *testing.T) {
 		AddRow("Alice").
 		RowError(0, errors.New("rows error"))
 
-	mock.ExpectQuery("SELECT DISTINCT name FROM users").
+	mock.ExpectQuery("^SELECT DISTINCT name FROM users$").
 		WillReturnRows(rows)
 
 	service := New(dbConn)
