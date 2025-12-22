@@ -3,93 +3,122 @@ package wifi_test
 import (
 	"errors"
 	"net"
-	"reflect"
 	"testing"
 
+	mywifi "github.com/Artem-Hack/task-6/internal/wifi"
 	"github.com/mdlayher/wifi"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestGetAddresses_OK(t *testing.T) {
-	mock := &WiFiHandleMock{
-		InterfacesFunc: func() ([]*wifi.Interface, error) {
-			return []*wifi.Interface{
-				{HardwareAddr: net.HardwareAddr{0x00, 0x11, 0x22}},
-				{HardwareAddr: net.HardwareAddr{0xAA, 0xBB, 0xCC}},
-			}, nil
+var errMock = errors.New("mock error")
+
+func TestWiFiService_GetAddresses(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		mockBehavior  func(m *MockWiFiHandle)
+		expectedAddrs []net.HardwareAddr
+		expectError   bool
+	}{
+		{
+			name: "Success",
+			mockBehavior: func(m *MockWiFiHandle) {
+				hwAddr, _ := net.ParseMAC("00:00:5e:00:53:01")
+				ifaces := []*wifi.Interface{
+					{HardwareAddr: hwAddr},
+				}
+				m.On("Interfaces").Return(ifaces, nil)
+			},
+			expectedAddrs: []net.HardwareAddr{
+				{0x00, 0x00, 0x5e, 0x00, 0x53, 0x01},
+			},
+			expectError: false,
+		},
+		{
+			name: "Error Getting Interfaces",
+			mockBehavior: func(m *MockWiFiHandle) {
+				m.On("Interfaces").Return(nil, errMock)
+			},
+			expectedAddrs: nil,
+			expectError:   true,
 		},
 	}
 
-	service := New(mock)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
-	got, err := service.GetAddresses()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+			mockWifi := new(MockWiFiHandle)
+			tc.mockBehavior(mockWifi)
 
-	want := []net.HardwareAddr{
-		{0x00, 0x11, 0x22},
-		{0xAA, 0xBB, 0xCC},
-	}
+			service := mywifi.New(mockWifi)
+			addrs, err := service.GetAddresses()
 
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
+			if tc.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "getting interfaces")
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expectedAddrs, addrs)
+			}
+
+			mockWifi.AssertExpectations(t)
+		})
 	}
 }
 
-func New(mock *WiFiHandleMock) any {
-	panic("unimplemented")
-}
+func TestWiFiService_GetNames(t *testing.T) {
+	t.Parallel()
 
-func TestGetAddresses_Error(t *testing.T) {
-	mock := &WiFiHandleMock{
-		InterfacesFunc: func() ([]*wifi.Interface, error) {
-			return nil, errors.New("fail")
+	tests := []struct {
+		name          string
+		mockBehavior  func(m *MockWiFiHandle)
+		expectedNames []string
+		expectError   bool
+	}{
+		{
+			name: "Success",
+			mockBehavior: func(m *MockWiFiHandle) {
+				ifaces := []*wifi.Interface{
+					{Name: "wlan0"},
+					{Name: "wlan1"},
+				}
+				m.On("Interfaces").Return(ifaces, nil)
+			},
+			expectedNames: []string{"wlan0", "wlan1"},
+			expectError:   false,
+		},
+		{
+			name: "Error Getting Interfaces",
+			mockBehavior: func(m *MockWiFiHandle) {
+				m.On("Interfaces").Return(nil, errMock)
+			},
+			expectedNames: nil,
+			expectError:   true,
 		},
 	}
 
-	service := New(mock)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
-	_, err := service.GetAddresses()
-	if err == nil {
-		t.Fatal("expected error")
-	}
-}
+			mockWifi := new(MockWiFiHandle)
+			tc.mockBehavior(mockWifi)
 
-func TestGetNames_OK(t *testing.T) {
-	mock := &WiFiHandleMock{
-		InterfacesFunc: func() ([]*wifi.Interface, error) {
-			return []*wifi.Interface{
-				{Name: "wlan0"},
-				{Name: "wlan1"},
-			}, nil
-		},
-	}
+			service := mywifi.New(mockWifi)
+			names, err := service.GetNames()
 
-	service := New(mock)
+			if tc.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "getting interfaces")
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expectedNames, names)
+			}
 
-	got, err := service.GetNames()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	want := []string{"wlan0", "wlan1"}
-
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
-	}
-}
-
-func TestGetNames_Error(t *testing.T) {
-	mock := &WiFiHandleMock{
-		InterfacesFunc: func() ([]*wifi.Interface, error) {
-			return nil, errors.New("fail")
-		},
-	}
-
-	service := New(mock)
-
-	_, err := service.GetNames()
-	if err == nil {
-		t.Fatal("expected error")
+			mockWifi.AssertExpectations(t)
+		})
 	}
 }
