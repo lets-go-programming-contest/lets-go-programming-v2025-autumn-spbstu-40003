@@ -12,12 +12,14 @@ func main() {
 	var dep int
 	if _, err := fmt.Scan(&dep); err != nil {
 		fmt.Println(noSolution)
+
 		return
 	}
 
-	for i := 0; i < dep; i++ {
+	for range dep {
 		if err := tempCalc(); err != nil {
 			fmt.Println(noSolution)
+
 			return
 		}
 	}
@@ -33,7 +35,7 @@ func tempCalc() error {
 	high := maxAllowed
 	isPos := true
 
-	for i := 0; i < workers; i++ {
+	for range workers {
 		var operator string
 		var temp int
 
@@ -43,6 +45,7 @@ func tempCalc() error {
 
 		if !isPos {
 			fmt.Println(noSolution)
+
 			continue
 		}
 
@@ -59,6 +62,7 @@ func tempCalc() error {
 			fmt.Println(noSolution)
 
 			isPos = false
+
 			continue
 		}
 
