@@ -63,6 +63,7 @@ func tempCalc() error {
 			}
 		default:
 			fmt.Println(noSolution)
+
 			isPos = false
 
 			continue
