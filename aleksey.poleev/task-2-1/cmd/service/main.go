@@ -38,11 +38,11 @@ func tempCalc() error {
 	isPos := true
 
 	for range workers {
-		var op string
+		var operator string
 
 		var temp int
 
-		if _, err := fmt.Scan(&op, &temp); err != nil {
+		if _, err := fmt.Scan(&operator, &temp); err != nil {
 			return fmt.Errorf("error reading temperature preference: %w", err)
 		}
 
@@ -52,7 +52,7 @@ func tempCalc() error {
 			continue
 		}
 
-		switch op {
+		switch operator {
 		case ">=":
 			if temp > low {
 				low = temp
@@ -76,5 +76,6 @@ func tempCalc() error {
 			isPos = false
 		}
 	}
+
 	return nil
 }
