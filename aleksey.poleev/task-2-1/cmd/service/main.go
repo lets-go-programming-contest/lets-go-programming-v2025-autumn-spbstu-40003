@@ -37,6 +37,7 @@ func tempCalc() error {
 
 	for range workers {
 		var operator string
+
 		var temp int
 
 		if _, err := fmt.Scan(&operator, &temp); err != nil {
@@ -60,11 +61,11 @@ func tempCalc() error {
 			}
 		default:
 			fmt.Println(noSolution)
-
 			isPos = false
 
 			continue
 		}
+
 		if low <= high {
 			fmt.Println(low)
 		} else {
