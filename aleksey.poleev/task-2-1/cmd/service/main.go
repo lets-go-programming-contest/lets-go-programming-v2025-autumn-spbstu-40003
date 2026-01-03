@@ -67,6 +67,7 @@ func tempCalc() error {
 
 			continue
 		}
+
 		if low <= high {
 			fmt.Println(low)
 		} else {
