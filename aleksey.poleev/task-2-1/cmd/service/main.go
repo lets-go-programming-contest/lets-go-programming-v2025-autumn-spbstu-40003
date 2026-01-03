@@ -1,8 +1,6 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
 const (
 	minAllowed = 15
@@ -14,14 +12,12 @@ func main() {
 	var dep int
 	if _, err := fmt.Scan(&dep); err != nil {
 		fmt.Println(noSolution)
-
 		return
 	}
 
-	for range dep {
+	for i := 0; i < dep; i++ {
 		if err := tempCalc(); err != nil {
 			fmt.Println(noSolution)
-
 			return
 		}
 	}
@@ -37,9 +33,8 @@ func tempCalc() error {
 	high := maxAllowed
 	isPos := true
 
-	for range workers {
+	for i := 0; i < workers; i++ {
 		var operator string
-
 		var temp int
 
 		if _, err := fmt.Scan(&operator, &temp); err != nil {
@@ -48,7 +43,6 @@ func tempCalc() error {
 
 		if !isPos {
 			fmt.Println(noSolution)
-
 			continue
 		}
 
@@ -65,7 +59,6 @@ func tempCalc() error {
 			fmt.Println(noSolution)
 
 			isPos = false
-
 			continue
 		}
 
