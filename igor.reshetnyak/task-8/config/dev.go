@@ -2,21 +2,24 @@
 
 package config
 
-import _ "embed"
+import (
+	_ "embed"
+
+	"gopkg.in/yaml.v3"
+)
 
 //go:embed dev.yaml
 var devConfig []byte
 
-type devProvider struct{}
-
-func (p *devProvider) GetConfigData() ([]byte, error) {
-	if len(devConfig) == 0 {
-		return nil, ErrDevConfigNotEmbedded
+func Load() (*Config, error) {
+	var cfg Config
+	if err := yaml.Unmarshal(devConfig, &cfg); err != nil {
+		return nil, err
 	}
 
-	return devConfig, nil
-}
+	if cfg.Environment == "" || cfg.LogLevel == "" {
+		return nil, errInvalidConfig
+	}
 
-func getProvider() provider {
-	return &devProvider{}
+	return &cfg, nil
 }
