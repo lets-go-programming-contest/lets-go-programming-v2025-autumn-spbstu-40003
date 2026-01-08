@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"sync"
 	"sync/atomic"
 )
 
@@ -22,7 +23,12 @@ func PrefixDecoratorFunc(
 			return ctx.Err()
 		case data, ok := <-input:
 			if !ok {
-				return nil
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				default:
+					return nil
+				}
 			}
 
 			if strings.Contains(data, "no decorator") {
@@ -54,8 +60,13 @@ func MultiplexerFunc(
 	done := make(chan struct{})
 	defer close(done)
 
+	var wg sync.WaitGroup
+	wg.Add(len(inputs))
+
 	for _, inputChan := range inputs {
 		go func(in chan string) {
+			defer wg.Done()
+
 			for {
 				select {
 				case <-done:
@@ -83,9 +94,17 @@ func MultiplexerFunc(
 		}(inputChan)
 	}
 
-	<-ctx.Done()
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
 
-	return ctx.Err()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-done:
+		return nil
+	}
 }
 
 func SeparatorFunc(
@@ -105,7 +124,12 @@ func SeparatorFunc(
 			return ctx.Err()
 		case data, ok := <-input:
 			if !ok {
-				return nil
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				default:
+					return nil
+				}
 			}
 
 			idx := int(atomic.AddUint64(&counter, 1)-1) % len(outputs)

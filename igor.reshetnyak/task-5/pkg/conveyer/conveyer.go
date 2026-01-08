@@ -42,6 +42,7 @@ type conveyerImpl struct {
 	tasks    []func(context.Context) error
 	size     int
 	running  bool
+	cancel   context.CancelFunc
 }
 
 func New(size int) *conveyerImpl {
@@ -62,7 +63,6 @@ func (c *conveyerImpl) getOrCreateChannel(name string) chan string {
 
 	ch := make(chan string, c.size)
 	c.channels[name] = ch
-
 	return ch
 }
 
@@ -141,9 +141,11 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 	c.mu.Lock()
 	if c.running {
 		c.mu.Unlock()
-
 		return errors.New("already running")
 	}
+
+	runCtx, cancel := context.WithCancel(ctx)
+	c.cancel = cancel
 	c.running = true
 	c.mu.Unlock()
 
@@ -151,10 +153,11 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 		c.closeChannels()
 		c.mu.Lock()
 		c.running = false
+		c.cancel = nil
 		c.mu.Unlock()
 	}()
 
-	g, ctx := errgroup.WithContext(ctx)
+	g, _ := errgroup.WithContext(runCtx)
 
 	c.mu.RLock()
 	tasks := make([]func(context.Context) error, len(c.tasks))
@@ -164,27 +167,45 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 	for _, task := range tasks {
 		currentTask := task
 		g.Go(func() error {
-			return currentTask(ctx)
+			return currentTask(runCtx)
 		})
 	}
 
-	return g.Wait()
+	select {
+	case <-runCtx.Done():
+		c.mu.Lock()
+		if c.cancel != nil {
+			c.cancel()
+		}
+		c.mu.Unlock()
+		return runCtx.Err()
+	default:
+		return g.Wait()
+	}
 }
 
 func (c *conveyerImpl) closeChannels() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for _, ch := range c.channels {
+	for name, ch := range c.channels {
 		close(ch)
+		delete(c.channels, name)
 	}
-	c.channels = make(map[string]chan string)
 }
 
 func (c *conveyerImpl) Send(input string, data string) error {
 	ch, err := c.getChannel(input)
 	if err != nil {
 		return err
+	}
+
+	c.mu.RLock()
+	running := c.running
+	c.mu.RUnlock()
+
+	if !running {
+		return ErrSendFailed
 	}
 
 	select {
@@ -206,7 +227,6 @@ func (c *conveyerImpl) Recv(output string) (string, error) {
 		if !ok {
 			return Undefined, nil
 		}
-
 		return data, nil
 	default:
 		return "", errors.New("no data")
