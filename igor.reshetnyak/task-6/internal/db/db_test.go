@@ -15,7 +15,6 @@ const (
 	getUniqueQuery = "SELECT DISTINCT name FROM users"
 )
 
-// Статические ошибки для тестов
 var (
 	errTest          = errors.New("test error")
 	errRowsIteration = errors.New("rows iteration error")
@@ -142,7 +141,7 @@ func TestGetNames_RowsErrAfterLoop(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"name"}).
 		AddRow("Test1").
 		AddRow("Test2").
-		CloseError(errRowsIteration) // Используем статическую ошибку
+		CloseError(errRowsIteration)
 
 	mock.ExpectQuery(getAllQuery).WillReturnRows(rows)
 
@@ -264,7 +263,7 @@ func TestGetUniqueNames_RowsErrAfterLoop(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"name"}).
 		AddRow("Test1").
 		AddRow("Test2").
-		CloseError(errRowsIteration) // Используем статическую ошибку
+		CloseError(errRowsIteration)
 
 	mock.ExpectQuery(getUniqueQuery).WillReturnRows(rows)
 
