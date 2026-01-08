@@ -146,6 +146,7 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 	c.mu.Lock()
 	if c.running {
 		c.mu.Unlock()
+
 		return ErrAlreadyRunning
 	}
 

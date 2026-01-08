@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strings"
 	"sync"
-	"sync/atomic"
 )
 
 var ErrCannotDecorate = errors.New("can't be decorated")
@@ -98,7 +97,7 @@ func SeparatorFunc(
 		return nil
 	}
 
-	var messageCounter atomic.Uint64
+	var messageCounter int64
 
 	for {
 		select {
@@ -110,8 +109,8 @@ func SeparatorFunc(
 				return nil
 			}
 
-			currentCounter := messageCounter.Add(1) - 1
-			targetIndex := int(currentCounter) % len(outputs)
+			messageCounter++
+			targetIndex := (int(messageCounter) - 1) % len(outputs)
 
 			select {
 			case outputs[targetIndex] <- data:
