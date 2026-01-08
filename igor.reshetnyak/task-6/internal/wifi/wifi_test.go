@@ -15,8 +15,11 @@ var errTest = errors.New("test error")
 
 func createMACAddress(t *testing.T, addr string) net.HardwareAddr {
 	t.Helper()
+
 	mac, err := net.ParseMAC(addr)
+
 	require.NoError(t, err)
+
 	return mac
 }
 
