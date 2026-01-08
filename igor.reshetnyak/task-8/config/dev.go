@@ -4,6 +4,7 @@ package config
 
 import (
 	_ "embed"
+	"fmt"
 
 	"gopkg.in/yaml.v3"
 )
@@ -13,8 +14,9 @@ var devConfig []byte
 
 func Load() (*Config, error) {
 	var cfg Config
+
 	if err := yaml.Unmarshal(devConfig, &cfg); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parse config: %w", err)
 	}
 
 	if cfg.Environment == "" || cfg.LogLevel == "" {

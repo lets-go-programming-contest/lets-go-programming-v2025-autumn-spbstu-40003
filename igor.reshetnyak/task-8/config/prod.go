@@ -13,8 +13,9 @@ var prodConfig []byte
 
 func Load() (*Config, error) {
 	var cfg Config
+
 	if err := yaml.Unmarshal(prodConfig, &cfg); err != nil {
-		return nil, err
+		return nil, errInvalidConfig
 	}
 
 	if cfg.Environment == "" || cfg.LogLevel == "" {

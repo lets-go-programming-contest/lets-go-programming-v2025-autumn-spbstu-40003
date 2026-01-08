@@ -2,6 +2,4 @@ package config
 
 import "errors"
 
-var (
-	errInvalidConfig = errors.New("invalid configuration")
-)
+var errInvalidConfig = errors.New("invalid configuration")
