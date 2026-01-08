@@ -3,6 +3,7 @@ package conveyer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -11,22 +12,25 @@ import (
 const Undefined = "undefined"
 
 var (
-	ErrChanNotFound = errors.New("chan not found")
+	ErrChanNotFound    = errors.New("chan not found")
+	ErrAlreadyRunning  = errors.New("already running")
+	ErrChannelFull     = errors.New("channel is full")
+	ErrNoDataAvailable = errors.New("no data")
 )
 
 type Conveyer interface {
 	RegisterDecorator(
-		fn func(ctx context.Context, input chan string, output chan string) error,
+		handlerFunc func(ctx context.Context, input chan string, output chan string) error,
 		input string,
 		output string,
 	)
 	RegisterMultiplexer(
-		fn func(ctx context.Context, inputs []chan string, output chan string) error,
+		handlerFunc func(ctx context.Context, inputs []chan string, output chan string) error,
 		inputs []string,
 		output string,
 	)
 	RegisterSeparator(
-		fn func(ctx context.Context, input chan string, outputs []chan string) error,
+		handlerFunc func(ctx context.Context, input chan string, outputs []chan string) error,
 		input string,
 		outputs []string,
 	)
@@ -41,14 +45,15 @@ type conveyerImpl struct {
 	tasks    []func(context.Context) error
 	size     int
 	running  bool
-	cancel   context.CancelFunc
 }
 
 func New(size int) *conveyerImpl {
 	return &conveyerImpl{
+		mu:       sync.RWMutex{},
 		channels: make(map[string]chan string),
 		tasks:    make([]func(context.Context) error, 0),
 		size:     size,
+		running:  false,
 	}
 }
 
@@ -56,37 +61,38 @@ func (c *conveyerImpl) getOrCreateChannel(name string) chan string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if ch, ok := c.channels[name]; ok {
-		return ch
+	if channel, ok := c.channels[name]; ok {
+		return channel
 	}
 
-	ch := make(chan string, c.size)
-	c.channels[name] = ch
-	return ch
+	channel := make(chan string, c.size)
+	c.channels[name] = channel
+
+	return channel
 }
 
 func (c *conveyerImpl) getChannel(name string) (chan string, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	ch, ok := c.channels[name]
+	channel, ok := c.channels[name]
 	if !ok {
 		return nil, ErrChanNotFound
 	}
 
-	return ch, nil
+	return channel, nil
 }
 
 func (c *conveyerImpl) RegisterDecorator(
-	fn func(ctx context.Context, input chan string, output chan string) error,
+	handlerFunc func(ctx context.Context, input chan string, output chan string) error,
 	input string,
 	output string,
 ) {
-	inputChan := c.getOrCreateChannel(input)
-	outputChan := c.getOrCreateChannel(output)
+	inputChannel := c.getOrCreateChannel(input)
+	outputChannel := c.getOrCreateChannel(output)
 
 	task := func(ctx context.Context) error {
-		return fn(ctx, inputChan, outputChan)
+		return handlerFunc(ctx, inputChannel, outputChannel)
 	}
 
 	c.mu.Lock()
@@ -95,19 +101,19 @@ func (c *conveyerImpl) RegisterDecorator(
 }
 
 func (c *conveyerImpl) RegisterMultiplexer(
-	fn func(ctx context.Context, inputs []chan string, output chan string) error,
+	handlerFunc func(ctx context.Context, inputs []chan string, output chan string) error,
 	inputs []string,
 	output string,
 ) {
-	inputChans := make([]chan string, len(inputs))
-	for i, name := range inputs {
-		inputChans[i] = c.getOrCreateChannel(name)
+	inputChannels := make([]chan string, len(inputs))
+	for index, name := range inputs {
+		inputChannels[index] = c.getOrCreateChannel(name)
 	}
 
-	outputChan := c.getOrCreateChannel(output)
+	outputChannel := c.getOrCreateChannel(output)
 
 	task := func(ctx context.Context) error {
-		return fn(ctx, inputChans, outputChan)
+		return handlerFunc(ctx, inputChannels, outputChannel)
 	}
 
 	c.mu.Lock()
@@ -116,19 +122,19 @@ func (c *conveyerImpl) RegisterMultiplexer(
 }
 
 func (c *conveyerImpl) RegisterSeparator(
-	fn func(ctx context.Context, input chan string, outputs []chan string) error,
+	handlerFunc func(ctx context.Context, input chan string, outputs []chan string) error,
 	input string,
 	outputs []string,
 ) {
-	inputChan := c.getOrCreateChannel(input)
+	inputChannel := c.getOrCreateChannel(input)
 
-	outputChans := make([]chan string, len(outputs))
-	for i, name := range outputs {
-		outputChans[i] = c.getOrCreateChannel(name)
+	outputChannels := make([]chan string, len(outputs))
+	for index, name := range outputs {
+		outputChannels[index] = c.getOrCreateChannel(name)
 	}
 
 	task := func(ctx context.Context) error {
-		return fn(ctx, inputChan, outputChans)
+		return handlerFunc(ctx, inputChannel, outputChannels)
 	}
 
 	c.mu.Lock()
@@ -140,13 +146,13 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 	c.mu.Lock()
 	if c.running {
 		c.mu.Unlock()
-		return errors.New("already running")
+		return ErrAlreadyRunning
 	}
 
 	c.running = true
 	c.mu.Unlock()
 
-	g, ctx := errgroup.WithContext(ctx)
+	processingGroup, groupCtx := errgroup.WithContext(ctx)
 
 	c.mu.RLock()
 	tasks := make([]func(context.Context) error, len(c.tasks))
@@ -155,50 +161,59 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 
 	for _, task := range tasks {
 		currentTask := task
-		g.Go(func() error {
-			return currentTask(ctx)
+
+		processingGroup.Go(func() error {
+			return currentTask(groupCtx)
 		})
 	}
 
-	err := g.Wait()
+	err := processingGroup.Wait()
 
 	c.mu.Lock()
-	for _, ch := range c.channels {
-		close(ch)
+	for _, channel := range c.channels {
+		close(channel)
 	}
+
 	c.running = false
 	c.mu.Unlock()
 
-	return err
+	if err != nil {
+		return fmt.Errorf("conveyer execution failed: %w", err)
+	}
+
+	return nil
 }
 
 func (c *conveyerImpl) Send(input string, data string) error {
-	ch, err := c.getChannel(input)
+	targetChannel, err := c.getChannel(input)
 	if err != nil {
 		return err
 	}
 
 	select {
-	case ch <- data:
+	case targetChannel <- data:
 		return nil
+
 	default:
-		return errors.New("channel is full")
+		return ErrChannelFull
 	}
 }
 
 func (c *conveyerImpl) Recv(output string) (string, error) {
-	ch, err := c.getChannel(output)
+	targetChannel, err := c.getChannel(output)
 	if err != nil {
 		return "", err
 	}
 
 	select {
-	case data, ok := <-ch:
-		if !ok {
+	case data, channelOpen := <-targetChannel:
+		if !channelOpen {
 			return Undefined, nil
 		}
+
 		return data, nil
+
 	default:
-		return "", errors.New("no data")
+		return "", ErrNoDataAvailable
 	}
 }

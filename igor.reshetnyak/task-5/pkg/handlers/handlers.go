@@ -21,8 +21,9 @@ func PrefixDecoratorFunc(
 		select {
 		case <-ctx.Done():
 			return nil
-		case data, ok := <-input:
-			if !ok {
+
+		case data, channelOpen := <-input:
+			if !channelOpen {
 				return nil
 			}
 
@@ -52,19 +53,20 @@ func MultiplexerFunc(
 		return nil
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(len(inputs))
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(len(inputs))
 
-	for _, inputChan := range inputs {
-		go func(in chan string) {
-			defer wg.Done()
+	for _, inputChannel := range inputs {
+		go func(sourceChannel chan string) {
+			defer waitGroup.Done()
 
 			for {
 				select {
 				case <-ctx.Done():
 					return
-				case data, ok := <-in:
-					if !ok {
+
+				case data, channelOpen := <-sourceChannel:
+					if !channelOpen {
 						return
 					}
 
@@ -79,10 +81,11 @@ func MultiplexerFunc(
 					}
 				}
 			}
-		}(inputChan)
+		}(inputChannel)
 	}
 
-	wg.Wait()
+	waitGroup.Wait()
+
 	return nil
 }
 
@@ -95,21 +98,23 @@ func SeparatorFunc(
 		return nil
 	}
 
-	var counter uint64
+	var messageCounter atomic.Uint64
 
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case data, ok := <-input:
-			if !ok {
+
+		case data, channelOpen := <-input:
+			if !channelOpen {
 				return nil
 			}
 
-			idx := int(atomic.AddUint64(&counter, 1)-1) % len(outputs)
+			currentCounter := messageCounter.Add(1) - 1
+			targetIndex := int(currentCounter) % len(outputs)
 
 			select {
-			case outputs[idx] <- data:
+			case outputs[targetIndex] <- data:
 			case <-ctx.Done():
 				return nil
 			}
