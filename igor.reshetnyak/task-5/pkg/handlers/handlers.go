@@ -53,6 +53,7 @@ func MultiplexerFunc(
 	}
 
 	var waitGroup sync.WaitGroup
+
 	waitGroup.Add(len(inputs))
 
 	for _, inputChannel := range inputs {
