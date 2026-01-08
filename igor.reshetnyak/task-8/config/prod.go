@@ -2,10 +2,7 @@
 
 package config
 
-import (
-	_ "embed"
-	"fmt"
-)
+import _ "embed"
 
 //go:embed prod.yaml
 var prodConfig []byte
@@ -14,12 +11,12 @@ type prodProvider struct{}
 
 func (p *prodProvider) GetConfigData() ([]byte, error) {
 	if len(prodConfig) == 0 {
-		return nil, fmt.Errorf("prod config not embedded")
+		return nil, ErrProdConfigNotEmbedded
 	}
 
 	return prodConfig, nil
 }
 
-func newProdProvider() provider {
+func getProvider() provider {
 	return &prodProvider{}
 }

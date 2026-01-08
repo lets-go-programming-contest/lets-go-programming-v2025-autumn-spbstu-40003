@@ -2,7 +2,6 @@ package config
 
 import "errors"
 
-// Package-level error constants.
 var (
 	ErrProviderNotInitialized = errors.New("config provider not initialized")
 	ErrDevConfigNotEmbedded   = errors.New("dev config not embedded")
