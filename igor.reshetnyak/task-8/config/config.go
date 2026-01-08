@@ -15,37 +15,43 @@ type provider interface {
 	GetConfigData() ([]byte, error)
 }
 
-var currentProvider provider
+func getProvider() provider {
+	return nil
+}
 
 func Load() (*Config, error) {
-	if currentProvider == nil {
-		return nil, fmt.Errorf("config provider not initialized")
+	p := getProvider()
+	if p == nil {
+		return nil, ErrProviderNotInitialized
 	}
 
-	data, err := currentProvider.GetConfigData()
+	data, err := p.GetConfigData()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get config data: %w", err)
+		return nil, fmt.Errorf("load config: %w", err)
 	}
 
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("failed to parse config: %w", err)
+		return nil, fmt.Errorf("parse config: %w", err)
 	}
 
 	if err := cfg.validate(); err != nil {
-		return nil, fmt.Errorf("invalid configuration: %w", err)
+		return nil, fmt.Errorf("validate config: %w", err)
 	}
 
 	return &cfg, nil
 }
 
 func (c *Config) validate() error {
+
 	if c.Environment == "" {
-		return fmt.Errorf("environment is required")
+		return ErrEnvironmentRequired
 	}
+
 	if c.LogLevel == "" {
-		return fmt.Errorf("log_level is required")
+		return ErrLogLevelRequired
 	}
+
 	return nil
 }
 

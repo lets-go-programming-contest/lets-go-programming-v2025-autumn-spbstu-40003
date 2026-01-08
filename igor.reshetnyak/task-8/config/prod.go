@@ -16,9 +16,10 @@ func (p *prodProvider) GetConfigData() ([]byte, error) {
 	if len(prodConfig) == 0 {
 		return nil, fmt.Errorf("prod config not embedded")
 	}
+
 	return prodConfig, nil
 }
 
-func init() {
-	currentProvider = &prodProvider{}
+func newProdProvider() provider {
+	return &prodProvider{}
 }
