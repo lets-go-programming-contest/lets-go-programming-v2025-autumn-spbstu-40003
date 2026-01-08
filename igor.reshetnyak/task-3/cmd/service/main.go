@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 
-	"task-3/internal/config"
-	"task-3/internal/processor"
+	"github.com/ReshetnyakIgor/task-3/internal/config"
+	"github.com/ReshetnyakIgor/task-3/internal/processor"
 )
 
 func main() {

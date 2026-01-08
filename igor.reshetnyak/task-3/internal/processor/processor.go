@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/ReshetnyakIgor/task-3/internal/currency"
 	"golang.org/x/net/html/charset"
-	"igor.reshetnyak/task-3/internal/currency"
 )
 
 func LoadExchangeData(path string) (*currency.ExchangeData, error) {
