@@ -12,7 +12,6 @@ const Undefined = "undefined"
 
 var (
 	ErrChanNotFound = errors.New("chan not found")
-	ErrSendFailed   = errors.New("send failed")
 )
 
 type Conveyer interface {
@@ -144,20 +143,10 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 		return errors.New("already running")
 	}
 
-	runCtx, cancel := context.WithCancel(ctx)
-	c.cancel = cancel
 	c.running = true
 	c.mu.Unlock()
 
-	defer func() {
-		c.closeChannels()
-		c.mu.Lock()
-		c.running = false
-		c.cancel = nil
-		c.mu.Unlock()
-	}()
-
-	g, _ := errgroup.WithContext(runCtx)
+	g, ctx := errgroup.WithContext(ctx)
 
 	c.mu.RLock()
 	tasks := make([]func(context.Context) error, len(c.tasks))
@@ -167,31 +156,20 @@ func (c *conveyerImpl) Run(ctx context.Context) error {
 	for _, task := range tasks {
 		currentTask := task
 		g.Go(func() error {
-			return currentTask(runCtx)
+			return currentTask(ctx)
 		})
 	}
 
-	select {
-	case <-runCtx.Done():
-		c.mu.Lock()
-		if c.cancel != nil {
-			c.cancel()
-		}
-		c.mu.Unlock()
-		return runCtx.Err()
-	default:
-		return g.Wait()
-	}
-}
+	err := g.Wait()
 
-func (c *conveyerImpl) closeChannels() {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	for name, ch := range c.channels {
+	for _, ch := range c.channels {
 		close(ch)
-		delete(c.channels, name)
 	}
+	c.running = false
+	c.mu.Unlock()
+
+	return err
 }
 
 func (c *conveyerImpl) Send(input string, data string) error {
@@ -200,19 +178,11 @@ func (c *conveyerImpl) Send(input string, data string) error {
 		return err
 	}
 
-	c.mu.RLock()
-	running := c.running
-	c.mu.RUnlock()
-
-	if !running {
-		return ErrSendFailed
-	}
-
 	select {
 	case ch <- data:
 		return nil
 	default:
-		return ErrSendFailed
+		return errors.New("channel is full")
 	}
 }
 

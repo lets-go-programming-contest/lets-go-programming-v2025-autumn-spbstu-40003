@@ -20,15 +20,10 @@ func PrefixDecoratorFunc(
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil
 		case data, ok := <-input:
 			if !ok {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				default:
-					return nil
-				}
+				return nil
 			}
 
 			if strings.Contains(data, "no decorator") {
@@ -42,7 +37,7 @@ func PrefixDecoratorFunc(
 			select {
 			case output <- data:
 			case <-ctx.Done():
-				return ctx.Err()
+				return nil
 			}
 		}
 	}
@@ -57,9 +52,6 @@ func MultiplexerFunc(
 		return nil
 	}
 
-	done := make(chan struct{})
-	defer close(done)
-
 	var wg sync.WaitGroup
 	wg.Add(len(inputs))
 
@@ -69,8 +61,6 @@ func MultiplexerFunc(
 
 			for {
 				select {
-				case <-done:
-					return
 				case <-ctx.Done():
 					return
 				case data, ok := <-in:
@@ -86,25 +76,14 @@ func MultiplexerFunc(
 					case output <- data:
 					case <-ctx.Done():
 						return
-					case <-done:
-						return
 					}
 				}
 			}
 		}(inputChan)
 	}
 
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
-
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-done:
-		return nil
-	}
+	wg.Wait()
+	return nil
 }
 
 func SeparatorFunc(
@@ -121,15 +100,10 @@ func SeparatorFunc(
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil
 		case data, ok := <-input:
 			if !ok {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				default:
-					return nil
-				}
+				return nil
 			}
 
 			idx := int(atomic.AddUint64(&counter, 1)-1) % len(outputs)
@@ -137,7 +111,7 @@ func SeparatorFunc(
 			select {
 			case outputs[idx] <- data:
 			case <-ctx.Done():
-				return ctx.Err()
+				return nil
 			}
 		}
 	}
